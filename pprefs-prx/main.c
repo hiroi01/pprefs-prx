@@ -747,7 +747,7 @@ int readSepluginsText( int ptype ){
 	
 	check_ms();
 	
-	while( type < loopend ){
+	for( ; type < loopend; type++){
 		fp = sceIoOpen(sepluginsTextPath[type], PSP_O_RDONLY, 0777);
 		if( fp < 0 ){
 			pdata[type].exist = false;
@@ -784,7 +784,6 @@ int readSepluginsText( int ptype ){
 		pdata[type].num = i;
 		sceIoClose(fp);
 		pdata[type].edit = false;
-		type++;
 	}
 	return 0;
 }
