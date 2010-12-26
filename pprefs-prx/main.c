@@ -476,7 +476,7 @@ void main_menu(void)
 		
 		while(1){
 			get_button(&padData);
-			if( padData.Buttons & PSP_CTRL_DOWN ){
+			if( padData.Buttons & PSP_CTRL_DOWN && pdata[now_type].num > 0 ){
 				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
 				if( now_arrow + 1 < pdata[now_type].num ){
 					now_arrow++;
@@ -484,7 +484,7 @@ void main_menu(void)
 					now_arrow = 0;
 				}
 				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
-			}else if( padData.Buttons & PSP_CTRL_UP ){
+			}else if( padData.Buttons & PSP_CTRL_UP && pdata[now_type].num > 0 ){
 				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
 				if( now_arrow - 1 >= 0 ){
 					now_arrow--;
@@ -493,7 +493,7 @@ void main_menu(void)
 				}
 				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 				
-			}else if( padData.Buttons & buttonData[buttonNum[0]].flag ){
+			}else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 ){
 				pdata[now_type].edit = true;
 				libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*");
 				pdata[now_type].line[now_arrow].toggle = !pdata[now_type].line[now_arrow].toggle;
@@ -752,6 +752,7 @@ int readSepluginsText( int ptype ){
 		if( fp < 0 ){
 			pdata[type].exist = false;
 			pdata[type].num = 0;
+			pdata[type].edit = false;
 			continue;
 		}else{
 			pdata[type].exist = true;
@@ -911,8 +912,11 @@ int copyMeProcess(void){
 	}
 
 	libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:OK ",buttonData[buttonNum[0]].name);
-	wait_button_down(&padData,buttonData[buttonNum[0]].flag);
-
+	while(1){
+		get_button(&padData);
+		if( padData.Buttons & buttonData[buttonNum[0]].flag ) break;
+	}
+	wait_button_up(&padData);
 	memoryFree(buf);
 	return 0;
 }
