@@ -87,7 +87,6 @@ char commonBuf[COMMON_BUF_LEN];
 int now_type = 0;
 
 
-//これらの変数はひとつの構造体にまとめるべきだ・・・
 char *sepluginsTextPath[] = {
 	"ms0:/seplugins/vsh.txt",
 	"ms0:/seplugins/game.txt",
@@ -259,7 +258,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.00   by hiroi01");
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.01   by hiroi01");
 
 
 
