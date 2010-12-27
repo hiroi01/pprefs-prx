@@ -148,17 +148,19 @@ void saveEditing(void){
 	}
 }
 
-
+/*
 double gettimeofday_sec()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	return tv.tv_sec + (double)tv.tv_usec*1e-6;
 }
+*/
 
 int displayBootMassageThread( SceSize arglen, void *argp ){
-	double timesec = gettimeofday_sec();
+//	double timesec = gettimeofday_sec();
 	unsigned int *key = (unsigned int *)argp;
+	unsigned int timeCount = 0;
 	char *temp;
 	char button[256] = "";
 
@@ -188,8 +190,11 @@ int displayBootMassageThread( SceSize arglen, void *argp ){
 			libmPrintf(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF)," pprefs 起動準備完了! / 起動ボタン:%s ",button);
 			sceDisplayWaitVblankStart();
 		}
-		sceKernelDelayThread( 1000 );
-		if( (gettimeofday_sec() - timesec) >= 8 ) stop_flag &= ~2;
+		// 1 / 1000000 sec
+		sceKernelDelayThread( 10000 );
+		timeCount++;
+		if( timeCount >= 500 ) stop_flag &= ~2;
+//		if( (gettimeofday_sec() - timesec) >= 8 ) stop_flag &= ~2;
 	}
 	
 	sceKernelExitDeleteThread(0);
@@ -691,32 +696,35 @@ int addNewItem(int type,char *str){
 	< 0 on error
 
 */
+
 int writeSepluginsText(int ptype){
 	if( !(0 <= ptype &&  ptype <= 2) ){
 		return -1;
 	}
 
 	int i,type = ptype;
-	FILE *fp;
+	SceUID fp;
 
 	
 	check_ms();
 
-
-	fp = fopen(sepluginsTextPath[type],"w");
-	if( fp == NULL  ) return (type+1);
+	fp = sceIoOpen(sepluginsTextPath[type], PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
+	if( fp < 0 ) return (type+1);
 
 	for( i = 0; i < pdata[type].num; i++ ){
-		fprintf(fp,"%s %c\n",
-			pdata[type].line[i].path,
-			pdata[type].line[i].toggle?'1':'0'
+		sprintf(commonBuf,"%s %c\n",
+				pdata[type].line[i].path,
+				pdata[type].line[i].toggle?'1':'0'
 		);
+		sceIoWrite(fp,commonBuf,strlen(commonBuf));
 	}
+	
 	pdata[type].edit = false;
-	fclose(fp);
+	sceIoClose(fp);
 
 	return 0;
 }
+
 
 /*
 	@param : ptype 
