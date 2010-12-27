@@ -7,11 +7,16 @@ OBJS =	\
 	memory.o \
 	file.o \
 	button.o \
-	iniconfig.o
+	iniconfig.o \
+	exports.o \
+	syslibc.o \
+	strncasecmp.o \
+	qsort.o \
 
-#PRX_EXPORTS = exports.exp
-#USE_KERNEL_LIBC	= 1
-#USE_KERNEL_LIBS	= 1
+
+PRX_EXPORTS = exports.exp
+USE_KERNEL_LIBC	= 1
+USE_KERNEL_LIBS	= 1
 
 CLASSG_LIBS = libs
 #CLASSG_LIBS = libc
