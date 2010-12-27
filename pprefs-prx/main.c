@@ -37,6 +37,11 @@ PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 #define MAX_LINE 21
 
 
+#define MAX_NUMBER_OF_THREADS 64
+SceUID st_thlist_first[MAX_NUMBER_OF_THREADS];
+int st_thnum_first;
+SceUID thlist[MAX_NUMBER_OF_THREADS];
+int thnum;
 
 int readConfig(const char *file_name);
 
@@ -54,6 +59,9 @@ int addNewItem(int type,char *str);
 
 int readSepluginsText( int ptype );
 int writeSepluginsText(int ptype);
+
+void ThreadsStatChange( bool stat, SceUID thlist[], int thnum );
+
 
 int copyMeProcess(void);
 
@@ -225,6 +233,7 @@ int main_thread( SceSize arglen, void *argp )
 		sceKernelDelayThread(1000);
 	}
 	
+//	libmExecTCmd(LIBM_TCMD_DUMP);
 	
 
 	strcpy(ownPath, argp);
@@ -237,6 +246,8 @@ int main_thread( SceSize arglen, void *argp )
 	stop_flag |= 2;
 	thid = sceKernelCreateThread( "PPREFS_DISPLAY_BOOT_MESSAGE", displayBootMassageThread, 31, 0x6000, PSP_THREAD_ATTR_CLEAR_STACK /*PSP_THREAD_ATTR_NO_FILLSTACK*/, 0 );
 	if( thid ) sceKernelStartThread( thid, sizeof(key), &key );
+
+
 
 	
 	while( stop_flag ){
@@ -447,8 +458,10 @@ void main_menu(void)
 	wait_button_up(&padData);
 
 	// suspend XMB
-	libmExecTCmd(LIBM_TCMD_SUSPEND);
-
+//	libmExecTCmd(LIBM_TCMD_SUSPEND);
+	sceKernelGetThreadmanIdList( SCE_KERNEL_TMID_Thread, thlist, MAX_NUMBER_OF_THREADS, &thnum );
+	ThreadsStatChange( false, thlist, thnum );
+	
 	//prepare for displaying and display
 	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
 	PRINT_SCREEN();
@@ -531,7 +544,8 @@ void main_menu(void)
 				wait_button_up(&padData);
 				
 				// resume XMB
-				libmExecTCmd(LIBM_TCMD_RESUME);
+//				libmExecTCmd(LIBM_TCMD_RESUME);
+				ThreadsStatChange( true, thlist, thnum );
 				return;
 			}else if( padData.Buttons & PSP_CTRL_SELECT ){
 				wait_button_up(&padData);
@@ -565,7 +579,6 @@ void main_menu(void)
 
 int module_start( SceSize arglen, void *argp )
 {
-	libmExecTCmd(LIBM_TCMD_DUMP);
 	SceUID thid;
 	
 //	while(1){
@@ -927,3 +940,31 @@ int copyMeProcess(void){
 	memoryFree(buf);
 	return 0;
 }
+void ThreadsStatChange( bool stat, SceUID thlist[], int thnum )
+{
+  int ( *request_stat_func )( SceUID ) = NULL;
+  int i, j;
+  SceUID selfid = sceKernelGetThreadId();
+
+  if( stat ){
+    request_stat_func = sceKernelResumeThread;
+  } else{
+    request_stat_func = sceKernelSuspendThread;
+  }
+
+  SceKernelThreadInfo status;
+
+  for( i = 0; i < thnum; i++ ){
+    bool no_target = false;
+    for( j = 0; j < st_thnum_first; j++ ){
+      if( thlist[i] == st_thlist_first[j] || selfid == thlist[i] ){
+        no_target = true;
+        break;
+      }
+    }
+
+    sceKernelReferThreadStatus(thlist[i], &status);
+    if( ! no_target ) ( *request_stat_func )( thlist[i] );
+  }
+}
+
