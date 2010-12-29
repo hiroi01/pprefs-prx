@@ -12,6 +12,7 @@ OBJS =	\
 	syslibc.o \
 	strncasecmp.o \
 	qsort.o \
+	thread.o
 
 
 PRX_EXPORTS = exports.exp
