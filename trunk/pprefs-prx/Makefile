@@ -42,3 +42,5 @@ LIBS = libini.a libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lp
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 
+all:
+	psp-packer pprefs.prx

@@ -44,6 +44,28 @@ int st_thnum_first;
 SceUID thlist[MAX_NUMBER_OF_THREADS];
 int thnum;
 
+
+char *sepluginsTextPath[] = {
+	"ms0:/seplugins/vsh.txt",
+	"ms0:/seplugins/game.txt",
+	"ms0:/seplugins/pops.txt"
+};
+
+struct {
+	int num;//number of structure of line
+	bool exist;
+	bool edit;
+	struct pdataLine{
+		char path[LEN_PER_LINE];
+		bool toggle;//= ture ON / = false OFF
+	}line[MAX_LINE];
+} pdata[3];
+
+
+struct pdataLine tmp_pdataLine;
+
+
+
 int readConfig(const char *file_name);
 
 
@@ -56,7 +78,7 @@ void main_menu(void);
 int read_line_file(SceUID fp, char* line, int num);
 
 int removeAnItem(int type,int num);
-int addNewItem(int type,char *str);
+int addNewItem(int type,struct pdataLine *lineData);
 
 int readSepluginsText( int ptype );
 int writeSepluginsText(int ptype);
@@ -94,26 +116,6 @@ char commonBuf[COMMON_BUF_LEN];
 
 
 int now_type = 0;
-
-
-char *sepluginsTextPath[] = {
-	"ms0:/seplugins/vsh.txt",
-	"ms0:/seplugins/game.txt",
-	"ms0:/seplugins/pops.txt"
-};
-
-struct {
-	int num;//number of structure of line
-	bool exist;
-	bool edit;
-	struct{
-		char path[LEN_PER_LINE];
-		bool toggle;//= ture ON / = false OFF
-	}line[MAX_LINE];
-} pdata[3];
-
-
-
 
 
 
@@ -271,7 +273,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.02   by hiroi01");
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.03beta   by hiroi01");
 
 
 
@@ -337,8 +339,10 @@ PRINT_LIST:
 						break;
 					//選択されたものがフォルダーではない && buttonData[buttonNum[0]].flagボタンが押されている
 					}else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && dir_num != 0 ){
-						strcat(currentPath,dirBuf[offset+now_arrow].name);
-						addNewItem(now_type,currentPath);
+						strcpy( tmp_pdataLine.path , currentPath );
+						strcat( tmp_pdataLine.path , dirBuf[offset+now_arrow].name );
+						tmp_pdataLine.toggle = false;
+						addNewItem(now_type,&tmp_pdataLine);
 						pdata[now_type].edit = true;
 						wait_button_up(&padData);
 						return 1;
@@ -453,6 +457,32 @@ int editTextMenu(int currentSelected,int position){
 	
 }
 
+/*
+void swap_pdataLine( struct pdataLine *first , struct pdataLine * second ){
+
+
+	strcpy( tmp.path , first->path );
+	tmp.toggle = first->toggle;
+
+	strcpy( first->path  , second->path );
+	first->toggle = second->toggle;
+
+	strcpy( second->path  , tmp.path );
+	second->toggle = tmp.toggle;
+
+}
+*/
+#define swap_pdataLine(first,second) \
+        strcpy( tmp_pdataLine.path , first.path ); \
+        tmp_pdataLine.toggle = first.toggle; \
+        strcpy( first.path  , second.path ); \
+        first.toggle = second.toggle; \
+        strcpy( second.path  , tmp_pdataLine.path ); \
+        second.toggle = tmp_pdataLine.toggle;
+
+
+#define fillLine(sy,color) libmFillRect( 0 , sy , 480 , sy + LIBM_CHAR_HEIGHT ,color);
+#define printEditedMark() libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*")
 
 void main_menu(void)
 {
@@ -470,22 +500,22 @@ void main_menu(void)
 	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
 	PRINT_SCREEN();
 
-	int i;
-	int now_arrow = 0;
-
+	int i,tmp;
+	int now_arrow = 0;//current position of arrow
+	
 	char *typeName[] = {
 		"vsh ",
 		"game",
 		"pops"
 	};
 	
-	
 
 	readSepluginsText(3);
 
 	while(1){
 		PRINT_SCREEN();
-		libmPrintf(0,264,FG_COLOR,BG_COLOR," %s:選択 SELECT:編集破棄&リロード △/START:メニュー HOME:保存&終了 ",buttonData[buttonNum[0]].name);
+		libmPrintf(0,264,FG_COLOR,BG_COLOR," %s:選択 SELECT:編集破棄&リロード △/START:メニュー HOME:保存&終了 □+↑/↓:並び替え",buttonData[buttonNum[0]].name);
+
 		libmPrintf(15,28,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",typeName[now_type]);
 		if( pdata[now_type].edit ) libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*");
 		libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
@@ -494,32 +524,69 @@ void main_menu(void)
 			"[%s] %s",pdata[now_type].line[i].toggle?"O N":"OFF",pdata[now_type].line[i].path);
 		}
 		
-		
+		wait_button_up_ex(&padData,PSP_CTRL_SQUARE);
+
 		while(1){
 			get_button(&padData);
-			if( padData.Buttons & PSP_CTRL_DOWN && pdata[now_type].num > 0 ){
-				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
-				if( now_arrow + 1 < pdata[now_type].num ){
-					now_arrow++;
-				}else{
-					now_arrow = 0;
+
+			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) && pdata[now_type].num > 0 ){
+				tmp = now_arrow; //現在の矢印の位置を覚えておく
+				
+				//矢印の位置を変更 / change position of arrow
+				if( padData.Buttons & PSP_CTRL_DOWN ){
+					if(  now_arrow + 1 < pdata[now_type].num )
+						now_arrow++;
+					else
+						now_arrow = 0;
+				}else if( padData.Buttons & PSP_CTRL_UP ){
+					if( now_arrow - 1 >= 0 )
+						now_arrow--;
+					else
+						now_arrow = pdata[now_type].num - 1;
 				}
-				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
-			}else if( padData.Buttons & PSP_CTRL_UP && pdata[now_type].num > 0 ){
-				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
-				if( now_arrow - 1 >= 0 ){
-					now_arrow--;
-				}else{
-					now_arrow = pdata[now_type].num - 1;
+
+				//□が押されてるなら、並び替え(そして編集フラグ立てる) / if □ is pushed , sort ( and flag edit )
+				if( padData.Buttons & PSP_CTRL_SQUARE ){
+					printEditedMark();
+					pdata[now_type].edit = true;
+					//tmp - now_arrow ==  1 one up
+					//tmp - now_arrow == -1 one down
+					//tmp - now_arrow >   1 up top      ( tmp > now_arrow )
+					//tmp - now_arrow <  -1 down bottom ( tmp < now_arrow )
+					if( tmp - now_arrow > 1 ){
+						for( i = tmp; i > now_arrow; i-- ){
+							swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
+						}
+						break;
+					}else if( tmp - now_arrow < -1 ){
+						for( i = tmp; i < now_arrow; i++ ){
+							swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i+1]);
+						}
+						break;
+					}else{
+						swap_pdataLine(pdata[now_type].line[now_arrow],pdata[now_type].line[tmp]);
+					}
 				}
+				
+				//画面に表示 / display on screen
+				fillLine(38 + tmp*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+				libmPrintf(15,38 + tmp*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].path);
+				fillLine(38 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+				libmPrintf(15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].path);
 				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+
+				//□以外のボタンが離されるまでwait / wait till releasing buttons except □
+				wait_button_up_ex(&padData,PSP_CTRL_SQUARE);
 				
 			}else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 ){
 				pdata[now_type].edit = true;
-				libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*");
+				 printEditedMark();
 				pdata[now_type].line[now_arrow].toggle = !pdata[now_type].line[now_arrow].toggle;
-				libmPrintf(15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,
-				"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].path);
+				libmPrintf(
+				            15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,
+				            "[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].path
+				);
+				wait_button_up(&padData);
 			}else if( padData.Buttons & PSP_CTRL_RTRIGGER ){
 				if( now_type == 0 ) now_type = 1;
 				else if( now_type == 1 ) now_type = 2;
@@ -576,7 +643,6 @@ void main_menu(void)
 				wait_button_up(&padData);
 				break;
 			}
-			wait_button_up(&padData);
 		}
 	}
 
@@ -688,12 +754,13 @@ int removeAnItem(int type,int num){
 	= 0 no problem
 	< 0 on error
 */
-int addNewItem(int type,char *str){
+int addNewItem(int type,struct pdataLine *lineData)
+{
 	if( !(0 <= type &&  type <= 2) ) return -1;
 	if( !(pdata[type].num < MAX_LINE) ) return -2;
 
-	strcpy(pdata[type].line[pdata[type].num].path,str);
-	pdata[type].line[pdata[type].num].toggle = false;
+	strcpy(pdata[type].line[pdata[type].num].path,lineData->path);
+	pdata[type].line[pdata[type].num].toggle = lineData->toggle;
 	pdata[type].num++;
 	
 	return 0;
