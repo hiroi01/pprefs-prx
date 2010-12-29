@@ -38,12 +38,6 @@ PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 #define MAX_LINE 21
 
 
-#define MAX_NUMBER_OF_THREADS 64
-SceUID st_thlist_first[MAX_NUMBER_OF_THREADS];
-int st_thnum_first;
-SceUID thlist[MAX_NUMBER_OF_THREADS];
-int thnum;
-
 
 char *sepluginsTextPath[] = {
 	"ms0:/seplugins/vsh.txt",
@@ -237,8 +231,7 @@ int main_thread( SceSize arglen, void *argp )
 	}
 	
 	Get_FirstThreads();
-//	libmExecTCmd(LIBM_TCMD_DUMP);
-	
+
 
 	strcpy(ownPath, argp);
 	strcpy(path, argp);
@@ -273,7 +266,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.03beta   by hiroi01");
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.03   by hiroi01");
 
 
 
@@ -457,21 +450,7 @@ int editTextMenu(int currentSelected,int position){
 	
 }
 
-/*
-void swap_pdataLine( struct pdataLine *first , struct pdataLine * second ){
 
-
-	strcpy( tmp.path , first->path );
-	tmp.toggle = first->toggle;
-
-	strcpy( first->path  , second->path );
-	first->toggle = second->toggle;
-
-	strcpy( second->path  , tmp.path );
-	second->toggle = tmp.toggle;
-
-}
-*/
 #define swap_pdataLine(first,second) \
         strcpy( tmp_pdataLine.path , first.path ); \
         tmp_pdataLine.toggle = first.toggle; \
@@ -490,10 +469,6 @@ void main_menu(void)
 	wait_button_up(&padData);
 
 	// suspend XMB
-//	libmExecTCmd(LIBM_TCMD_SUSPEND);
-//	sceKernelGetThreadmanIdList( SCE_KERNEL_TMID_Thread, thlist, MAX_NUMBER_OF_THREADS, &thnum );
-//	ThreadsStatChange( false, thlist, thnum );
-//	sceKernelSuspendAllUserThreads();	
 	Suspend_Resume_Threads(SUSPEND_MODE);
 	
 	//prepare for displaying and display
@@ -615,8 +590,6 @@ void main_menu(void)
 				wait_button_up(&padData);
 				
 				// resume XMB
-//				libmExecTCmd(LIBM_TCMD_RESUME);
-//				ThreadsStatChange( true, thlist, thnum );
 				Suspend_Resume_Threads(RESUME_MODE);
 
 				return;
@@ -1013,31 +986,5 @@ int copyMeProcess(void){
 	memoryFree(buf);
 	return 0;
 }
-void ThreadsStatChange( bool stat, SceUID thlist[], int thnum )
-{
-  int ( *request_stat_func )( SceUID ) = NULL;
-  int i, j;
-  SceUID selfid = sceKernelGetThreadId();
 
-  if( stat ){
-    request_stat_func = sceKernelResumeThread;
-  } else{
-    request_stat_func = sceKernelSuspendThread;
-  }
-
-  SceKernelThreadInfo status;
-
-  for( i = 0; i < thnum; i++ ){
-    bool no_target = false;
-    for( j = 0; j < st_thnum_first; j++ ){
-      if( thlist[i] == st_thlist_first[j] || selfid == thlist[i] ){
-        no_target = true;
-        break;
-      }
-    }
-
-    sceKernelReferThreadStatus(thlist[i], &status);
-    if( ! no_target ) ( *request_stat_func )( thlist[i] );
-  }
-}
 
