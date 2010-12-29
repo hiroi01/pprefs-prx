@@ -22,6 +22,7 @@
 #include "file.h"
 #include "iniconfig.h"
 #include "button.h"
+#include "thread.h"
 
 // ÉÇÉWÉÖÅ[ÉãÇÃíËã`
 PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
@@ -233,6 +234,7 @@ int main_thread( SceSize arglen, void *argp )
 		sceKernelDelayThread(1000);
 	}
 	
+	Get_FirstThreads();
 //	libmExecTCmd(LIBM_TCMD_DUMP);
 	
 
@@ -269,7 +271,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.01   by hiroi01");
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.02   by hiroi01");
 
 
 
@@ -459,8 +461,10 @@ void main_menu(void)
 
 	// suspend XMB
 //	libmExecTCmd(LIBM_TCMD_SUSPEND);
-	sceKernelGetThreadmanIdList( SCE_KERNEL_TMID_Thread, thlist, MAX_NUMBER_OF_THREADS, &thnum );
-	ThreadsStatChange( false, thlist, thnum );
+//	sceKernelGetThreadmanIdList( SCE_KERNEL_TMID_Thread, thlist, MAX_NUMBER_OF_THREADS, &thnum );
+//	ThreadsStatChange( false, thlist, thnum );
+//	sceKernelSuspendAllUserThreads();	
+	Suspend_Resume_Threads(SUSPEND_MODE);
 	
 	//prepare for displaying and display
 	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
@@ -545,7 +549,9 @@ void main_menu(void)
 				
 				// resume XMB
 //				libmExecTCmd(LIBM_TCMD_RESUME);
-				ThreadsStatChange( true, thlist, thnum );
+//				ThreadsStatChange( true, thlist, thnum );
+				Suspend_Resume_Threads(RESUME_MODE);
+
 				return;
 			}else if( padData.Buttons & PSP_CTRL_SELECT ){
 				wait_button_up(&padData);
