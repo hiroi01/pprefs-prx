@@ -12,5 +12,6 @@
 void get_button(SceCtrlData *data);
 void wait_button_up(SceCtrlData *data);
 void wait_button_down(SceCtrlData *data,unsigned int key);
+void wait_button_up_ex(SceCtrlData *data,unsigned int exception_key);
 
 #endif

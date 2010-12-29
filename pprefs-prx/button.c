@@ -23,3 +23,11 @@ void wait_button_down(SceCtrlData *data,unsigned int key)
 		if((data->Buttons & key) == key) break;
 	}
 }
+
+void wait_button_up_ex(SceCtrlData *data,unsigned int exception_key)
+{
+  while((data->Buttons & (CHEACK_KEY & ~exception_key)) != 0)
+  {
+    sceCtrlPeekBufferPositive( data, 1 );
+  }
+}
