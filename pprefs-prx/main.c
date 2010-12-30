@@ -60,8 +60,6 @@ struct pdataLine tmp_pdataLine;
 
 
 
-int readConfig(const char *file_name);
-
 
 int module_start( SceSize arglen, void *argp );
 int module_stop( void );
@@ -90,9 +88,10 @@ int stop_flag;
 
 SceCtrlData padData;
 
-
+/*
 int buttonNumBuf[2];
-int *buttonNum = buttonNumBuf;
+ = buttonNumBuf;
+*/
 
 struct {
 	unsigned int flag;
@@ -102,6 +101,8 @@ struct {
 	{PSP_CTRL_CIRCLE,"○"}
 };
 
+bool autoReload;
+int buttonNum[2];
 
 #define COMMON_BUF_LEN 256
 char commonBuf[COMMON_BUF_LEN];
@@ -191,7 +192,7 @@ int displayBootMassageThread( SceSize arglen, void *argp ){
 	
 	while( stop_flag & 2 ){
 		if( libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
-			libmPrintf(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF)," pprefs 起動準備完了! / 起動ボタン:%s ",button);
+			libmPrintf(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF)," pprefs 起動準備完了! / MSへのアクセスが落ち着いた後に 起動ボタン:%s ",button);
 			sceDisplayWaitVblankStart();
 		}
 		// 1 / 1000000 sec
@@ -230,7 +231,7 @@ int main_thread( SceSize arglen, void *argp )
 		sceKernelDelayThread(1000);
 	}
 	
-	Get_FirstThreads();
+//	Get_FirstThreads();
 
 
 	strcpy(ownPath, argp);
@@ -238,7 +239,17 @@ int main_thread( SceSize arglen, void *argp )
 	temp = strrchr(path, '/');
 	temp[0] = '\0';
 	strcat(path, INI_PATH);
-	key = readConfig(path);
+	key = readConfig(path,&autoReload,buttonNum);
+	
+	pdata[0].num = 0;
+	pdata[1].num = 0;
+	pdata[2].num = 0;
+	pdata[0].edit = false;
+	pdata[1].edit = false;
+	pdata[2].edit = false;
+	pdata[0].exist = false;
+	pdata[1].exist = false;
+	pdata[2].exist = false;
 	
 	stop_flag |= 2;
 	thid = sceKernelCreateThread( "PPREFS_DISPLAY_BOOT_MESSAGE", displayBootMassageThread, 31, 0x6000, PSP_THREAD_ATTR_CLEAR_STACK /*PSP_THREAD_ATTR_NO_FILLSTACK*/, 0 );
@@ -249,9 +260,9 @@ int main_thread( SceSize arglen, void *argp )
 	
 	while( stop_flag ){
 		sceKernelDelayThread( 50000 );
-		//    sceCtrlPeekBufferPositive( &data, 1 );
 		//    padData.Buttons ^= XOR_KEY;
-		get_button( &padData);
+//		get_button( &padData);
+		sceCtrlPeekBufferPositive( &padData, 1 );
 		if((padData.Buttons & key) == key){
 			stop_flag &= ~2;
 			main_menu();
@@ -266,7 +277,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.03   by hiroi01");
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.04   by hiroi01");
 
 
 
@@ -485,7 +496,7 @@ void main_menu(void)
 	};
 	
 
-	readSepluginsText(3);
+	if( autoReload ) readSepluginsText(3);
 
 	while(1){
 		PRINT_SCREEN();
@@ -594,23 +605,26 @@ void main_menu(void)
 
 				return;
 			}else if( padData.Buttons & PSP_CTRL_SELECT ){
-				wait_button_up(&padData);
-				
-				libmFillRect(0 , 264 , 480 , 272 ,BG_COLOR);
-				makeWindow(8 , 28 , 8 + LIBM_CHAR_WIDTH*18 , 28 + LIBM_CHAR_HEIGHT*5,FG_COLOR,BG_COLOR);
-				libmPrintf(8 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT , FG_COLOR,BG_COLOR,"編集を破棄して、");
-				libmPrintf(8 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"リロードしてもよろしいですか?");
-				libmPrintf(8 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:はい %s:いいえ",buttonData[buttonNum[0]].name,buttonData[buttonNum[1]].name);
-				while(1){
-					get_button(&padData);
-					if( padData.Buttons & buttonData[buttonNum[0]].flag ){
-						wait_button_up(&padData);
-						readSepluginsText(3);
-						break;
-					}else if( padData.Buttons & (buttonData[buttonNum[1]].flag | PSP_CTRL_HOME) ){
-						wait_button_up(&padData);
-						break;
+
+				if( pdata[0].edit || pdata[1].edit || pdata[2].edit ){
+					libmFillRect(0 , 264 , 480 , 272 ,BG_COLOR);
+					makeWindow(8 , 28 , 8 + LIBM_CHAR_WIDTH*18 , 28 + LIBM_CHAR_HEIGHT*5,FG_COLOR,BG_COLOR);
+					libmPrintf(8 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT , FG_COLOR,BG_COLOR,"編集を破棄して、");
+					libmPrintf(8 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"リロードしてもよろしいですか?");
+					libmPrintf(8 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:はい %s:いいえ",buttonData[buttonNum[0]].name,buttonData[buttonNum[1]].name);
+					while(1){
+						get_button(&padData);
+						if( padData.Buttons & buttonData[buttonNum[0]].flag ){
+							wait_button_up(&padData);
+							readSepluginsText(3);
+							break;
+						}else if( padData.Buttons & (buttonData[buttonNum[1]].flag | PSP_CTRL_HOME) ){
+							wait_button_up(&padData);
+							break;
+						}
 					}
+				}else{
+					readSepluginsText(3);
 				}
 				
 				wait_button_up(&padData);
@@ -624,6 +638,8 @@ void main_menu(void)
 
 int module_start( SceSize arglen, void *argp )
 {
+	Get_FirstThreads();
+
 	SceUID thid;
 	
 //	while(1){

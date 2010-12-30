@@ -5,6 +5,7 @@
 #include "libini.h"
 #include "iniconfig.h"
 
+
 // LibiniÇÃÉTÉìÉvÉãÇÊÇË
 void strutilRemoveChar( char *__restrict__ str, const char *__restrict__ search )
 {
@@ -101,16 +102,15 @@ bool callbackForIni(const char *key, char *val,void *opt){
 	return false;
 }
 
-//Ç±ÇÃexternÇÕñ≥óùñÓóùÇ©Ç»ÅH
-extern int *buttonNum;
-int readConfig(const char *file_name){
 
-	ini_pair list[2];
+int readConfig( const char *file_name , bool *autoReload , int *buttonNum )
+{
+
+	ini_pair list[3];
 	ini_data data;
 	int bootKey = 0;
 	char buf[256];
-	bool swapButtonFlag = false;
-	
+	bool swapButtonFlag;
 
 	memset(&data,0,sizeof(ini_data));
 	memset(list,0,sizeof(list));
@@ -121,6 +121,7 @@ int readConfig(const char *file_name){
 	data.bufLen	= 256;
 	
 	iniAddKey( &data ,"SwapButton"	,INI_TYPE_BOOL	,&swapButtonFlag	,false	);
+	iniAddKey( &data ,"AutoReload"	,INI_TYPE_BOOL	,&autoReload	,true	);
 	iniAddKey( &data ,"BootKey"		,INI_TYPE_STR ,NULL ,0);
 	
 	iniLoad(file_name,&data,callbackForIni,&bootKey);
