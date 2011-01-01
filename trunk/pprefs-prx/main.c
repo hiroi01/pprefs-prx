@@ -114,11 +114,16 @@ int writeSepluginsText(int ptype);
 
 int copyMeProcess(void);
 
+int (*checkMs)(void);
+
+int nothingToDo(void){
+	return 0;
+}
 
 void saveEditing(void){
 	int i;
 
-//	check_ms();
+//	checkMs();
 
 	for( i = 0; i < 3; i++ ){
 		if ( pdata[i].edit ){
@@ -232,6 +237,12 @@ int main_thread( SceSize arglen, void *argp )
 		buttonNum[1] = 0;
 	}
 	
+	if (key.checkMs ){
+		checkMs = check_ms;
+	}else{
+		checkMs = nothingToDo;
+	}
+	
 	
 	pdata[0].num = 0;
 	pdata[1].num = 0;
@@ -269,7 +280,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.04   by hiroi01");
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.041   by hiroi01");
 
 
 
@@ -776,7 +787,7 @@ int writeSepluginsText(int ptype){
 	SceUID fp;
 
 	
-	check_ms();
+	checkMs();
 
 	fp = sceIoOpen(sepluginsTextPath[type], PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
 	if( fp < 0 ) return (type+1);
@@ -823,7 +834,7 @@ int readSepluginsText( int ptype ){
 		 return -1;
 	}
 	
-	check_ms();
+	checkMs();
 	
 	for( ; type < loopend; type++){
 		fp = sceIoOpen(sepluginsTextPath[type], PSP_O_RDONLY, 0777);
@@ -919,7 +930,7 @@ int copyMeProcess(void){
 	char *buf;
 	int readSize,writeSize,fd;
 
-	check_ms();
+	checkMs();
 
 	sceIoGetstat(ownPath, &stat);
 
@@ -958,7 +969,7 @@ int copyMeProcess(void){
 			}
 		}
 		wait_button_up(&padData);
-		if( !(check_ms() < 0) ) break;
+		if( !(checkMs() < 0) ) break;
 	}
 	
 	sceIoMkdir("ms0:/seplugins",0777);

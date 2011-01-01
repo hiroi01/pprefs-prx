@@ -25,7 +25,7 @@
 #include "screen.h"
 #include "macro.h"
 */
-
+#include "libmenu.h"
 #include "file.h"
 #include "error.h"
 
@@ -85,9 +85,8 @@ int read_dir(dir_t dir[], const char *path, int dir_only)
   SceIoDirent entry;
   int num;
   int file_num = 0;
-  int ret;
 
-  ret = check_ms();
+//  int ret  = check_ms();
 /*
   if(dir_only == 0)
   {
