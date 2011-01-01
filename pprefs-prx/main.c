@@ -20,7 +20,7 @@
 #include "libmenu.h"
 #include "memory.h"
 #include "file.h"
-#include "iniconfig.h"
+#include "conf.h"
 #include "button.h"
 #include "thread.h"
 
@@ -59,6 +59,42 @@ struct {
 struct pdataLine tmp_pdataLine;
 
 
+//dir_t *dirBuf = NULL;
+dir_t dirBuf[128];
+
+int stop_flag;
+
+
+SceCtrlData padData;
+
+/*
+ int buttonNumBuf[2];
+ = buttonNumBuf;
+ */
+
+struct {
+	unsigned int flag;
+	char *name;
+}buttonData[] = {
+	{PSP_CTRL_CROSS,"×"},
+	{PSP_CTRL_CIRCLE,"○"}
+};
+
+int buttonNum[2] = {0,1};
+
+#define COMMON_BUF_LEN 256
+char commonBuf[COMMON_BUF_LEN];
+
+#define libmPrintf(x,y,fg,bg,format, ... ) libmPrintf(x,y,fg,bg,commonBuf,COMMON_BUF_LEN,format, ##__VA_ARGS__)
+
+
+int now_type = 0;
+
+
+
+char ownPath[256];
+
+
 
 
 int module_start( SceSize arglen, void *argp );
@@ -75,46 +111,9 @@ int addNewItem(int type,struct pdataLine *lineData);
 int readSepluginsText( int ptype );
 int writeSepluginsText(int ptype);
 
-void ThreadsStatChange( bool stat, SceUID thlist[], int thnum );
-
 
 int copyMeProcess(void);
 
-//dir_t *dirBuf = NULL;
-dir_t dirBuf[128];
-
-int stop_flag;
-
-
-SceCtrlData padData;
-
-/*
-int buttonNumBuf[2];
- = buttonNumBuf;
-*/
-
-struct {
-	unsigned int flag;
-	char *name;
-}buttonData[] = {
-	{PSP_CTRL_CROSS,"×"},
-	{PSP_CTRL_CIRCLE,"○"}
-};
-
-bool autoReload;
-int buttonNum[2];
-
-#define COMMON_BUF_LEN 256
-char commonBuf[COMMON_BUF_LEN];
-
-#define libmPrintf(x,y,fg,bg,format, ... ) libmPrintf(x,y,fg,bg,commonBuf,COMMON_BUF_LEN,format, ##__VA_ARGS__)
-
-
-int now_type = 0;
-
-
-
-char ownPath[256];
 
 void saveEditing(void){
 	int i;
@@ -153,64 +152,55 @@ void saveEditing(void){
 	}
 }
 
-/*
-double gettimeofday_sec()
-{
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return tv.tv_sec + (double)tv.tv_usec*1e-6;
-}
-*/
 
 int displayBootMassageThread( SceSize arglen, void *argp ){
-//	double timesec = gettimeofday_sec();
 	unsigned int *key = (unsigned int *)argp;
 	unsigned int timeCount = 0;
 	char *temp;
-	char button[256] = "";
 
 
-	if( *key & PSP_CTRL_SELECT ) strcat(button,"SELECT + ");
-	if( *key & PSP_CTRL_START ) strcat(button,"START + ");
-	if( *key & PSP_CTRL_UP ) strcat(button,"↑ + ");
-	if( *key & PSP_CTRL_RIGHT ) strcat(button,"→ + ");
-	if( *key & PSP_CTRL_DOWN ) strcat(button,"↓ + ");
-	if( *key & PSP_CTRL_LEFT ) strcat(button,"← + ");
-	if( *key & PSP_CTRL_LTRIGGER ) strcat(button,"[L] + ");
-	if( *key & PSP_CTRL_RTRIGGER ) strcat(button,"[R] + ");
-	if( *key & PSP_CTRL_TRIANGLE ) strcat(button,"△ + ");
-	if( *key & PSP_CTRL_CIRCLE ) strcat(button,"○ + ");
-	if( *key & PSP_CTRL_CROSS ) strcat(button,"× + ");
-	if( *key & PSP_CTRL_SQUARE ) strcat(button,"□ + ");
-	if( *key & PSP_CTRL_NOTE ) strcat(button,"♪ + ");
-	if( *key & PSP_CTRL_HOME ) strcat(button,"HOME + ");
+	strcpy(commonBuf," pprefs 起動準備完了! / 起動ボタン:");
 
-	temp = strrchr(button, '+');
+	if( *key & PSP_CTRL_SELECT ) strcat(commonBuf,"SELECT + ");
+	if( *key & PSP_CTRL_START ) strcat(commonBuf,"START + ");
+	if( *key & PSP_CTRL_UP ) strcat(commonBuf,"↑ + ");
+	if( *key & PSP_CTRL_RIGHT ) strcat(commonBuf,"→ + ");
+	if( *key & PSP_CTRL_DOWN ) strcat(commonBuf,"↓ + ");
+	if( *key & PSP_CTRL_LEFT ) strcat(commonBuf,"← + ");
+	if( *key & PSP_CTRL_LTRIGGER ) strcat(commonBuf,"[L] + ");
+	if( *key & PSP_CTRL_RTRIGGER ) strcat(commonBuf,"[R] + ");
+	if( *key & PSP_CTRL_TRIANGLE ) strcat(commonBuf,"△ + ");
+	if( *key & PSP_CTRL_CIRCLE ) strcat(commonBuf,"○ + ");
+	if( *key & PSP_CTRL_CROSS ) strcat(commonBuf,"× + ");
+	if( *key & PSP_CTRL_SQUARE ) strcat(commonBuf,"□ + ");
+	if( *key & PSP_CTRL_NOTE ) strcat(commonBuf,"♪ + ");
+	if( *key & PSP_CTRL_HOME ) strcat(commonBuf,"HOME + ");
+
+	temp = strrchr(commonBuf, '+');
 	if( temp != NULL ){
 		temp[-1] = '\0';
 	}
 	
+	strcat(commonBuf," ");
+	
 	while( stop_flag & 2 ){
 		if( libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
-			libmPrintf(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF)," pprefs 起動準備完了! / MSへのアクセスが落ち着いた後に 起動ボタン:%s ",button);
+			libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),commonBuf);
 			sceDisplayWaitVblankStart();
 		}
 		// 1 / 1000000 sec
 		sceKernelDelayThread( 10000 );
 		timeCount++;
 		if( timeCount >= 500 ) stop_flag &= ~2;
-//		if( (gettimeofday_sec() - timesec) >= 8 ) stop_flag &= ~2;
 	}
-	
+	stop_flag &= ~4;
 	sceKernelExitDeleteThread(0);
 	return 0;
 }
 
 int main_thread( SceSize arglen, void *argp )
 {
-	unsigned int key;
-	char *temp;
-	char path[256];
+	Conf_Key key;
 	SceUID thid;
 	
 
@@ -235,11 +225,13 @@ int main_thread( SceSize arglen, void *argp )
 
 
 	strcpy(ownPath, argp);
-	strcpy(path, argp);
-	temp = strrchr(path, '/');
-	temp[0] = '\0';
-	strcat(path, INI_PATH);
-	key = readConfig(path,&autoReload,buttonNum);
+	Read_Conf(argp,&key);
+	
+	if( key.swapButton ){
+		buttonNum[0] = 1;
+		buttonNum[1] = 0;
+	}
+	
 	
 	pdata[0].num = 0;
 	pdata[1].num = 0;
@@ -253,7 +245,7 @@ int main_thread( SceSize arglen, void *argp )
 	
 	stop_flag |= 2;
 	thid = sceKernelCreateThread( "PPREFS_DISPLAY_BOOT_MESSAGE", displayBootMassageThread, 31, 0x6000, PSP_THREAD_ATTR_CLEAR_STACK /*PSP_THREAD_ATTR_NO_FILLSTACK*/, 0 );
-	if( thid ) sceKernelStartThread( thid, sizeof(key), &key );
+	if( thid ) sceKernelStartThread( thid, sizeof(key), &key.bootKey );
 
 
 
@@ -263,9 +255,9 @@ int main_thread( SceSize arglen, void *argp )
 		//    padData.Buttons ^= XOR_KEY;
 //		get_button( &padData);
 		sceCtrlPeekBufferPositive( &padData, 1 );
-		if((padData.Buttons & key) == key){
+		if((padData.Buttons & key.bootKey) == key.bootKey){
 			stop_flag &= ~2;
-			main_menu();
+			if( ! (stop_flag & 4) ) main_menu();
 		}
 
 	}
@@ -496,7 +488,10 @@ void main_menu(void)
 	};
 	
 
-	if( autoReload ) readSepluginsText(3);
+
+	
+	readSepluginsText(3);
+	
 
 	while(1){
 		PRINT_SCREEN();
@@ -509,7 +504,7 @@ void main_menu(void)
 			libmPrintf(15,38 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,
 			"[%s] %s",pdata[now_type].line[i].toggle?"O N":"OFF",pdata[now_type].line[i].path);
 		}
-		
+
 		wait_button_up_ex(&padData,PSP_CTRL_SQUARE);
 
 		while(1){
@@ -638,8 +633,9 @@ void main_menu(void)
 
 int module_start( SceSize arglen, void *argp )
 {
+	
 	Get_FirstThreads();
-
+	
 	SceUID thid;
 	
 //	while(1){
@@ -1002,5 +998,7 @@ int copyMeProcess(void){
 	memoryFree(buf);
 	return 0;
 }
+
+
 
 
