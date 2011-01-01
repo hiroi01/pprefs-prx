@@ -2,8 +2,10 @@
 #ifndef __INICONFIG__
 #define __INICONFIG__
 
-#include <stdbool.h>
+#include "libini.h"
 
-int readConfig( const char *file_name , bool *autoReload , int *buttonNum );
+void strutilRemoveChar( char *__restrict__ str, const char *__restrict__ search );
+void callbackToSplit(const char *val,void *opt);
+bool callbackForIni(const char *key, char *val,void *opt);
 
 #endif

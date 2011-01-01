@@ -1,4 +1,4 @@
-TARGET = pprefs
+TARGET = ptextviewer
 PSP_FW_VERSION = 500
 BUILD_PRX = 1
 
@@ -7,12 +7,12 @@ OBJS =	\
 	memory.o \
 	file.o \
 	button.o \
+	iniconfig.o \
 	exports.o \
 	syslibc.o \
 	strncasecmp.o \
 	qsort.o \
-	thread.o \
-	conf.o
+	thread.o
 
 
 PRX_EXPORTS = exports.exp
@@ -36,11 +36,11 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm
+LIBS = libini.a libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm
 
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 
 all:
-	psp-packer pprefs.prx
+	psp-packer ptextviewer.prx

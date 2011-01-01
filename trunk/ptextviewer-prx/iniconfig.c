@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <pspctrl.h>
 
+#include "libini.h"
 #include "iniconfig.h"
 
 
@@ -82,8 +83,7 @@ void callbackToSplit(const char *val,void *opt)
 	}
 }
 
-bool callbackForIni(const char *key, char *val,void *opt)
-{
+bool callbackForIni(const char *key, char *val,void *opt){
 	if( strcasecmp(key,"BootKey") == 0 ){
 		int *bootKey = (int *)opt;
 		
@@ -102,15 +102,16 @@ bool callbackForIni(const char *key, char *val,void *opt)
 	return false;
 }
 
-int readConfig( const char *file_name )
+
+int readConfig( const char *file_name , int *buttonNum )
 {
-	
-	ini_pair list[3];
+
+	ini_pair list[2];
 	ini_data data;
 	int bootKey = 0;
 	char buf[256];
 	bool swapButtonFlag;
-	
+
 	memset(&data,0,sizeof(ini_data));
 	memset(list,0,sizeof(list));
 	
@@ -120,7 +121,6 @@ int readConfig( const char *file_name )
 	data.bufLen	= 256;
 	
 	iniAddKey( &data ,"SwapButton"	,INI_TYPE_BOOL	,&swapButtonFlag	,false	);
-	iniAddKey( &data ,"AutoReload"	,INI_TYPE_BOOL	,&autoReload	,true	);
 	iniAddKey( &data ,"BootKey"		,INI_TYPE_STR ,NULL ,0);
 	
 	iniLoad(file_name,&data,callbackForIni,&bootKey);
@@ -134,8 +134,7 @@ int readConfig( const char *file_name )
 	}
 	
 	if(bootKey == 0){
-		bootKey = PSP_CTRL_HOME;
+		bootKey = PSP_CTRL_RTRIGGER | PSP_CTRL_LTRIGGER | PSP_CTRL_NOTE;
 	}
 	return bootKey;
 }
-
