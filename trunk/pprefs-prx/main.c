@@ -96,11 +96,12 @@ int deviceModel = 0;
 char ownPath[256];
 
 char *modelName[] = {
-	"[????]",
 	"[1000]",
 	"[2000]",
 	"[3000]",
-	"[ go ]"
+	"",
+	"[ go ]",
+	"[????]"
 };
 
 
@@ -243,6 +244,7 @@ int main_thread( SceSize arglen, void *argp )
 	
 
 	deviceModel = sceKernelGetModel();
+	if( deviceModel != 0 && deviceModel != 1 && deviceModel != 2 && deviceModel != 4 ) deviceModel = 5;
 	
 	pdata[0].num = 0;
 	pdata[1].num = 0;
@@ -280,7 +282,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.05   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.051   by hiroi01"); \
 libmPrint(424,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 
@@ -609,7 +611,6 @@ void main_menu(void)
 				wait_button_up(&padData);
 				break;
 			}else if( padData.Buttons &  PSP_CTRL_START  ){
-//				Suspend_Resume_Threads(RESUME_MODE);
 				wait_button_up(&padData);
 				
 				
@@ -625,6 +626,7 @@ void main_menu(void)
 						libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
 						libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"           ");
 						saveEditing();
+						Suspend_Resume_Threads(RESUME_MODE);
 						sceKernelExitVSHVSH(NULL);
 						return;
 					}else if( padData.Buttons & (CHEACK_KEY & ~PSP_CTRL_START) ){
