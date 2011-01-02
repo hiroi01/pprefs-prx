@@ -1,7 +1,7 @@
 /*
 	
 	ありがとう、
-	maxemさん、takkaさん(アルファベット順)
+	>>472さん、maxemさん、plumさん、takkaさん(アルファベット順)
 
 */
 
@@ -14,7 +14,8 @@
 #include <pspsdk.h>
 #include <pspctrl.h>
 #include <pspdisplay.h>
-
+#include <psploadexec_kernel.h>
+#include <pspsysmem_kernel.h>
 
 #include "main.h"
 #include "libmenu.h"
@@ -89,12 +90,18 @@ char commonBuf[COMMON_BUF_LEN];
 
 
 int now_type = 0;
-
+int deviceModel = 0;
 
 
 char ownPath[256];
 
-
+char *modelName[] = {
+	"[????]",
+	"[1000]",
+	"[2000]",
+	"[3000]",
+	"[ go ]"
+};
 
 
 int module_start( SceSize arglen, void *argp );
@@ -111,14 +118,11 @@ int addNewItem(int type,struct pdataLine *lineData);
 int readSepluginsText( int ptype );
 int writeSepluginsText(int ptype);
 
+void getButtonWhileMakeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
 
 int copyMeProcess(void);
 
-int (*checkMs)(void);
 
-int nothingToDo(void){
-	return 0;
-}
 
 void saveEditing(void){
 	int i;
@@ -237,12 +241,8 @@ int main_thread( SceSize arglen, void *argp )
 		buttonNum[1] = 0;
 	}
 	
-	if (key.checkMs ){
-		checkMs = check_ms;
-	}else{
-		checkMs = nothingToDo;
-	}
-	
+
+	deviceModel = sceKernelGetModel();
 	
 	pdata[0].num = 0;
 	pdata[1].num = 0;
@@ -280,7 +280,9 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.041   by hiroi01");
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.05   by hiroi01"); \
+libmPrint(424,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
+
 
 
 
@@ -316,23 +318,26 @@ PRINT_LIST:
 		while(1){
 			get_button(&padData);
 			if( padData.Buttons & PSP_CTRL_DOWN ){
-				wait_button_up(&padData);
 				if( now_arrow + 1 < MAX_DISPLAY_NUM && now_arrow + 1 < dir_num ){
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
 					now_arrow++;
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+					wait_button_up(&padData);
 				}else{
 					if( offset+MAX_DISPLAY_NUM < dir_num ) offset++;
+					wait_button_up(&padData);
 					goto PRINT_LIST;
 				}
 			}else if( padData.Buttons & PSP_CTRL_UP ){
-				wait_button_up(&padData);
+				
 				if( now_arrow - 1 >= 0 ){
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
 					now_arrow--;
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+					wait_button_up(&padData);
 				}else{
 					if( offset > 0 ) offset--;
+					wait_button_up(&padData);
 					goto PRINT_LIST;
 				}
 			}else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) ){
@@ -387,7 +392,7 @@ return: どのメニューが実行されたか
 
 int editTextMenu(int currentSelected,int position){
 	int i,now_arrow;
-	int menunum = 3;
+	int menunum = (deviceModel == 4)?2:3;
 	char *menu[] ={
 		"追記",
 		"削除",
@@ -409,6 +414,7 @@ int editTextMenu(int currentSelected,int position){
 		libmPrint( 8 + LIBM_CHAR_WIDTH*2 , position + LIBM_CHAR_HEIGHT+2 + i*(LIBM_CHAR_HEIGHT+2) ,FG_COLOR,BG_COLOR,menu[i]);
 	}
 	while(1){
+
 		get_button(&padData);
 		if( padData.Buttons & PSP_CTRL_DOWN ){
 			libmFillRect( 8 + LIBM_CHAR_WIDTH , position + LIBM_CHAR_HEIGHT+2 + now_arrow*(LIBM_CHAR_HEIGHT+2) , 8 + LIBM_CHAR_WIDTH*2 , position + LIBM_CHAR_HEIGHT+2 + now_arrow*(LIBM_CHAR_HEIGHT+2) + LIBM_CHAR_HEIGHT , BG_COLOR );
@@ -418,6 +424,7 @@ int editTextMenu(int currentSelected,int position){
 				now_arrow = 0;
 			}
 			libmPrint( 8 + LIBM_CHAR_WIDTH , position + LIBM_CHAR_HEIGHT+2 + now_arrow*(LIBM_CHAR_HEIGHT+2) , FG_COLOR , BG_COLOR , ">");
+			wait_button_up(&padData);
 		}else if( padData.Buttons & PSP_CTRL_UP ){
 			libmFillRect( 8 + LIBM_CHAR_WIDTH , position + LIBM_CHAR_HEIGHT+2 + now_arrow*(LIBM_CHAR_HEIGHT+2) , 8 + LIBM_CHAR_WIDTH*2 , position + LIBM_CHAR_HEIGHT+2 + now_arrow*(LIBM_CHAR_HEIGHT+2) + LIBM_CHAR_HEIGHT , BG_COLOR );
 			if( now_arrow - 1 >= 0 ){
@@ -426,6 +433,7 @@ int editTextMenu(int currentSelected,int position){
 				now_arrow = menunum - 1;
 			}
 			libmPrint( 8 + LIBM_CHAR_WIDTH , position + LIBM_CHAR_HEIGHT+2 + now_arrow*(LIBM_CHAR_HEIGHT+2) , FG_COLOR , BG_COLOR , ">");
+			wait_button_up(&padData);
 		}else if( padData.Buttons & buttonData[buttonNum[0]].flag ){
 			wait_button_up(&padData);
 			break;
@@ -506,7 +514,7 @@ void main_menu(void)
 
 	while(1){
 		PRINT_SCREEN();
-		libmPrintf(0,264,FG_COLOR,BG_COLOR," %s:選択 SELECT:編集破棄&リロード △/START:メニュー HOME:保存&終了 □+↑/↓:並び替え",buttonData[buttonNum[0]].name);
+		libmPrintf(0,264,FG_COLOR,BG_COLOR,"%s選択 △メニュー □+↑/↓並び替え SELECT編集破棄&リロード HOME保存&終了 START保存&VSH再起動",buttonData[buttonNum[0]].name);
 
 		libmPrintf(15,28,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",typeName[now_type]);
 		if( pdata[now_type].edit ) libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*");
@@ -593,22 +601,45 @@ void main_menu(void)
 				wait_button_up(&padData);
 				now_arrow = 0;
 				break;
-			}else if( padData.Buttons & ( PSP_CTRL_TRIANGLE | PSP_CTRL_START ) ){
+			}else if( padData.Buttons &  PSP_CTRL_TRIANGLE  ){
 				if( editTextMenu(now_arrow,( now_arrow < 10 )?148:46) != 0 ){
 					
 					now_arrow = 0;
 				}
 				wait_button_up(&padData);
 				break;
-			}else if( padData.Buttons & PSP_CTRL_HOME ){
-				wait_button_up(&padData);
-				saveEditing();
-
+			}else if( padData.Buttons &  PSP_CTRL_START  ){
+//				Suspend_Resume_Threads(RESUME_MODE);
 				wait_button_up(&padData);
 				
+				
+				getButtonWhileMakeWindow(
+					100 , 36 ,
+					 100 + LIBM_CHAR_WIDTH*16 , 44 + LIBM_CHAR_HEIGHT*5,
+					 FG_COLOR,BG_COLOR
+				);
+				libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"もう一度STARTを押すと");
+				libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"RESTART VSH");
+				while(1){
+					if( padData.Buttons & PSP_CTRL_START ){
+						libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
+						libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"           ");
+						saveEditing();
+						sceKernelExitVSHVSH(NULL);
+						return;
+					}else if( padData.Buttons & (CHEACK_KEY & ~PSP_CTRL_START) ){
+						break;
+					}
+					get_button(&padData);
+				}
+				
+				wait_button_up(&padData);
+				break;
+			}else if( padData.Buttons & PSP_CTRL_HOME ){
+				saveEditing();
+				wait_button_up(&padData);
 				// resume XMB
 				Suspend_Resume_Threads(RESUME_MODE);
-
 				return;
 			}else if( padData.Buttons & PSP_CTRL_SELECT ){
 
@@ -649,6 +680,8 @@ int module_start( SceSize arglen, void *argp )
 	
 	SceUID thid;
 	
+
+
 //	while(1){
 //		dirBuf = (dir_t *)memoryAlloc( sizeof(dir_t) * 128 );
 //		if( dir != NULL ) break;
@@ -894,6 +927,22 @@ void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor){
 
 }
 
+void getButtonWhileMakeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor){
+	int nowx = sx,nowy = sy;
+	while(1){
+		get_button(&padData);
+		nowx += 8;
+		nowy += 8;
+		if( nowx > ex ) nowx = ex;
+		if( nowy > ey ) nowy = ey;
+		libmFillRect(sx , sy , nowx , nowy , bgcolor );
+		libmFrame(sx , sy , nowx ,nowy , fgcolor );
+		if( nowx == ex && nowy == ey ) break;
+		sceKernelDelayThread(8000);
+	}
+
+}
+
 
 
 
@@ -1011,5 +1060,16 @@ int copyMeProcess(void){
 }
 
 
-
+int checkMs(void)
+{
+	int ret = 0;
+	SceUID dp = sceIoDopen("ms0:/");
+	if(dp < 0){
+		ret = check_ms();
+	}else{
+		sceIoDclose(dp);
+	}
+	
+	return ret;
+}
 

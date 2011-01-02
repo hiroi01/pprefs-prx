@@ -25,6 +25,7 @@
 #include "screen.h"
 #include "macro.h"
 */
+#include "button.h"
 #include "libmenu.h"
 #include "file.h"
 #include "error.h"
@@ -63,7 +64,7 @@ const char dir_type_sort[] = {
     'a', // TYPE_UMD
     'c', // TYPE_SYS
     'c', // TYPE_PBT
-    'c', // TYPE_PRX
+    'a', // TYPE_PRX
     'c', // TYPE_ETC
 };
 
@@ -85,7 +86,8 @@ int read_dir(dir_t dir[], const char *path, int dir_only)
   SceIoDirent entry;
   int num;
   int file_num = 0;
-
+  
+  checkMs();
 //  int ret  = check_ms();
 /*
   if(dir_only == 0)
@@ -577,12 +579,14 @@ int check_ms()
   {
  //   msg_win("", 0, MSG_CLEAR, 0);
  //   msg_win("Memory Stickを入れて下さい", 1, MSG_WAIT, 0);
- 	makeWindow(LIBM_CHAR_WIDTH*9 ,LIBM_CHAR_HEIGHT*9 ,LIBM_CHAR_WIDTH*30 ,LIBM_CHAR_WIDTH*13, FG_COLOR,BG_COLOR );
+ 	makeWindow(LIBM_CHAR_WIDTH*9 ,LIBM_CHAR_HEIGHT*9 ,LIBM_CHAR_WIDTH*30 ,LIBM_CHAR_WIDTH*14, FG_COLOR,BG_COLOR );
 	libmPrint( LIBM_CHAR_WIDTH*10 ,LIBM_CHAR_HEIGHT*10 , FG_COLOR,BG_COLOR,"Memory Stickを入れて下さい");
+	libmPrint( LIBM_CHAR_WIDTH*10 ,LIBM_CHAR_HEIGHT*12 + 4 , FG_COLOR,BG_COLOR,"HOME:エスケープ");
 
     ms = -1;
     while(ms <= 0)
     {
+      if( isButtonDown(PSP_CTRL_HOME) ) return -2;
       sceKernelDelayThread(1000);
       ms = MScmIsMediumInserted();
     }

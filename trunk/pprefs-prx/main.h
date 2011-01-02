@@ -8,6 +8,8 @@
 
 void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
 
+int checkMs(void);
+
 
 
 
