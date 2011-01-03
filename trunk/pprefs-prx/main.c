@@ -60,7 +60,6 @@ struct {
 struct pdataLine tmp_pdataLine;
 
 
-//dir_t *dirBuf = NULL;
 dir_t dirBuf[128];
 
 int stop_flag;
@@ -68,10 +67,7 @@ int stop_flag;
 
 SceCtrlData padData;
 
-/*
- int buttonNumBuf[2];
- = buttonNumBuf;
- */
+
 
 struct {
 	unsigned int flag;
@@ -188,11 +184,11 @@ int displayBootMassageThread( SceSize arglen, void *argp ){
 
 	temp = strrchr(commonBuf, '+');
 	if( temp != NULL ){
-		temp[-1] = '\0';
+		temp[-1] = ' ';
+		temp[0]  = '\0';
 	}
-	
-	strcat(commonBuf," ");
-	
+		
+	stop_flag |= 4;
 	while( stop_flag & 2 ){
 		if( libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
 			libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),commonBuf);
@@ -211,7 +207,7 @@ int displayBootMassageThread( SceSize arglen, void *argp ){
 int main_thread( SceSize arglen, void *argp )
 {
 	Conf_Key key;
-	SceUID thid;
+	
 	
 
 	while( 1 )
@@ -256,9 +252,12 @@ int main_thread( SceSize arglen, void *argp )
 	pdata[1].exist = false;
 	pdata[2].exist = false;
 	
-	stop_flag |= 2;
-	thid = sceKernelCreateThread( "PPREFS_DISPLAY_BOOT_MESSAGE", displayBootMassageThread, 31, 0x6000, PSP_THREAD_ATTR_CLEAR_STACK /*PSP_THREAD_ATTR_NO_FILLSTACK*/, 0 );
-	if( thid ) sceKernelStartThread( thid, sizeof(key), &key.bootKey );
+	if( key.bootMessage ){
+		SceUID thid;
+		stop_flag |= 2;
+		thid = sceKernelCreateThread( "PPREFS_DISPLAY_BOOT_MESSAGE", displayBootMassageThread, 31, 0x6000, PSP_THREAD_ATTR_CLEAR_STACK /*PSP_THREAD_ATTR_NO_FILLSTACK*/, 0 );
+		if( thid ) sceKernelStartThread( thid, sizeof(key), &key.bootKey );
+	}
 
 
 
@@ -282,7 +281,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.051   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.052   by hiroi01"); \
 libmPrint(424,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 
@@ -682,13 +681,6 @@ int module_start( SceSize arglen, void *argp )
 	
 	SceUID thid;
 	
-
-
-//	while(1){
-//		dirBuf = (dir_t *)memoryAlloc( sizeof(dir_t) * 128 );
-//		if( dir != NULL ) break;
-//		sceKernelDelayThread(10000);
-//	}
 	
 	//umd dumpとは逆で flag == 0 の時にストップする仕様
 	stop_flag = 1;

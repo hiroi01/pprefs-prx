@@ -10,6 +10,7 @@ typedef struct
 {
 	u32 bootKey;
 	bool swapButton;
+	bool bootMessage;
 } Conf_Key;
 
 
