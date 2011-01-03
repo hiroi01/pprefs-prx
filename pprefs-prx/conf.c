@@ -155,6 +155,7 @@ int Read_Conf(const char *path, Conf_Key *key)
 	// 読み取れなっかった場合はデフォルトの設定
 	key->bootKey = PSP_CTRL_HOME;
 	key->swapButton = false;
+	key->bootMessage = true;
 	
 	// 設定ファイル・オープン
 	fd = sceIoOpen(ms_path, PSP_O_RDONLY, 0777);
@@ -182,8 +183,12 @@ int Read_Conf(const char *path, Conf_Key *key)
 			else if(strcasecmp(buf, "SWAPBUTTON") == 0)
 			{
 				key->swapButton = Get_Bool(ptr,false);
-				
 			}
+			else if(strcasecmp(buf, "BOOTMESSAGE") == 0)
+			{
+				key->bootMessage = Get_Bool(ptr,true);
+			}
+			
 		}
 	}
 
