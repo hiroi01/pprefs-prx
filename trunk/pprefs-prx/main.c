@@ -29,11 +29,18 @@
 PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 
 
+#define compareScePspDateTime(a,b) ( \
+a.second == b.second && \
+a.minute == b.minute && \
+a.hour   == b.hour   && \
+a.day    == b.day    && \
+a.month  == b.month  && \
+a.year   == b.year      \
+)
+
 
 #define INI_PATH "/pprefs.ini"
 
-#define FG_COLOR WHITE
-#define BG_COLOR BLACK
 
 #define LEN_PER_LINE 256
 #define MAX_LINE 21
@@ -44,7 +51,7 @@ PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.06   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.062beta1   by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 
@@ -57,8 +64,9 @@ char *sepluginsTextPath[] = {
 
 struct {
 	int num;//number of line
-	bool exist;
-	bool edit;
+	bool exist;//ファイルが存在するかフラグ
+	bool edit;//編集フラグ
+	SceIoStat stat;
 	struct pdataLine{
 		char path[LEN_PER_LINE];
 		bool toggle;//= ture ON / = false OFF
@@ -79,6 +87,14 @@ SceCtrlData padData;
 Conf_Key config;
 
 
+
+//buttonNum buttonDataは,ボタン入れ替えに使う
+//buttonNumの数字を入れ替えれば役割も入れ替わる
+//
+//e.g. 1)
+// if( pad.Buttons & buttonData.flag[butttonNum[0]] )  {  }
+//e.g. 2)
+//printf( buttonData.name[butttonNum[0]] );
 struct {
 	unsigned int flag;
 	char *name;
@@ -86,8 +102,8 @@ struct {
 	{PSP_CTRL_CROSS,"×"},
 	{PSP_CTRL_CIRCLE,"○"}
 };
-
 int buttonNum[2] = {0,1};
+
 
 #define COMMON_BUF_LEN 256
 char commonBuf[COMMON_BUF_LEN];
@@ -95,10 +111,10 @@ char commonBuf[COMMON_BUF_LEN];
 #define libmPrintf(x,y,fg,bg,format, ... ) libmPrintf(x,y,fg,bg,commonBuf,COMMON_BUF_LEN,format, ##__VA_ARGS__)
 #define fillLine(sy,color) libmFillRect( 0 , sy , 480 , sy + LIBM_CHAR_HEIGHT ,color);
 
+
+
+
 int now_type = 0;
-
-
-
 char ownPath[256];
 
 int deviceModel = 5;
@@ -118,19 +134,18 @@ int module_stop( void );
 int main_thread( SceSize arglen, void *argp );
 void main_menu(void);
 
-int read_line_file(SceUID fp, char* line, int num);
-
 int removeAnItem(int type,int num);
 int addNewItem(int type,struct pdataLine *lineData);
 
-int readSepluginsText( int ptype );
+
+int readSepluginsText( int ptype ,bool checkFlag );
 int writeSepluginsText(int ptype);
 
-void getButtonWhileMakeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
+void makeWindowWithButtonGetting(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
 
 int copyMeProcess(void);
 
-void saveEditing(void);
+void saveEdit(void);
 
 
 
@@ -169,7 +184,6 @@ int main_thread( SceSize arglen, void *argp )
 		sceKernelDelayThread(1000);
 	}
 	
-//	Get_FirstThreads();
 
 
 	strcpy(ownPath, argp);
@@ -180,6 +194,17 @@ int main_thread( SceSize arglen, void *argp )
 		buttonNum[1] = 0;
 	}
 	
+	pdata[0].num = 0;
+	pdata[1].num = 0;
+	pdata[2].num = 0;
+	pdata[0].edit = false;
+	pdata[1].edit = false;
+	pdata[2].edit = false;
+	pdata[0].exist = false;
+	pdata[1].exist = false;
+	pdata[2].exist = false;
+	
+	readSepluginsText(3,false);
 
 	//deviceModel 多分
 	//0 -> 1000
@@ -190,16 +215,6 @@ int main_thread( SceSize arglen, void *argp )
 	//5 -> unknown
 	deviceModel = sceKernelGetModel();
 	if( !( deviceModel >= 0 &&  deviceModel <= 4 ) ) deviceModel = 5;
-	
-	pdata[0].num = 0;
-	pdata[1].num = 0;
-	pdata[2].num = 0;
-	pdata[0].edit = false;
-	pdata[1].edit = false;
-	pdata[2].edit = false;
-	pdata[0].exist = false;
-	pdata[1].exist = false;
-	pdata[2].exist = false;
 	
 	
 	padData.Buttons = 0;
@@ -559,7 +574,7 @@ int editTextMenu(int currentSelected,int position){
 			libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:OK ",buttonData[buttonNum[0]].name);
 			wait_button_down(&padData,buttonData[buttonNum[0]].flag);
 		}
-		if( tmp !=  1 ) readSepluginsText(3);
+		if( tmp !=  1 ) readSepluginsText(3,true);
 	}
 	
 	return now_arrow + 1;
@@ -594,23 +609,19 @@ void main_menu(void)
 	int i,tmp;
 	int now_arrow = 0;//current position of arrow
 	
-	char *typeName[] = {
-		"vsh ",
-		"game",
-		"pops"
-	};
-	
+
 
 
 	
-	readSepluginsText(3);
+	readSepluginsText(3,true);
 	
+	wait_button_up(&padData);
 
 	while(1){
 		PRINT_SCREEN();
 		libmPrintf(0,264,FG_COLOR,BG_COLOR,"%s選択 △メニュー □+↑/↓並び替え SELECT編集破棄&リロード HOME保存&終了 START保存&VSH再起動",buttonData[buttonNum[0]].name);
 
-		libmPrintf(15,28,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",typeName[now_type]);
+		libmPrintf(15,28,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",sepluginsTextPath[now_type]);
 		if( pdata[now_type].edit ) libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*");
 		libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 		for( i = 0; i < pdata[now_type].num; i++ ){
@@ -706,7 +717,7 @@ void main_menu(void)
 				wait_button_up(&padData);
 				
 				if( ! config.onePushRestart ){
-					getButtonWhileMakeWindow(
+					makeWindowWithButtonGetting(
 						100 , 36 ,
 						 100 + LIBM_CHAR_WIDTH*16 , 44 + LIBM_CHAR_HEIGHT*5,
 						 FG_COLOR,BG_COLOR
@@ -717,7 +728,7 @@ void main_menu(void)
 						if( padData.Buttons & PSP_CTRL_START ){
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"           ");
-							saveEditing();
+							saveEdit();
 							Suspend_Resume_Threads(RESUME_MODE);
 							sceKernelExitVSHVSH(NULL);
 							return;
@@ -727,7 +738,7 @@ void main_menu(void)
 						get_button(&padData);
 					}
 				}else{
-					saveEditing();
+					saveEdit();
 					Suspend_Resume_Threads(RESUME_MODE);
 					sceKernelExitVSHVSH(NULL);
 					return;
@@ -736,7 +747,7 @@ void main_menu(void)
 				wait_button_up(&padData);
 				break;
 			}else if( padData.Buttons & PSP_CTRL_HOME ){
-				saveEditing();
+				saveEdit();
 				wait_button_up(&padData);
 				// resume XMB
 				Suspend_Resume_Threads(RESUME_MODE);
@@ -753,7 +764,7 @@ void main_menu(void)
 						get_button(&padData);
 						if( padData.Buttons & buttonData[buttonNum[0]].flag ){
 							wait_button_up(&padData);
-							readSepluginsText(3);
+							readSepluginsText(3,false);
 							break;
 						}else if( padData.Buttons & (buttonData[buttonNum[1]].flag | PSP_CTRL_HOME) ){
 							wait_button_up(&padData);
@@ -761,7 +772,7 @@ void main_menu(void)
 						}
 					}
 				}else{
-					readSepluginsText(3);
+					readSepluginsText(3,false);
 				}
 				
 				wait_button_up(&padData);
@@ -791,89 +802,10 @@ int module_start( SceSize arglen, void *argp )
 
 int module_stop( void )
 {
-//	memoryFree(dir);
 	stop_flag = 0;
 	  return 0;
 }
 
-
-//from umd dumper
-int read_line_file(SceUID fp, char* line, int num)
-{
-  char buff[num];
-  char* end;
-  int len;
-  int tmp;
-
-  tmp = 0;
-  len = sceIoRead(fp, buff, num);
-  // エラーの場合 / on error
-  if(len == 0)
-    return -1;
-
-  end = strchr(buff, '\n');
-
-  // \nが見つからない場合 / not found \n
-  if(end == NULL)
-  {
-    buff[num - 1] = '\0';
-    strcpy(line, buff);
-    return len;
-  }
-
-  end[0] = '\0';
-  if((end != buff) && (end[-1] == '\r'))
-  {
-    end[-1] = '\0';
-    tmp = -1;
-  }
-
-  strcpy(line, buff);
-  sceIoLseek(fp, - len + (end - buff) + 1, SEEK_CUR);
-  return end - buff + tmp;
-}
-
-
-//末尾のnつまり\n(改行)を削除せずそのまま1行ファイルを読み込む
-int read_line_file_keepn(SceUID fp, char* line, int num)
-{
-  char buff[num];
-  char* end;
-  int len;
-  int tmp;
-
-  tmp = 1;
-  len = sceIoRead(fp, buff, num);
-  // エラーの場合 / on error
-  if(len == 0)
-    return -1;
-
-  end = strchr(buff, '\n');
-
-  // \nが見つからない場合 / not found \n
-  if(end == NULL)
-  {
-    buff[num - 1] = '\0';
-    strcpy(line, buff);
-    return len;
-  }
-
-  if( &end[1] < &buff[num] ){
-    end[1] = '\0';
-    if( (end[0] == '\r') )
-    {
-      end[0] = '\0';
-      tmp = 0;
-    }
-  }else{
-    end[0] = '\0';
-    tmp = 0;
-  }
-
-  strcpy(line, buff);
-  sceIoLseek(fp, - len + (end - buff) + 1, SEEK_CUR);
-  return end - buff + tmp;
-}
 
 
 /*
@@ -884,7 +816,7 @@ int read_line_file_keepn(SceUID fp, char* line, int num)
 	= 1 game.txt
 	= 2 pops.txt
 	@param : num
-	removing data number
+	number of removing data
 
 	@return : 
 	= 0 no problem
@@ -970,12 +902,17 @@ int writeSepluginsText(int ptype){
 		);
 		sceIoWrite(fp,commonBuf,strlen(commonBuf));
 	}
-	
-	pdata[type].edit = false;
 	sceIoClose(fp);
+	
+	//各種情報更新
+	sceIoGetstat(sepluginsTextPath[type], &pdata[type].stat);
+	pdata[type].edit = false;
+	pdata[type].exist = true;
 
 	return 0;
 }
+
+
 
 
 /*
@@ -984,16 +921,22 @@ int writeSepluginsText(int ptype){
 	= 1 game.txt
 	= 2 pops.txt
 	= 3 all
+	@param : checkFlag
+	= true ファイルを読む必要があるかチェックして、必要なら読み込む
+	= true 必要かどうか関係なく、ファイルを読み込む
 	@return : 
-	= 0 no problem
-	< 0 on error
+	 = 0 no problem
+	!= 0 on error
 */
 
-int readSepluginsText( int ptype ){
+int readSepluginsText( int ptype ,bool checkFlag )
+{
 
 	SceUID fp;
-	int type,i,readSize,loopend;
+	int type,i,readSize,loopend,ret = 0;
 	char line[LEN_PER_LINE],*ptr;
+	SceIoStat stat;
+
 
 	if( 0 <= ptype &&  ptype <= 2 ){
 		type = ptype;
@@ -1008,15 +951,32 @@ int readSepluginsText( int ptype ){
 	checkMs();
 	
 	for( ; type < loopend; type++){
-		fp = sceIoOpen(sepluginsTextPath[type], PSP_O_RDONLY, 0777);
-		if( fp < 0 ){
+		pdata[type].edit = false;
+
+		if( sceIoGetstat(sepluginsTextPath[type], &stat) < 0 ){//ファイルが存在しない
 			pdata[type].exist = false;
 			pdata[type].num = 0;
-			pdata[type].edit = false;
 			continue;
-		}else{
-			pdata[type].exist = true;
 		}
+		
+		//checkFlagが立っていて、これ以前にファイルが存在していて、sizeとmtimeが一緒なら -> ファイルを読む必要なし
+		if( checkFlag &&
+		    pdata[type].exist == true &&
+		    stat.st_size == pdata[type].stat.st_size &&
+		    compareScePspDateTime(stat.st_mtime, pdata[type].stat.st_mtime)
+		){
+			continue;
+		}
+
+		
+		fp = sceIoOpen(sepluginsTextPath[type], PSP_O_RDONLY, 0777);
+		if( fp < 0 ){//ファイルオープンエラー
+			pdata[type].exist = false;
+			pdata[type].num = 0;
+			ret |= (1<<type);
+			continue;
+		}
+
 
 		i = 0;
 		while( i < MAX_LINE ){
@@ -1042,15 +1002,19 @@ int readSepluginsText( int ptype ){
 			}
 			i++;
 		}
-		pdata[type].num = i;
 		sceIoClose(fp);
-		pdata[type].edit = false;
+		
+		//各種情報を更新
+		pdata[type].num = i;
+		pdata[type].exist = true;
+		pdata[type].stat = stat;
 	}
-	return 0;
+	return ret;
 }
 
-
-void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor){
+//にゅーってでる窓を作る
+void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
+{
 	int nowx = sx,nowy = sy;
 	while(1){
 		nowx += 8;
@@ -1065,7 +1029,9 @@ void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor){
 
 }
 
-void getButtonWhileMakeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor){
+//にゅーってしている最中にもボタンをgetする
+void makeWindowWithButtonGetting(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
+{
 	int nowx = sx,nowy = sy;
 	while(1){
 		get_button(&padData);
@@ -1100,7 +1066,7 @@ int copyMeProcess(void){
 		while(1){
 			get_button(&padData);
 			if( padData.Buttons & PSP_CTRL_START ){
-				saveEditing();
+				saveEdit();
 				break;
 			}else if( padData.Buttons & PSP_CTRL_SELECT ){
 				break;
@@ -1198,20 +1164,8 @@ int copyMeProcess(void){
 }
 
 
-int checkMs(void)
-{
-	int ret = 0;
-	SceUID dp = sceIoDopen("ms0:/");
-	if(dp < 0){
-		ret = check_ms();
-	}else{
-		sceIoDclose(dp);
-	}
-	
-	return ret;
-}
 
-void saveEditing(void)
+void saveEdit(void)
 {
 	int i;
 
@@ -1250,18 +1204,6 @@ void saveEditing(void)
 }
 
 
-int removeSpace(char *str)
-{
-	int i,j;
-	
-	for( i = 0; str[i] != '\0'; i++ ){
-		if( str[i] == ' ' || str[i] == '\r' ){
-			for( j = i; str[j] != '\0'; j++ ) str[j] = str[j+1]; //1文字詰める
-		}
-	}
-	
-	return i;
-}
 
 
 

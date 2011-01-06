@@ -5,6 +5,14 @@
  *      Author: takka
  */
 
+
+ /*
+ * iso toolのソースより
+ *
+ * mod by hiroi01
+ */
+
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -25,12 +33,56 @@
 #include "screen.h"
 #include "macro.h"
 */
+
 #include "button.h"
 #include "libmenu.h"
 #include "file.h"
-#include "error.h"
 
 #define FIO_CST_SIZE    0x0004
+
+//--------------------------------------------------------
+
+
+typedef enum {
+  ERR_OPEN          = -1,
+  ERR_READ          = -2,
+  ERR_WRITE         = -3,
+  ERR_SEEK          = -4,
+  ERR_CLOSE         = -5,
+
+  ERR_DECRYPT       = -6,
+  ERR_NOT_CRYPT     = -7,
+
+  ERR_DEFLATE       = -8,
+  ERR_DEFLATE_SIZE  = -9,
+  ERR_INFLATE       = -10,
+
+  ERR_INIT          = -11,
+
+  ERR_PRX           = -12,
+
+  ERR_NOT_FOUND     = -13,
+  ERR_SIZE_OVER     = -14,
+
+  ERR_CHG_STAT      = -15,
+
+  ERR_NO_UMD        = -16,
+
+  ERR_RENAME        = -17,
+
+  ERR_NO_MEMORY     = -18,
+
+} err_msg_num;
+
+#define YES                 (1)
+#define NO                  (0)
+
+#define DONE                (0)
+#define CANCEL              (-1)
+//--------------------------------------------------------
+
+
+
 
 int compare_dir_int(const void* c1, const void* c2);
 int compare_dir_str(const void* c1, const void* c2);
@@ -43,6 +95,7 @@ int compare_dir_dir(const void* c1, const void* c2);
 
   return int       : 変更後のファイルサイズ, エラーの場合はERR_CHG_STATを返す
 ---------------------------------------------------------------------------*/
+/*
 int file_truncate(const char *path, int length)
 {
     SceIoStat psp_stat;
@@ -55,6 +108,8 @@ int file_truncate(const char *path, int length)
 
     return ret;
 }
+*/
+
 
 // ソート時の優先順位
 const char dir_type_sort[] = {
@@ -173,6 +228,7 @@ int read_dir(dir_t dir[], const char *path, int dir_only)
 
   return int       : ファイル数, dir[0].numにも保存される
 ---------------------------------------------------------------------------*/
+/*
 int read_dir_2(dir_t dir[], const char *path, int read_dir_flag)
 {
   SceUID dp;
@@ -224,6 +280,7 @@ int read_dir_2(dir_t dir[], const char *path, int read_dir_flag)
 
   return file_num;
 }
+*/
 
 /*---------------------------------------------------------------------------
   MSのリード
@@ -234,6 +291,7 @@ int read_dir_2(dir_t dir[], const char *path, int read_dir_flag)
 
   return int       : 読込みサイズ, エラーの場合は ERR_OPEN/ERR_READ を返す
 ---------------------------------------------------------------------------*/
+/*
 int ms_read(void* buf, const char* path, int pos, int size)
 {
   SceUID fp;
@@ -258,7 +316,7 @@ int ms_read(void* buf, const char* path, int pos, int size)
   }
   return ret;
 }
-
+*/
 /*---------------------------------------------------------------------------
   MSへのライト
   const void* buf  : 書込みバッファ
@@ -268,6 +326,7 @@ int ms_read(void* buf, const char* path, int pos, int size)
 
   return int       : 書込んだサイズ, エラーの場合は ERR_OPEN/ERR_WRITE を返す
 ---------------------------------------------------------------------------*/
+/*
 int ms_write(const void* buf, const char* path, int pos, int size)
 {
   SceUID fp;
@@ -301,7 +360,7 @@ int ms_write_apend(const void* buf, const char* path, int pos, int size)
   }
   return ret;
 }
-
+*/
 /*---------------------------------------------------------------------------
   ファイルリード
 ---------------------------------------------------------------------------*/
@@ -357,7 +416,7 @@ int file_write(const void* buf, const char* path, file_type type, int pos, int s
   }
   return ret;
 }
-*/
+
 // FIO_S_IWUSR | FIO_S_IWGRP | FIO_S_IWOTH
 int set_file_mode(const char* path, int bits)
 {
@@ -376,7 +435,7 @@ int set_file_mode(const char* path, int bits)
 
   return ret;
 }
-
+*/
 /*---------------------------------------------------------------------------
 ---------------------------------------------------------------------------*/
 int up_dir(char *path)
@@ -398,9 +457,11 @@ int up_dir(char *path)
   return ret;
 }
 
+
 #if 0
 /*---------------------------------------------------------------------------
 ---------------------------------------------------------------------------*/
+/*
 int get_file_data_2(int* pos, int* size, int* size_pos, const char* path, file_type type, const char *name)
 {
   char buf[50 * SECTOR_SIZE];
@@ -439,6 +500,7 @@ int get_file_data_2(int* pos, int* size, int* size_pos, const char* path, file_t
 
   return ret;
 }
+*/
 #endif
 
 int read_line(char* str,  SceUID fp, int num)
@@ -467,6 +529,94 @@ int read_line(char* str,  SceUID fp, int num)
 
   return len;
 }
+
+
+
+//from umd dumper
+int read_line_file(SceUID fp, char* line, int num)
+{
+  char buff[num];
+  char* end;
+  int len;
+  int tmp;
+
+  tmp = 0;
+  len = sceIoRead(fp, buff, num);
+  // エラーの場合 / on error
+  if(len == 0)
+    return -1;
+
+  end = strchr(buff, '\n');
+
+  // \nが見つからない場合 / not found \n
+  if(end == NULL)
+  {
+    buff[num - 1] = '\0';
+    strcpy(line, buff);
+    return len;
+  }
+
+  end[0] = '\0';
+  if((end != buff) && (end[-1] == '\r'))
+  {
+    end[-1] = '\0';
+    tmp = -1;
+  }
+
+  strcpy(line, buff);
+  sceIoLseek(fp, - len + (end - buff) + 1, SEEK_CUR);
+  return end - buff + tmp;
+}
+
+
+
+
+int read_line_file_keepn(SceUID fp, char* line, int num)
+{
+  char buff[num];
+  char* end;
+  int len;
+  int tmp;
+
+  tmp = 1;
+  len = sceIoRead(fp, buff, num);
+  // エラーの場合 / on error
+  if(len == 0)
+    return -1;
+
+  end = strchr(buff, '\n');
+
+  // \nが見つからない場合 / not found \n
+  if(end == NULL)
+  {
+    buff[num - 1] = '\0';
+    strcpy(line, buff);
+    return len;
+  }
+
+  //この処理は正しい？
+  //buffの大きさをこえないように、末尾に\0を追加したい
+  if( &end[1] < &buff[num] ){
+    end[1] = '\0';
+    /*
+    if( (end[0] == '\r') )
+    {
+      end[0] = '\0';
+      tmp = 0;
+    }
+    */
+  }else{
+    end[0] = '\0';
+    tmp = 0;
+  }
+
+  strcpy(line, buff);
+  sceIoLseek(fp, - len + (end - buff) + 1, SEEK_CUR);
+  return end - buff + tmp;
+}
+
+
+
 /*
 int get_umd_sector(const char* path, file_type type)
 {
@@ -548,7 +698,7 @@ int get_umd_name(char* name, char* e_name, const char* id, int mode)
 
   return ret;
 }
-*/
+
 int get_ms_free()
 {
     unsigned int buf[5];
@@ -567,6 +717,21 @@ int get_ms_free()
       free = buf[1] * ((buf[3] * buf[4]) / 1024);// 空き容量取得(kb)
 
     return free;
+}
+
+*/
+
+int checkMs(void)
+{
+	int ret = 0;
+	SceUID dp = sceIoDopen("ms0:/");
+	if(dp < 0){
+		ret = check_ms();
+	}else{
+		sceIoDclose(dp);
+	}
+	
+	return ret;
 }
 
 int check_ms()

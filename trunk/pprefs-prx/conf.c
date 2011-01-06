@@ -1,3 +1,5 @@
+//from mp3play
+
 // キーコンフィグ
 
 // ヘッダー
@@ -6,7 +8,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "conf.h"
-#include "main.h"
+#include "button.h"
+#include "file.h"
 
 // プロトタイプ宣言
 int Check_EOF(SceUID fd);
@@ -14,6 +17,25 @@ u32 Conv_Key(const char *buf);
 char *ch_token(char *str, const char *delim);
 u32 Get_Key(const char *str);
 bool Get_Bool(const char *str,bool defaultValue);
+int removeSpace(char *str);
+
+
+
+
+//わたされた文字列からスペースを取り除く
+int removeSpace(char *str)
+{
+	int i,j;
+	
+	for( i = 0; str[i] != '\0'; i++ ){
+		if( str[i] == ' ' || str[i] == '\r' ){
+			for( j = i; str[j] != '\0'; j++ ) str[j] = str[j+1]; //1文字詰める
+		}
+	}
+	
+	return i;
+}
+
 
 // 関数
 int Read_Line(SceUID fd, char *buf, int n)
@@ -72,7 +94,7 @@ u32 Conv_Key(const char *buf)
 	else if(strcasecmp(buf, "CROSS") == 0)		return PSP_CTRL_CROSS;
 	else if(strcasecmp(buf, "SQUARE") == 0)		return PSP_CTRL_SQUARE;
 	else if(strcasecmp(buf, "HOME") == 0)		return PSP_CTRL_HOME;
-	else if(strcasecmp(buf, "HOLD") == 0)		return PSP_CTRL_HOLD;
+//	else if(strcasecmp(buf, "HOLD") == 0)		return PSP_CTRL_HOLD;
 	else if(strcasecmp(buf, "NOTE") == 0)		return PSP_CTRL_NOTE;
 	else if(strcasecmp(buf, "SCREEN") == 0)		return PSP_CTRL_SCREEN;
 	else if(strcasecmp(buf, "VOLUP") == 0)		return PSP_CTRL_VOLUP;
