@@ -7,7 +7,7 @@ void waitButtonUp(void)
 {
   do{
     sceCtrlPeekBufferPositive( &data, 1 );
-  }while((data.Buttons & CHEACK_KEY) != 0);
+  }while((data.Buttons & CHEACK_KEY_2) != 0);
 }
 
 void waitAnyButtonDown(unsigned int key)
@@ -31,7 +31,7 @@ void waitButtonUpEx(unsigned int exception_key)
 {
   do{
     sceCtrlPeekBufferPositive( &data, 1 );
-  }while((data.Buttons & (CHEACK_KEY & ~exception_key)) != 0);
+  }while((data.Buttons & (CHEACK_KEY_2 & ~exception_key)) != 0);
 }
 
 bool isButtonDown(unsigned int key)
@@ -52,7 +52,7 @@ bool isButtonDown(unsigned int key)
 void get_button(SceCtrlData *data)
 {
   sceCtrlPeekBufferPositive( data, 1 );
-  data->Buttons &= CHEACK_KEY;
+  data->Buttons &= CHEACK_KEY_2;
 }
 
 
@@ -65,7 +65,7 @@ void get_button(SceCtrlData *data)
 
 void wait_button_up(SceCtrlData *data)
 {
-  while((data->Buttons & CHEACK_KEY) != 0)
+  while((data->Buttons & CHEACK_KEY_2) != 0)
   {
     sceCtrlPeekBufferPositive( data, 1 );
   }
@@ -90,7 +90,7 @@ void wait_any_button_down(SceCtrlData *data,unsigned int key)
 
 void wait_button_up_ex(SceCtrlData *data,unsigned int exception_key)
 {
-  while((data->Buttons & (CHEACK_KEY & ~exception_key)) != 0)
+  while((data->Buttons & (CHEACK_KEY_2 & ~exception_key)) != 0)
   {
     sceCtrlPeekBufferPositive( data, 1 );
   }

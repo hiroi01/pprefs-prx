@@ -8,11 +8,11 @@ OBJS =	\
 	file.o \
 	button.o \
 	exports.o \
-	syslibc.o \
-	strncasecmp.o \
-	qsort.o \
 	thread.o \
-	conf.o
+	conf.o \
+	syslibc/syslibc.o \
+	syslibc/strncasecmp.o \
+	syslibc/qsort.o \
 
 
 PRX_EXPORTS = exports.exp
@@ -44,3 +44,15 @@ include $(PSPSDK)/lib/build_prx.mak
 
 all:
 	psp-packer pprefs.prx
+
+main.o: main.h libmenu.h memory.h file.h conf.h button.h thread.h color.h
+
+memory.o: memory.h
+
+file.o: main.h libmenu.h button.h file.h
+
+button.o: button.h
+
+thread.o: thread.h
+
+conf.o: conf.h button.h file.h

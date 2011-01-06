@@ -5,6 +5,12 @@
  *      Author: takka
  */
 
+ /*
+ * iso toolのソースより
+ *
+ * mod by hiroi01
+ */
+ 
 #ifndef FILE_H_
 
 #define FILE_H_
@@ -54,48 +60,60 @@ typedef struct {
 
 #define SECTOR_SIZE (0x800)
 
+
 /*---------------------------------------------------------------------------
   指定したディレクトリ情報を読取る
 ---------------------------------------------------------------------------*/
 int read_dir(dir_t dir[], const char *path, int dir_only);
-int read_dir_2(dir_t dir[], const char *path, int read_dir_flag);
+//int read_dir_2(dir_t dir[], const char *path, int read_dir_flag);
 
-int ms_read(void* buf, const char* path, int pos, int size);
+//int ms_read(void* buf, const char* path, int pos, int size);
 
-int ms_write(const void* buf, const char* path, int pos, int size);
-int ms_write_apend(const void* buf, const char* path, int pos, int size);
+//int ms_write(const void* buf, const char* path, int pos, int size);
+//int ms_write_apend(const void* buf, const char* path, int pos, int size);
 
 
 /*---------------------------------------------------------------------------
   ファイルセクタリード
 ---------------------------------------------------------------------------*/
-int ms_sector_read(void* buf, const char* path, int sec, int num);
+//int ms_sector_read(void* buf, const char* path, int sec, int num);
 
 /*---------------------------------------------------------------------------
   ファイルライト
 ---------------------------------------------------------------------------*/
-int ms_sector_write(const void* buf, const char* path, int sec, int num);
+//int ms_sector_write(const void* buf, const char* path, int sec, int num);
 
-int file_read(void* buf, const char* path, file_type type, int sec, int num);
-int file_write(const void* buf, const char* path, file_type type, int sec, int num);
+//int file_read(void* buf, const char* path, file_type type, int sec, int num);
+//int file_write(const void* buf, const char* path, file_type type, int sec, int num);
 
 /*---------------------------------------------------------------------------
 ---------------------------------------------------------------------------*/
-int set_file_mode(const char* path, int bits);
-int get_file_mode(const char* path);
+//int set_file_mode(const char* path, int bits);
+//int get_file_mode(const char* path);
 
 int up_dir(char *path);
 
-int get_umd_sector(const char* path, file_type type);
+//int get_umd_sector(const char* path, file_type type);
 
-int get_umd_id(char* id, const char* path, file_type type);
+//int get_umd_id(char* id, const char* path, file_type type);
 
-int get_umd_name(char* name, char* e_name, const char* id, int mode);
+//int get_umd_name(char* name, char* e_name, const char* id, int mode);
 
 int read_line(char* str,  SceUID fp, int num);
 
-int get_ms_free();
+//int get_ms_free();
 int check_ms();
 int check_file(const char* path);
+
+
+
+/*----------------------------------------------------------------*/
+//mod by hiroi01
+
+//nつまり(末尾の)\n(改行) を削除せず、ファイルからそのままの1行を読み込む
+int checkMs(void);
+int read_line_file(SceUID fp, char* line, int num);
+int read_line_file_keepn(SceUID fp, char* line, int num);
+
 
 #endif /* FILE_H_ */
