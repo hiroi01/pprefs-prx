@@ -51,7 +51,7 @@ a.year   == b.year      \
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.062beta1   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.062   by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 
