@@ -51,7 +51,7 @@ a.year   == b.year      \
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.062   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.063   by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 
@@ -77,6 +77,7 @@ struct {
 struct pdataLine tmp_pdataLine;
 
 
+//ファイルリスト(ファイルブラウザ)のためのbuffer
 dir_t dirBuf[128];
 
 int stop_flag;
@@ -86,7 +87,8 @@ SceCtrlData padData;
 
 Conf_Key config;
 
-
+//改行コード
+char *lineFeedCode[3] = { "\r\n", "\n", "\r"};
 
 //buttonNum buttonDataは,ボタン入れ替えに使う
 //buttonNumの数字を入れ替えれば役割も入れ替わる
@@ -297,7 +299,12 @@ u32 detect_key(void){
 int config_menu(void){
 	Conf_Key newConfig = config;
 	char *temp;
-	int now_arrow = 0,menuNum = 7;
+	int now_arrow = 0,menuNum = 8;
+	char *lineFeedCodeName[] = {
+		"CR+LF",
+		"LF",
+//		"LF"
+	};
 	
 	while(1){
 		PRINT_SCREEN();
@@ -319,12 +326,15 @@ int config_menu(void){
 		
 		libmPrintf(15, 46 + 6*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "一度押しでVSH再起動:%s", newConfig.onePushRestart?"O N":"OFF");
 		libmPrint (15, 46 + 7*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "VSH再起動するのにSTARTを一度押すか二度押すか ON→一度押し OFF→二度押し(デフォルトはOFF)");
-		
-		libmPrint (15, 46 + 8*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "上記の設定で保存する");
 
-		libmPrint (15, 46 +10*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "デフォルト値にする");
+		libmPrintf(15, 46 + 8*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "改行コード:%s", lineFeedCodeName[newConfig.lineFeedCode]);
+		libmPrint (15, 46 + 9*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "このプラグインがテキストを書き出すときに使う改行コード(デフォルトはCR+LF)");
 
-		libmPrint (15, 46 +12*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "やめる");
+		libmPrint (15, 46 +10*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "上記の設定で保存する");
+
+		libmPrint (15, 46 +12*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "デフォルト値にする");
+
+		libmPrint (15, 46 +14*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "やめる");
 
 		libmPrintf(5, 46 + now_arrow*2*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, ">");
 
@@ -359,8 +369,11 @@ int config_menu(void){
 				}else if( now_arrow == 3 ){
 					newConfig.onePushRestart = ! newConfig.onePushRestart;
 					break;
+				}else if( now_arrow == 4 ){
+					newConfig.lineFeedCode++;
+					if( newConfig.lineFeedCode > 1 ) newConfig.lineFeedCode = 0;
+					break;
 				}else if( now_arrow == (menuNum -3) ){
-					Write_Conf(ownPath,&newConfig);
 					config = newConfig;
 					if( config.swapButton ){
 						buttonNum[0] = 1;
@@ -369,6 +382,7 @@ int config_menu(void){
 						buttonNum[0] = 0;
 						buttonNum[1] = 1;
 					}
+					Write_Conf(ownPath,&newConfig);
 					wait_button_up(&padData);
 					return 0;
 				}else if( now_arrow == (menuNum -2) ){
@@ -492,7 +506,7 @@ return: どのメニューが実行されたか
 */
 
 
-int editTextMenu(int currentSelected,int position){
+int sub_menu(int currentSelected,int position){
 	int i,now_arrow;
 	int menunum = (deviceModel == 4)?3:4;
 	char *menu[] ={
@@ -707,7 +721,7 @@ void main_menu(void)
 				now_arrow = 0;
 				break;
 			}else if( padData.Buttons &  PSP_CTRL_TRIANGLE  ){
-				if( editTextMenu(now_arrow,( now_arrow < 10 )?148:46) != 0 ){
+				if( sub_menu(now_arrow,( now_arrow < 10 )?148:46) != 0 ){
 					
 					now_arrow = 0;
 				}
@@ -896,9 +910,10 @@ int writeSepluginsText(int ptype){
 	if( fp < 0 ) return (type+1);
 
 	for( i = 0; i < pdata[type].num; i++ ){
-		sprintf(commonBuf,"%s %c\n",
+		sprintf(commonBuf,"%s %c%s",
 				pdata[type].line[i].path,
-				pdata[type].line[i].toggle?'1':'0'
+				pdata[type].line[i].toggle?'1':'0',
+				lineFeedCode[config.lineFeedCode]
 		);
 		sceIoWrite(fp,commonBuf,strlen(commonBuf));
 	}

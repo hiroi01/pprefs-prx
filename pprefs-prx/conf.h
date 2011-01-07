@@ -16,6 +16,7 @@ typedef struct
 	bool swapButton;
 	bool bootMessage;
 	bool onePushRestart;
+	int lineFeedCode;// = 0:CR+LF  =1:CR  =2:LF
 } Conf_Key;
 
 
