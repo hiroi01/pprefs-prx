@@ -15,14 +15,22 @@
 int Check_EOF(SceUID fd);
 u32 Conv_Key(const char *buf);
 char *ch_token(char *str, const char *delim);
+
 u32 Get_Key(const char *str);
 bool Get_Bool(const char *str,bool defaultValue);
+int Get_LineFeedCode(const char *str);
+
+int Write_Conf(const char *path, Conf_Key *key);
+
 int removeSpace(char *str);
 
+void Set_Default_Conf(Conf_Key *key);
 
 
 
-//わたされた文字列からスペースを取り除く
+extern char *lineFeedCode[3];
+
+//わたされた文字列のスペースを取り除く
 int removeSpace(char *str)
 {
 	int i,j;
@@ -149,6 +157,26 @@ bool Get_Bool(const char *str,bool defaultValue)
 	return rtn;
 }
 
+int Get_LineFeedCode(const char *str)
+{
+	bool rtn = 0;
+	
+	if( strcasecmp(str,"CR+LF") == 0 )
+	{
+		rtn = 0;
+	}
+	else if(  strcasecmp(str,"LF") == 0 )
+	{
+		rtn = 1;
+	}
+	/*else if(  strcasecmp(str,"CR") == 0 )
+	{
+		rtn = 2;
+	}*/
+	
+	return rtn;
+}
+
 int Read_Conf(const char *path, Conf_Key *key)
 {
 	SceUID fd;
@@ -200,6 +228,7 @@ int Read_Conf(const char *path, Conf_Key *key)
 			if(strcasecmp(buf, "BOOTKEY") == 0)
 			{
 				key->bootKey = Get_Key(ptr);
+				if( key->bootKey == 0 ) key->bootKey = PSP_CTRL_HOME;
 			}
 			else if(strcasecmp(buf, "SWAPBUTTON") == 0)
 			{
@@ -212,6 +241,10 @@ int Read_Conf(const char *path, Conf_Key *key)
 			else if(strcasecmp(buf, "ONEPUSHRESTART") == 0)
 			{
 				key->onePushRestart = Get_Bool(ptr,false);
+			}
+			else if(strcasecmp(buf, "LINEFEEDCODE") == 0)
+			{
+				key->lineFeedCode = Get_LineFeedCode(ptr);
 			}
 			/*
 			else if(strcasecmp(buf, "???") == 0)
@@ -296,39 +329,55 @@ int Write_Conf(const char *path, Conf_Key *key)
 			sceIoWrite(fdw,tmp,readSize);
 			continue;
 		}
-
 		ptr = ch_token(buf, "=");
 		if(ptr == NULL) continue; //ダメな行
 		
 		if(strcasecmp(buf, "BOOTKEY") == 0 && (!(flag & 1)) )
 		{
+			flag |= 1;
 			tmp[0] = '\0';
 			GET_KEY_NAME_FOR_CONF(key->bootKey,tmp);
 			ptr = strrchr(tmp, '+');
 			if( ptr != NULL ) ptr[-1] = '\0';
-			sprintf(buf,"BootKey = %s\n",tmp);
-			flag |= 1;
+			sprintf(buf,"BootKey = %s%s",tmp,lineFeedCode[key->lineFeedCode]);
 		}
 		else if(strcasecmp(buf, "SWAPBUTTON") == 0 && (!(flag & 2)) )
 		{
-			sprintf(buf,"SwapButton = %s\n",key->swapButton?"true":"false");
 			flag |= 2;
+			sprintf(buf,"SwapButton = %s%s",key->swapButton?"true":"false",lineFeedCode[key->lineFeedCode]);
 		}
 		else if(strcasecmp(buf, "BOOTMESSAGE") == 0 && (!(flag & 4)) )
 		{
-			sprintf(buf,"BootMessage = %s\n",key->bootMessage?"true":"false");
 			flag |= 4;
+			sprintf(buf,"BootMessage = %s%s",key->bootMessage?"true":"false",lineFeedCode[key->lineFeedCode]);
 		}
 		else if(strcasecmp(buf, "ONEPUSHRESTART") == 0 && (!(flag & 8)) )
 		{
-			sprintf(buf,"OnePushRestart = %s\n",key->onePushRestart?"true":"false");
 			flag |= 8;
+			sprintf(buf,"OnePushRestart = %s%s",key->onePushRestart?"true":"false",lineFeedCode[key->lineFeedCode]);
+		}
+		else if(strcasecmp(buf, "LINEFEEDCODE") == 0 && (!(flag & 16)) )
+		{
+			flag |= 16;
+			if( key->lineFeedCode == 1 )
+			{
+				strcpy(tmp,"LF");
+			}
+			/*else if( key->lineFeedCode == 2 )
+			{
+				strcpy(tmp,"CR");
+			}*/
+			else /*if( key->lineFeedCode == 0 )*/
+			{
+				strcpy(tmp,"CR+LF");
+			}
+			sprintf(buf,"LineFeedCode = %s%s", tmp,lineFeedCode[key->lineFeedCode]);
 		}
 		/*
 			else if(strcasecmp(buf, "???") == 0 && (!(flag & ?)) )
 			{
-				sprintf(buf,"??? = %s\n", ???);
 				flag |= ?;
+				sprintf(buf,"??? = %s%s", ???, lineFeedCode[key->lineFeedCode]);
 			}
 		*/
 		else
@@ -342,46 +391,58 @@ int Write_Conf(const char *path, Conf_Key *key)
 	
 	if( (!(flag & 1)) )
 	{
+		flag |= 1;
 		tmp[0] = '\0';
 		GET_KEY_NAME_FOR_CONF(key->bootKey,tmp);
 		ptr = strrchr(tmp, '+');
 		if( ptr != NULL ) ptr[-1] = '\0';
-		sprintf(buf,"BootKey = %s\n",tmp);
+		sprintf(buf,"BootKey = %s%s",tmp,lineFeedCode[key->lineFeedCode]);
 		sceIoWrite(fdw,buf,strlen(buf));
-		flag |= 1;
 	}
 	if( (!(flag & 2)) )
 	{
-		sprintf(buf,"SwapButton = %s\n",key->swapButton?"true":"false");
-		sceIoWrite(fdw,buf,strlen(buf));
 		flag |= 2;
+		sprintf(buf,"SwapButton = %s%s",key->swapButton?"true":"false",lineFeedCode[key->lineFeedCode]);
+		sceIoWrite(fdw,buf,strlen(buf));
 	}
 	if( (!(flag & 4)) )
 	{
-		sprintf(buf,"BootMessage = %s\n",key->bootMessage?"true":"false");
-		sceIoWrite(fdw,buf,strlen(buf));
 		flag |= 4;
-	}
-	if( (!(flag & 4)) )
-	{
-		sprintf(buf,"BootMessage = %s\n",key->bootMessage?"true":"false");
+		sprintf(buf,"BootMessage = %s%s",key->bootMessage?"true":"false",lineFeedCode[key->lineFeedCode]);
 		sceIoWrite(fdw,buf,strlen(buf));
-		flag |= 4;
 	}
 	if( (!(flag & 8)) )
 	{
-		sprintf(buf,"OnePushRestart = %s\n",key->onePushRestart?"true":"false");
-		sceIoWrite(fdw,buf,strlen(buf));
 		flag |= 8;
+		sprintf(buf,"OnePushRestart = %s%s",key->onePushRestart?"true":"false",lineFeedCode[key->lineFeedCode]);
+		sceIoWrite(fdw,buf,strlen(buf));
 	}
-	/*
+	if( (!(flag & 16)) )
+	{
+		flag |= 16;
+		if( key->lineFeedCode == 1 )
+		{
+			strcpy(tmp,"LF");
+		}
+		/*else if( key->lineFeedCode == 2 )
+		{
+			strcpy(tmp,"CR");
+		}*/
+		else /*if( key->lineFeedCode == 0 )*/
+		{
+			strcpy(tmp,"CR+LF");
+		}
+		sprintf(buf,"LineFeedCode = %s%s", tmp,lineFeedCode[key->lineFeedCode]);
+		sceIoWrite(fdw,buf,strlen(buf));
+	}	/*
 	if( (!(flag & ?)) )
 	{
-		sprintf(buf,"??? = %s\n", ???);
-		sceIoWrite(fdw,buf,strlen(buf));
 		flag |= ?;
+		sprintf(buf,"??? = %s%s", ???, ,lineFeedCode[key->lineFeedCode]);
+		sceIoWrite(fdw,buf,strlen(buf));
 	}
 	*/
+
 
 	if( fd >= 0 ) sceIoClose(fd);
 	sceIoClose(fdw);
@@ -399,6 +460,7 @@ void Set_Default_Conf(Conf_Key *key)
 	key->swapButton = false;
 	key->bootMessage = true;
 	key->onePushRestart = false;
+	key->lineFeedCode = 0;
 	/*
 	key->??? = ???;
 	*/
