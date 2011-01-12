@@ -51,10 +51,16 @@ a.year   == b.year      \
 
 #define PRINT_SCREEN() \
 libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.063   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.07   by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
+#define SUSPEND_THREADS() \
+Suspend_Resume_Threads(SUSPEND_MODE); \
+now_state = true;
 
+#define RESUME_THREADS() \
+Suspend_Resume_Threads(RESUME_MODE); \
+now_state = false;
 
 char *sepluginsTextPath[] = {
 	"ms0:/seplugins/vsh.txt",
@@ -105,6 +111,7 @@ struct {
 	{PSP_CTRL_CIRCLE,"○"}
 };
 int buttonNum[2] = {0,1};
+/*----------------------------------------------------------------------------*/
 
 
 #define COMMON_BUF_LEN 256
@@ -113,11 +120,13 @@ char commonBuf[COMMON_BUF_LEN];
 #define libmPrintf(x,y,fg,bg,format, ... ) libmPrintf(x,y,fg,bg,commonBuf,COMMON_BUF_LEN,format, ##__VA_ARGS__)
 #define fillLine(sy,color) libmFillRect( 0 , sy , 480 , sy + LIBM_CHAR_HEIGHT ,color);
 
+/*----------------------------------------------------------------------------*/
 
 
 
 int now_type = 0;
 char ownPath[256];
+bool now_state = false; // = true suspending   = false no suspending
 
 int deviceModel = 5;
 char *modelName[] = {
@@ -129,7 +138,7 @@ char *modelName[] = {
 	"[???]"
 };
 
-
+/*----------------------------------------------------------------------------*/
 int module_start( SceSize arglen, void *argp );
 int module_stop( void );
 
@@ -149,17 +158,12 @@ int copyMeProcess(void);
 
 void saveEdit(void);
 
+void pprefsSleep(double sleepTime);
+double gettimeofday_sec();
+
+/*----------------------------------------------------------------------------*/
 
 
-
-
-double gettimeofday_sec()
-{
-	struct timeval tv;
-	//gettimeofday(&tv, NULL);
-	sceKernelLibcGettimeofday(&tv, NULL);
-	return tv.tv_sec + (double)tv.tv_usec*1e-6;
-}
 
 
 
@@ -374,6 +378,7 @@ int config_menu(void){
 					if( newConfig.lineFeedCode > 1 ) newConfig.lineFeedCode = 0;
 					break;
 				}else if( now_arrow == (menuNum -3) ){
+					if( ! now_state ) SUSPEND_THREADS();
 					config = newConfig;
 					if( config.swapButton ){
 						buttonNum[0] = 1;
@@ -608,13 +613,15 @@ int sub_menu(int currentSelected,int position){
 
 #define printEditedMark() libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*")
 
+
+
 void main_menu(void)
 {
 	// wait till releasing buttons
 	wait_button_up(&padData);
-
+	double timesec = gettimeofday_sec();
 	// suspend XMB
-	Suspend_Resume_Threads(SUSPEND_MODE);
+//	Suspend_Resume_Threads(SUSPEND_MODE);
 	
 	//prepare for displaying and display
 	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
@@ -633,6 +640,9 @@ void main_menu(void)
 
 	while(1){
 		PRINT_SCREEN();
+		if( ! now_state ) libmPrint(424,10,FG_COLOR,BG_COLOR,"NS");
+		else libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
+		
 		libmPrintf(0,264,FG_COLOR,BG_COLOR,"%s選択 △メニュー □+↑/↓並び替え SELECT編集破棄&リロード HOME保存&終了 START保存&VSH再起動",buttonData[buttonNum[0]].name);
 
 		libmPrintf(15,28,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",sepluginsTextPath[now_type]);
@@ -644,8 +654,15 @@ void main_menu(void)
 		}
 
 		wait_button_up_ex(&padData,PSP_CTRL_SQUARE);
-
 		while(1){
+			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
+			if( ! now_state ){
+				if( (gettimeofday_sec() - timesec) >= 0.5 ){
+					SUSPEND_THREADS();
+					libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
+				}
+			}
+			
 			get_button(&padData);
 
 			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) && pdata[now_type].num > 0 ){
@@ -727,7 +744,7 @@ void main_menu(void)
 				}
 				wait_button_up(&padData);
 				break;
-			}else if( padData.Buttons &  PSP_CTRL_START  ){
+			}else if( padData.Buttons &  PSP_CTRL_START ){
 				wait_button_up(&padData);
 				
 				if( ! config.onePushRestart ){
@@ -743,7 +760,7 @@ void main_menu(void)
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"           ");
 							saveEdit();
-							Suspend_Resume_Threads(RESUME_MODE);
+							if( now_state ) RESUME_THREADS();
 							sceKernelExitVSHVSH(NULL);
 							return;
 						}else if( padData.Buttons & (CHEACK_KEY & ~PSP_CTRL_START) ){
@@ -753,7 +770,7 @@ void main_menu(void)
 					}
 				}else{
 					saveEdit();
-					Suspend_Resume_Threads(RESUME_MODE);
+					if( now_state ) RESUME_THREADS();
 					sceKernelExitVSHVSH(NULL);
 					return;
 				}
@@ -763,10 +780,9 @@ void main_menu(void)
 			}else if( padData.Buttons & PSP_CTRL_HOME ){
 				saveEdit();
 				wait_button_up(&padData);
-				// resume XMB
-				Suspend_Resume_Threads(RESUME_MODE);
+				if( now_state ) RESUME_THREADS();
 				return;
-			}else if( padData.Buttons & PSP_CTRL_SELECT ){
+			}else if( padData.Buttons & PSP_CTRL_SELECT && now_state ){
 
 				if( pdata[0].edit || pdata[1].edit || pdata[2].edit ){
 					libmFillRect(0 , 264 , 480 , 272 ,BG_COLOR);
@@ -789,7 +805,6 @@ void main_menu(void)
 					readSepluginsText(3,false);
 				}
 				
-				wait_button_up(&padData);
 				break;
 			}
 		}
@@ -1027,6 +1042,13 @@ int readSepluginsText( int ptype ,bool checkFlag )
 	return ret;
 }
 
+
+void pprefsSleep(double sleepTime)
+{
+	double timesec= gettimeofday_sec();
+	
+	while( (gettimeofday_sec() - timesec) < sleepTime );
+}
 //にゅーってでる窓を作る
 void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
 {
@@ -1039,7 +1061,7 @@ void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
 		libmFillRect(sx , sy , nowx , nowy , bgcolor );
 		libmFrame(sx , sy , nowx ,nowy , fgcolor );
 		if( nowx == ex && nowy == ey ) break;
-		sceKernelDelayThread(8000);
+		pprefsSleep(0.008);
 	}
 
 }
@@ -1057,7 +1079,7 @@ void makeWindowWithButtonGetting(int sx, int sy, int ex, int ey, u32 fgcolor ,u3
 		libmFillRect(sx , sy , nowx , nowy , bgcolor );
 		libmFrame(sx , sy , nowx ,nowy , fgcolor );
 		if( nowx == ex && nowy == ey ) break;
-		sceKernelDelayThread(8000);
+		pprefsSleep(0.008);
 	}
 
 }
@@ -1188,6 +1210,7 @@ void saveEdit(void)
 
 	for( i = 0; i < 3; i++ ){
 		if ( pdata[i].edit ){
+			if( ! now_state ) SUSPEND_THREADS();
 			while(1){
 				if( writeSepluginsText(i) < 0 ){
 
@@ -1220,5 +1243,14 @@ void saveEdit(void)
 
 
 
+
+
+double gettimeofday_sec()
+{
+	struct timeval tv;
+	//gettimeofday(&tv, NULL);
+	sceKernelLibcGettimeofday(&tv, NULL);
+	return tv.tv_sec + (double)tv.tv_usec*1e-6;
+}
 
 
