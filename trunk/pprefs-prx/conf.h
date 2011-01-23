@@ -1,7 +1,7 @@
 //from mp3play
 
 
-// キーコンフィグ
+// L[RtBO
 
 
 #ifndef __CONF_H__

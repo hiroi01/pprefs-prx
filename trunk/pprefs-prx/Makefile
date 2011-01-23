@@ -4,16 +4,20 @@ BUILD_PRX = 1
 
 OBJS =	\
 	main.o \
-	memory.o \
+	pprefs.o \
 	file.o \
 	button.o \
 	exports.o \
 	thread.o \
 	conf.o \
+	configmenu.o \
+	sepluginstxt.o \
+	editpergame.o \
+	fileselecter.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \
-
+	syslibc/memory.o \
 
 PRX_EXPORTS = exports.exp
 USE_KERNEL_LIBC	= 1
@@ -36,7 +40,7 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm
+LIBS = libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm -lz
 
 
 PSPSDK=$(shell psp-config --pspsdk-path)
@@ -45,14 +49,20 @@ include $(PSPSDK)/lib/build_prx.mak
 all:
 	psp-packer pprefs.prx
 
-main.o: main.h libmenu.h memory.h file.h conf.h button.h thread.h color.h
+main.o: main.c main.h libmenu.h memory.h file.h conf.h button.h thread.h color.h
 
-memory.o: memory.h
+file.o: file.c main.h libmenu.h button.h file.h
 
-file.o: main.h libmenu.h button.h file.h
+button.o: button.c button.h
 
-button.o: button.h
+thread.o: thread.c thread.h
 
-thread.o: thread.h
+conf.o: conf.c conf.h button.h file.h
 
-conf.o: conf.h button.h file.h
+configmenu.o: configmenu.c common.h libmenu.h button.h main.h language.h
+
+editpergame.o: editpergame.c common.h libmenu.h memory.h button.h fileselecter.h pprefs.h main.h language.h
+
+fileselecter.o: fileselecter.c fileselecter.h common.h button.h libmenu.h main.h language.h 
+
+pprefs.o: pprefs.c

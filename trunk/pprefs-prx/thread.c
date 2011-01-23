@@ -1,20 +1,20 @@
-// ƒXƒŒƒbƒh
+// ã‚¹ãƒ¬ãƒƒãƒ‰
 
-// ƒwƒbƒ_[
+// ãƒ˜ãƒƒãƒ€ãƒ¼
 #include <pspthreadman.h>
 #include "thread.h"
 
-// ƒOƒ[ƒoƒ‹•Ï”
+// ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°
 static int first_th[MAX_THREAD];
 static int first_count;
 
 static int current_th[MAX_THREAD];
 static int current_count;
 
-// ŠÖ”
+// é–¢æ•°
 void Get_FirstThreads()
 {
-	// ƒXƒŒƒbƒhˆê——‚ğæ“¾
+	// ã‚¹ãƒ¬ãƒƒãƒ‰ä¸€è¦§ã‚’å–å¾—
 	sceKernelGetThreadmanIdList(SCE_KERNEL_TMID_Thread, first_th, MAX_THREAD, &first_count);
 }
 
@@ -27,7 +27,7 @@ void Suspend_Resume_Threads(int mode)
 	my_thid = sceKernelGetThreadId();
 	Thread_Func = (mode == RESUME_MODE ? sceKernelResumeThread : sceKernelSuspendThread);
 
-	// ƒXƒŒƒbƒhˆê——‚ğæ“¾
+	// ã‚¹ãƒ¬ãƒƒãƒ‰ä¸€è¦§ã‚’å–å¾—
 	sceKernelGetThreadmanIdList(SCE_KERNEL_TMID_Thread, current_th, MAX_THREAD, &current_count);
 
 	for(i = 0; i < current_count; i++)

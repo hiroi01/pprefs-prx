@@ -1,8 +1,8 @@
 //from mp3play
 
-// ƒL[ƒRƒ“ƒtƒBƒO
+// ã‚­ãƒ¼ã‚³ãƒ³ãƒ•ã‚£ã‚°
 
-// ƒwƒbƒ_[
+// ãƒ˜ãƒƒãƒ€ãƒ¼
 #include <pspkernel.h>
 #include <pspctrl.h>
 #include <string.h>
@@ -11,7 +11,7 @@
 #include "button.h"
 #include "file.h"
 
-// ƒvƒƒgƒ^ƒCƒvéŒ¾
+// ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—å®£è¨€
 int Check_EOF(SceUID fd);
 u32 Conv_Key(const char *buf);
 char *ch_token(char *str, const char *delim);
@@ -30,14 +30,14 @@ void Set_Default_Conf(Conf_Key *key);
 
 extern char *lineFeedCode[3];
 
-//‚í‚½‚³‚ê‚½•¶š—ñ‚ÌƒXƒy[ƒX‚ğæ‚èœ‚­
+//ã‚ãŸã•ã‚ŒãŸæ–‡å­—åˆ—ã®ã‚¹ãƒšãƒ¼ã‚¹ã‚’å–ã‚Šé™¤ã
 int removeSpace(char *str)
 {
 	int i,j;
 	
 	for( i = 0; str[i] != '\0'; i++ ){
 		if( str[i] == ' ' || str[i] == '\r' ){
-			for( j = i; str[j] != '\0'; j++ ) str[j] = str[j+1]; //1•¶š‹l‚ß‚é
+			for( j = i; str[j] != '\0'; j++ ) str[j] = str[j+1]; //1æ–‡å­—è©°ã‚ã‚‹
 		}
 	}
 	
@@ -45,7 +45,7 @@ int removeSpace(char *str)
 }
 
 
-// ŠÖ”
+// é–¢æ•°
 int Read_Line(SceUID fd, char *buf, int n)
 {
 	int res, count = 0;
@@ -110,8 +110,8 @@ u32 Conv_Key(const char *buf)
 	else return 0;
 }
 
-// strtokŠÖ”‚Ì‘ã‚í‚è(NULLw’è•s‰Â)
-// delim‚Åw’è‚µ‚½•¶š—ñ‚ğstr‚©‚ç’T‚µ‚Ä•ª’f‚·‚é
+// strtoké–¢æ•°ã®ä»£ã‚ã‚Š(NULLæŒ‡å®šä¸å¯)
+// delimã§æŒ‡å®šã—ãŸæ–‡å­—åˆ—ã‚’strã‹ã‚‰æ¢ã—ã¦åˆ†æ–­ã™ã‚‹
 char *ch_token(char *str, const char *delim)
 {
 	char *ptr = strstr(str, delim);
@@ -127,10 +127,10 @@ u32 Get_Key(const char *str)
 	char buf[256];
 	char *ptr;
 
-	// ƒRƒs[
+	// ã‚³ãƒ”ãƒ¼
 	strcpy(buf, str);
 
-	// ÅŒã‚Ü‚Å
+	// æœ€å¾Œã¾ã§
 	do
 	{
 		ptr = ch_token(buf, "+");
@@ -184,10 +184,10 @@ int Read_Conf(const char *path, Conf_Key *key)
 	char ms_path[128];
 	char *ptr;
 
-	// ƒRƒs[
+	// ã‚³ãƒ”ãƒ¼
 	strcpy(ms_path, path);
 
-	// ƒpƒXæ“¾
+	// ãƒ‘ã‚¹å–å¾—
 	ptr = strrchr(ms_path, '/');
 	ptr++;
 	*ptr++	= 'p';
@@ -202,24 +202,24 @@ int Read_Conf(const char *path, Conf_Key *key)
 	*ptr++	= 'i';
 	*ptr	= '\0';
 
-	// “Ç‚İæ‚ê‚È‚Á‚©‚Á‚½ê‡‚ÍƒfƒtƒHƒ‹ƒg‚Ìİ’è
+	// èª­ã¿å–ã‚Œãªã£ã‹ã£ãŸå ´åˆã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®è¨­å®š
 	Set_Default_Conf(key);
 	
 	
-	// İ’èƒtƒ@ƒCƒ‹EƒI[ƒvƒ“
+	// è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ãƒ»ã‚ªãƒ¼ãƒ—ãƒ³
 	fd = sceIoOpen(ms_path, PSP_O_RDONLY, 0777);
 	if(fd < 0)
 	{
 		return -1;
 	}
 
-	// ƒtƒ@ƒCƒ‹I’[‚Ü‚Åƒ‹[ƒv
+	// ãƒ•ã‚¡ã‚¤ãƒ«çµ‚ç«¯ã¾ã§ãƒ«ãƒ¼ãƒ—
 	while (Check_EOF(fd) == 0)
 	{
-		// ˆês“Ç‚İ‚Ş
+		// ä¸€è¡Œèª­ã¿è¾¼ã‚€
 		Read_Line(fd, buf, 255);
 
-		// ƒRƒƒ“ƒg‚Æ‰üs‚ÍœŠO
+		// ã‚³ãƒ¡ãƒ³ãƒˆã¨æ”¹è¡Œã¯é™¤å¤–
 		if(buf[0] != '#' && buf[0] != '\n' && buf[0] != '\0')
 		{
 			ptr = ch_token(buf, "=");
@@ -271,10 +271,10 @@ int Write_Conf(const char *path, Conf_Key *key)
 	u32 flag = 0;
 	
 
-	// ƒRƒs[
+	// ã‚³ãƒ”ãƒ¼
 	strcpy(ms_path, path);
 
-	// ƒpƒXæ“¾
+	// ãƒ‘ã‚¹å–å¾—
 	ptr = strrchr(ms_path, '/');
 	ptr++;
 	*ptr++	= 'p';
@@ -322,15 +322,15 @@ int Write_Conf(const char *path, Conf_Key *key)
 		
 		
 		strcpy(tmp,buf);
-		//—]Œv‚ÈƒXƒy[ƒX‚ğíœ‚·‚é
+		//ä½™è¨ˆãªã‚¹ãƒšãƒ¼ã‚¹ã‚’å‰Šé™¤ã™ã‚‹
 		removeSpace(buf);
-		//ƒRƒƒ“ƒg‚â‰üs‚¾‚¯‚Ìs‚È‚Ç”ò‚Î‚µ‚Ä‚à‚¢‚¢s‚È‚ç
+		//ã‚³ãƒ¡ãƒ³ãƒˆã‚„æ”¹è¡Œã ã‘ã®è¡Œãªã©é£›ã°ã—ã¦ã‚‚ã„ã„è¡Œãªã‚‰
 		if( buf[0] == '#' || buf[0] == '\n' || buf[0] == '\0' ){
 			sceIoWrite(fdw,tmp,readSize);
 			continue;
 		}
 		ptr = ch_token(buf, "=");
-		if(ptr == NULL) continue; //ƒ_ƒ‚Ès
+		if(ptr == NULL) continue; //ãƒ€ãƒ¡ãªè¡Œ
 		
 		if(strcasecmp(buf, "BOOTKEY") == 0 && (!(flag & 1)) )
 		{
@@ -382,7 +382,7 @@ int Write_Conf(const char *path, Conf_Key *key)
 		*/
 		else
 		{
-			//ƒ_ƒ‚Ès
+			//ãƒ€ãƒ¡ãªè¡Œ
 			continue;
 		}
 		sceIoWrite(fdw,buf,strlen(buf));
@@ -466,15 +466,15 @@ void Set_Default_Conf(Conf_Key *key)
 	*/
 }
 
-//4‰ÓŠ
+//4ç®‡æ‰€
 
 
 
 /*
 
 // @return:
-// true  ‚Æ‚Î‚µ‚Ä‚¢‚¢s
-// false ‚Æ‚Î‚µ‚¿‚áƒ_ƒ
+// true  ã¨ã°ã—ã¦ã„ã„è¡Œ
+// false ã¨ã°ã—ã¡ã‚ƒãƒ€ãƒ¡
 bool is_skiping_line(char *str)
 {
 	int i;

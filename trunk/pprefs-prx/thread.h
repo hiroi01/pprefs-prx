@@ -1,24 +1,24 @@
-// ƒXƒŒƒbƒh
+// ã‚¹ãƒ¬ãƒƒãƒ‰
 
 #ifndef __THREAD_H__
 #define __THREAD_H__
 
 
-// ’è‹`
+// å®šç¾©
 #define			MAX_THREAD			64
 #define			SUSPEND_MODE		0
 #define			RESUME_MODE			1
 
 
 /*
-	‹N“®Žž‚ÌƒXƒŒƒbƒh‚ðŽæ“¾‚·‚é
-	¦‚Å‚«‚é‚¾‚¯‹N“®Žž‚ÉŽg‚Á‚Ä‚­‚¾‚³‚¢
+	èµ·å‹•æ™‚ã®ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’å–å¾—ã™ã‚‹
+	â€»ã§ãã‚‹ã ã‘èµ·å‹•æ™‚ã«ä½¿ã£ã¦ãã ã•ã„
 */
 void Get_FirstThreads();
 
 /*
-	Ž©•ª‚ÌƒXƒŒƒbƒhˆÈŠO‚ð’âŽ~EÄŠJ‚³‚¹‚é
-	mode ‚Í SUSPEND_MODE ‚Æ RESUME_MODE ‚Ì“ñ‚Â‚ªŽg‚¦‚Ü‚·
+	è‡ªåˆ†ã®ã‚¹ãƒ¬ãƒƒãƒ‰ä»¥å¤–ã‚’åœæ­¢ãƒ»å†é–‹ã•ã›ã‚‹
+	mode ã¯ SUSPEND_MODE ã¨ RESUME_MODE ã®äºŒã¤ãŒä½¿ãˆã¾ã™
 */
 void Suspend_Resume_Threads(int mode);
 

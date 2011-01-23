@@ -102,3 +102,34 @@ bool is_button_down(SceCtrlData *data,unsigned int key)
 	if((data->Buttons & key) == key) return true;
 	return false;
 }
+
+//made by plum
+//thank you plum
+// 関数
+int Count_Buttons(u32 buttons, int count)
+{
+	SceCtrlData pad;
+	clock_t time;
+
+	// 指定するボタンをセット
+	pad.Buttons = buttons;
+
+	// 現在の時間 + 指定した時間
+	time = sceKernelLibcClock() + count;
+
+	// ボタンが離れるまでループ
+	while((pad.Buttons & buttons) == buttons)
+	{
+		// ディレイ
+		sceKernelDelayThread(50000);
+
+		// パッド情報を取得する
+		sceCtrlReadBufferPositive(&pad, 1);
+
+		// 現在の時間が指定した時間を過ぎたら
+		if(sceKernelLibcClock() > time)
+			return 1;
+	}
+
+	return 0;
+}

@@ -1,8 +1,17 @@
 // from libmenu
 
 
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef MEMORY_H_
+#define MEMORY_H_
+
+#include <pspkernel.h>
+#include <string.h>
+#include <math.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 
 /*=========================================================
@@ -25,6 +34,9 @@ typedef struct
 } memory_header;
 
 
+
+
+
 /*=========================================================
 	å^êÈåæ
 =========================================================*/
@@ -37,14 +49,15 @@ typedef enum {
 	MEMORY_USER_MIRROR
 } MemoryPartition;
 
-void *memoryAllocEx( const char *name, MemoryPartition partition, unsigned int align, SceSize size, int type, void *addr );
+
+void *memoryAlloc( SceSize size );
+void *memoryAllocEx_( const char *name, MemoryPartition partition, unsigned int align, SceSize size, int type, void *addr );
+
+void memoryFree( void *memblock );
 
 
-void *malloc( size_t size );
-
-void free( void *memblock );
-
+#ifdef __cplusplus
+}
 #endif
 
-
-
+#endif
