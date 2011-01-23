@@ -55,7 +55,8 @@ if( now_state ){ \
 }
 
 
-extern char *sepluginsTextPath[];
+extern char sepluginsTextPath[3][64];
+extern const char *sepluginsBasePath[];
 extern char commonBuf[COMMON_BUF_LEN];
 extern const char *lineFeedCode[];
 extern Conf_Key config;

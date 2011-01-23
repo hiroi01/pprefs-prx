@@ -17,6 +17,7 @@ typedef struct
 	bool bootMessage;
 	bool onePushRestart;
 	int lineFeedCode;// = 0:CR+LF  =1:CR  =2:LF
+	int defaultPath;
 } Conf_Key;
 
 
@@ -24,6 +25,7 @@ int Read_Line(SceUID fd, char *buf, int n);
 int Read_Conf(const char *path, Conf_Key *key);
 int Write_Conf(const char *path, Conf_Key *key);
 void Set_Default_Conf(Conf_Key *key);
+void Set_Default_Path(char path[3][64], int num);
 
 #endif
 

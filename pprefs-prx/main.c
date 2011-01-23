@@ -34,12 +34,11 @@ PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 ------------------------------------------------------*/
 
 char commonBuf[COMMON_BUF_LEN];
-char *sepluginsTextPath[] = {
-	"ms0:/seplugins/vsh.txt",
-	"ms0:/seplugins/game.txt",
-	"ms0:/seplugins/pops.txt"
+char sepluginsTextPath[3][64];
+const char *sepluginsBasePath[] = {
+	"ms0:/seplugins/",
+	"ms0:/plugins/"
 };
-
 Conf_Key config;
 
 //改行コード
@@ -159,6 +158,8 @@ int main_thread( SceSize arglen, void *argp )
 		buttonNum[0] = 1;
 		buttonNum[1] = 0;
 	}
+	
+	Set_Default_Path( sepluginsTextPath,config.defaultPath);
 	
 	pdata[0].num = 0;
 	pdata[1].num = 0;
@@ -294,7 +295,7 @@ int sub_menu(int currentSelected,int position){
 
 	//追記
 	if( now_arrow == 0 ){
-		if( fileSelecter("ms0:/seplugins/", &dirTmp, PPREFSMSG_ADD_TOP, 0, "ccbcccac") == 0 ){
+		if( fileSelecter(sepluginsBasePath[config.defaultPath], &dirTmp, PPREFSMSG_ADD_TOP, 0, "ccbcccac") == 0 ){
 			strcpy(tmp_pdataLine.path, dirTmp.name);
 			tmp_pdataLine.toggle = false;
 			addNewItem(now_type,&tmp_pdataLine);

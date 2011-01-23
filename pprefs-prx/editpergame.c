@@ -486,7 +486,7 @@ int editPergameMenu(void)
 			}else if( padData.Buttons & PSP_CTRL_TRIANGLE ){
 				beforeButtons = PSP_CTRL_TRIANGLE;
 				//プラグインを選択
-				if( fileSelecter("ms0:/seplugins/",&dirTmp, PPREFSMSG_EDITPERGAME_SELECTPRX, 0, "ccbcccac" ) == 0 ){
+				if( fileSelecter(sepluginsBasePath[config.defaultPath],&dirTmp, PPREFSMSG_EDITPERGAME_SELECTPRX, 0, "ccbcccac" ) == 0 ){
 					for( i = 0; i+readSize < PERGAMEBUF_SIZE && dirTmp.name[i] != '\0'; i++ ){
 						//too big size
 						if( i+readSize+1 >= PERGAMEBUF_SIZE ){
