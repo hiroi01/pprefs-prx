@@ -12,13 +12,13 @@ extern "C" {
 #endif
 
 
-// libmExecTCmd ‚Åw’è‰Â”\‚ÈƒRƒ}ƒ“ƒhˆê——
+// libmExecTCmd ã§æŒ‡å®šå¯èƒ½ãªã‚³ãƒãƒ³ãƒ‰ä¸€è¦§
 enum
 {
-	LIBM_TCMD_SUSPEND	,	//‘¼ƒXƒŒƒbƒh‚ğ’â~
-	LIBM_TCMD_RESUME	,	//‘¼ƒXƒŒƒbƒh‚ğÄŠJ
-	LIBM_TCMD_DUMP		,	//‘¼ƒXƒŒƒbƒh‚ğ’â~EÄŠJ‚³‚¹‚éˆ×‚ÌƒZ[ƒtƒŠƒXƒg‚ğì‚é
-	LIBM_TCMD_GET		,	//‘¼ƒXƒŒƒbƒh‚Ì’â~EÄŠJó‘Ô‚ğæ“¾
+	LIBM_TCMD_SUSPEND	,	//ä»–ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’åœæ­¢
+	LIBM_TCMD_RESUME	,	//ä»–ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’å†é–‹
+	LIBM_TCMD_DUMP		,	//ä»–ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’åœæ­¢ãƒ»å†é–‹ã•ã›ã‚‹ç‚ºã®ã‚»ãƒ¼ãƒ•ãƒªã‚¹ãƒˆã‚’ä½œã‚‹
+	LIBM_TCMD_GET		,	//ä»–ã‚¹ãƒ¬ãƒƒãƒ‰ã®åœæ­¢ãƒ»å†é–‹çŠ¶æ…‹ã‚’å–å¾—
 };
 
 #define	LIBM_TSUSPEND			LIBM_TCMD_SUSPEND
@@ -51,92 +51,92 @@ typedef enum
 
 
 
-// libmGetHandle‚ğÀsŒã‚É Action ‚ğQÆ‚µ‚Ä“¾‚ç‚ê‚éƒƒjƒ…[‚Ìó‘Ô
+// libmGetHandleã‚’å®Ÿè¡Œå¾Œã« Action ã‚’å‚ç…§ã—ã¦å¾—ã‚‰ã‚Œã‚‹ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã®çŠ¶æ…‹
 typedef enum
 {
-	Menu_None = 0,	//‰½‚à‚È‚µ
-	Menu_Show,		//ƒƒjƒ…[‚ª•\¦‚³‚ê‚½
-	Menu_Up,		//ƒAƒCƒeƒ€‘I‘ğó‘Ô‚Å "ã" ‚Éw’è‚³‚ê‚Ä‚¢‚éƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚½
-	Menu_Down,		//ƒAƒCƒeƒ€‘I‘ğó‘Ô‚Å "‰º" ‚Éw’è‚³‚ê‚Ä‚¢‚éƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚½
-	Menu_Left,		//ƒAƒCƒeƒ€‘I‘ğó‘Ô‚Å "¶" ‚Éw’è‚³‚ê‚Ä‚¢‚éƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚½
-	Menu_Right,		//ƒAƒCƒeƒ€‘I‘ğó‘Ô‚Å "‰E" ‚Éw’è‚³‚ê‚Ä‚¢‚éƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚½
-	Menu_Select,	//ƒAƒCƒeƒ€‘I‘ğó‘Ô‚Å "‘I‘ğ" ‚Éw’è‚³‚ê‚Ä‚¢‚éƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚½
-	Menu_Back,		//ƒAƒCƒeƒ€‘I‘ğó‘Ô‚Å "–ß‚é" ‚Éw’è‚³‚ê‚Ä‚¢‚éƒ{ƒ^ƒ“‚ª‰Ÿ‚³‚ê‚½
-	Menu_Close		//ƒƒjƒ…[‚ª•Â‚¶‚ç‚ê‚½
+	Menu_None = 0,	//ä½•ã‚‚ãªã—
+	Menu_Show,		//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ãŒè¡¨ç¤ºã•ã‚ŒãŸ
+	Menu_Up,		//ã‚¢ã‚¤ãƒ†ãƒ é¸æŠçŠ¶æ…‹ã§ "ä¸Š" ã«æŒ‡å®šã•ã‚Œã¦ã„ã‚‹ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚ŒãŸ
+	Menu_Down,		//ã‚¢ã‚¤ãƒ†ãƒ é¸æŠçŠ¶æ…‹ã§ "ä¸‹" ã«æŒ‡å®šã•ã‚Œã¦ã„ã‚‹ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚ŒãŸ
+	Menu_Left,		//ã‚¢ã‚¤ãƒ†ãƒ é¸æŠçŠ¶æ…‹ã§ "å·¦" ã«æŒ‡å®šã•ã‚Œã¦ã„ã‚‹ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚ŒãŸ
+	Menu_Right,		//ã‚¢ã‚¤ãƒ†ãƒ é¸æŠçŠ¶æ…‹ã§ "å³" ã«æŒ‡å®šã•ã‚Œã¦ã„ã‚‹ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚ŒãŸ
+	Menu_Select,	//ã‚¢ã‚¤ãƒ†ãƒ é¸æŠçŠ¶æ…‹ã§ "é¸æŠ" ã«æŒ‡å®šã•ã‚Œã¦ã„ã‚‹ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚ŒãŸ
+	Menu_Back,		//ã‚¢ã‚¤ãƒ†ãƒ é¸æŠçŠ¶æ…‹ã§ "æˆ»ã‚‹" ã«æŒ‡å®šã•ã‚Œã¦ã„ã‚‹ãƒœã‚¿ãƒ³ãŒæŠ¼ã•ã‚ŒãŸ
+	Menu_Close		//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ãŒé–‰ã˜ã‚‰ã‚ŒãŸ
 } MenuResult;
 
 
-// libmOptAtype‚Öw’è‰Â”\‚Èƒ^ƒCƒvˆê——
+// libmOptã€typeã¸æŒ‡å®šå¯èƒ½ãªã‚¿ã‚¤ãƒ—ä¸€è¦§
 typedef enum
 {
-	LIBM_OPT_NONE,	//–³Œø
-	LIBM_OPT_LIST,	//ƒvƒƒOƒ‰ƒ€ã‚Ì•Ï”‚©‚çƒƒjƒ…[ì¬
-	LIBM_OPT_FUNC,	//ƒƒ‚ƒŠ‚©‚ç•Ï”‚ğ“®“IŠm•Û‚µ‚Äƒƒjƒ…[ì¬
+	LIBM_OPT_NONE,	//ç„¡åŠ¹
+	LIBM_OPT_LIST,	//ãƒ—ãƒ­ã‚°ãƒ©ãƒ ä¸Šã®å¤‰æ•°ã‹ã‚‰ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä½œæˆ
+	LIBM_OPT_FUNC,	//ãƒ¡ãƒ¢ãƒªã‹ã‚‰å¤‰æ•°ã‚’å‹•çš„ç¢ºä¿ã—ã¦ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä½œæˆ
 } optType;
 
 
 
 typedef struct MenuItem
 {
-	struct MenuItem			*Parent;		//ƒAƒCƒeƒ€‚Ìe ( NULL = Root )
-	struct MenuItem			*Next;			//ƒAƒCƒeƒ€‚ÌŸ
-	struct MenuItem			*Prev;			//ƒAƒCƒeƒ€‚Ì‘O
-	struct MenuItem			*Children;		//ƒAƒCƒeƒ€‚Ìq
+	struct MenuItem			*Parent;		//ã‚¢ã‚¤ãƒ†ãƒ ã®è¦ª ( NULL = Root )
+	struct MenuItem			*Next;			//ã‚¢ã‚¤ãƒ†ãƒ ã®æ¬¡
+	struct MenuItem			*Prev;			//ã‚¢ã‚¤ãƒ†ãƒ ã®å‰
+	struct MenuItem			*Children;		//ã‚¢ã‚¤ãƒ†ãƒ ã®å­
 	
 	
-	const char				*Name;			//ƒAƒCƒeƒ€–¼i•\¦‚³‚ê‚éj
-	int						Type;			//ƒAƒCƒeƒ€‚Ìƒ^ƒCƒv
-	int						actionID;		//ƒAƒCƒeƒ€‚ª‘I‘ğ‚³‚ê‚½‚è‚µ‚½‚ÉAhandleMenu‚Ì•Ô‹p’l‚Ö‘—‚éactionID
-	int						Data;			//ƒAƒCƒeƒ€’l
+	const char				*Name;			//ã‚¢ã‚¤ãƒ†ãƒ åï¼ˆè¡¨ç¤ºã•ã‚Œã‚‹ï¼‰
+	int						Type;			//ã‚¢ã‚¤ãƒ†ãƒ ã®ã‚¿ã‚¤ãƒ—
+	int						actionID;		//ã‚¢ã‚¤ãƒ†ãƒ ãŒé¸æŠã•ã‚ŒãŸã‚Šã—ãŸæ™‚ã«ã€handleMenuã®è¿”å´å€¤ã¸é€ã‚‹actionID
+	int						Data;			//ã‚¢ã‚¤ãƒ†ãƒ å€¤
 	
-	bool					Visible;		//ƒAƒCƒeƒ€‚Ì‰Â‹ó‘Ô( ture ,false )
-	bool					Disable;		//ƒAƒCƒeƒ€‚Ì—LŒøE–³Œø ó‘Ô
+	bool					Visible;		//ã‚¢ã‚¤ãƒ†ãƒ ã®å¯è¦–çŠ¶æ…‹( ture ,false )
+	bool					Disable;		//ã‚¢ã‚¤ãƒ†ãƒ ã®æœ‰åŠ¹ãƒ»ç„¡åŠ¹ çŠ¶æ…‹
 	
 	
-	//”ñƒAƒNƒeƒBƒu‚ÌƒAƒCƒeƒ€•`‰æF
-	//w’è‚ª‚È‚¯‚ê‚Î Context ‚Ì’ÊíF
+	//éã‚¢ã‚¯ãƒ†ã‚£ãƒ–æ™‚ã®ã‚¢ã‚¤ãƒ†ãƒ æç”»è‰²
+	//æŒ‡å®šãŒãªã‘ã‚Œã° Context ã®é€šå¸¸è‰²
 	
 	struct
 	{
-		u32 				Font;			//ƒtƒHƒ“ƒg
-		u32 				Back;			//”wŒi
-		u32					Line;			//‰ºü
+		u32 				Font;			//ãƒ•ã‚©ãƒ³ãƒˆ
+		u32 				Back;			//èƒŒæ™¯
+		u32					Line;			//ä¸‹ç·š
 	}Color;
 	
 	
 	union
 	{
-		//ƒ‰ƒWƒIƒ{ƒ^ƒ“—p
-		struct MenuItem		*RB_Group;		//ƒOƒ‹[ƒvæ‚Ö‚Ìƒ|ƒCƒ“ƒ^[
+		//ãƒ©ã‚¸ã‚ªãƒœã‚¿ãƒ³ç”¨
+		struct MenuItem		*RB_Group;		//ã‚°ãƒ«ãƒ¼ãƒ—å…ˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ãƒ¼
 		
-		//ƒ‰ƒWƒIƒ{ƒ^ƒ“EƒOƒ‹[ƒv—p
-		struct MenuItem		*Group_Sel;		//‘I‘ğ’†ƒAƒCƒeƒ€‚Ö‚Ìƒ|ƒCƒ“ƒ^[
+		//ãƒ©ã‚¸ã‚ªãƒœã‚¿ãƒ³ãƒ»ã‚°ãƒ«ãƒ¼ãƒ—ç”¨
+		struct MenuItem		*Group_Sel;		//é¸æŠä¸­ã‚¢ã‚¤ãƒ†ãƒ ã¸ã®ãƒã‚¤ãƒ³ã‚¿ãƒ¼
 		
-		//ƒRƒ“ƒeƒi[—p
+		//ã‚³ãƒ³ãƒ†ãƒŠãƒ¼ç”¨
 		struct
 		{
-			bool			IsOpen;			//ŠJ•Âó‘Ô
-			struct MenuItem	*Disp;			//ŠÖ˜A•t‚¯‚Äó‘Ô•\¦‚³‚¹‚éƒAƒCƒeƒ€‚Ö‚Ìƒ|ƒCƒ“ƒ^[
+			bool			IsOpen;			//é–‹é–‰çŠ¶æ…‹
+			struct MenuItem	*Disp;			//é–¢é€£ä»˜ã‘ã¦çŠ¶æ…‹è¡¨ç¤ºã•ã›ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ã¸ã®ãƒã‚¤ãƒ³ã‚¿ãƒ¼
 		}CNT;
 		
-		//ƒ`ƒFƒbƒNƒ{ƒbƒNƒX—p
-		bool				CB_Checked; 	//‘I‘ğó‘Ô
+		//ãƒã‚§ãƒƒã‚¯ãƒœãƒƒã‚¯ã‚¹ç”¨
+		bool				CB_Checked; 	//é¸æŠçŠ¶æ…‹
 		
-		//ƒŠƒXƒgƒ{ƒbƒNƒX—p
+		//ãƒªã‚¹ãƒˆãƒœãƒƒã‚¯ã‚¹ç”¨
 		struct
 		{
-			const char		**List;			//ƒŠƒXƒg‚Ö‚Ìƒ|ƒCƒ“ƒ^[
-			int				Index;			//‘I‘ğ’†‚Ìindex
+			const char		**List;			//ãƒªã‚¹ãƒˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ãƒ¼
+			int				Index;			//é¸æŠä¸­ã®index
 		}SB;
 		
-		//ƒAƒbƒvƒ_ƒEƒ“—p
+		//ã‚¢ãƒƒãƒ—ãƒ€ã‚¦ãƒ³ç”¨
 		struct
 		{
-			float			Now;			//Œ»İ’n
-			float			Step;			//Step’l (+/-)
-			float			Min;			//Å¬’l
-			float			Max;			//Å‘å’l
-			bool			type;			//•\¦ƒ^ƒCƒv ( true = ®” , false = ¬” )
+			float			Now;			//ç¾åœ¨åœ°
+			float			Step;			//Stepå€¤ (+/-)
+			float			Min;			//æœ€å°å€¤
+			float			Max;			//æœ€å¤§å€¤
+			bool			type;			//è¡¨ç¤ºã‚¿ã‚¤ãƒ— ( true = æ•´æ•° , false = å°æ•° )
 		}UD;
 		
 	}Ctrl;
@@ -155,20 +155,20 @@ typedef struct
 {
 	struct
 	{
-		//ƒƒjƒ…[—pƒAƒCƒeƒ€‚ğƒƒ‚ƒŠ‚©‚ç“®“IŠm•Û‚·‚éê‡‚Éİ’è
+		//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ç”¨ã‚¢ã‚¤ãƒ†ãƒ ã‚’ãƒ¡ãƒ¢ãƒªã‹ã‚‰å‹•çš„ç¢ºä¿ã™ã‚‹å ´åˆã«è¨­å®š
 		void* (*malloc_p)(SceSize size) ;
 		void  (*free_p) (void *ptr) ;
 	}func;
 	
 	struct
 	{
-		//ƒƒjƒ…[—pƒAƒCƒeƒ€Šm•Û‚ğƒXƒ^ƒbƒNã‚Ì•Ï”‚É‚·‚éê‡‚Éİ’è
+		//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ç”¨ã‚¢ã‚¤ãƒ†ãƒ ç¢ºä¿ã‚’ã‚¹ã‚¿ãƒƒã‚¯ä¸Šã®å¤‰æ•°ã«ã™ã‚‹å ´åˆã«è¨­å®š
 		MenuItem *val;
 		int size;
 	} list;
 	
-	//ƒƒjƒ…[—pƒAƒCƒeƒ€‚ÌŠm•Û•û–@
-	optType type;	//LIBM_OPT_LIST => ƒXƒ^ƒbƒNã‚Ì•Ï”ALIBM_OPT_FUNC => “®“IŠm•Û
+	//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ç”¨ã‚¢ã‚¤ãƒ†ãƒ ã®ç¢ºä¿æ–¹æ³•
+	optType type;	//LIBM_OPT_LIST => ã‚¹ã‚¿ãƒƒã‚¯ä¸Šã®å¤‰æ•°ã€LIBM_OPT_FUNC => å‹•çš„ç¢ºä¿
 	
 	int count;
 	
@@ -178,45 +178,45 @@ typedef struct
 
 typedef struct MenuContext
 {
-	//ƒƒjƒ…[‘€ì—p‚ÌKey
+	//ãƒ¡ãƒ‹ãƒ¥ãƒ¼æ“ä½œç”¨ã®Key
 	struct
 	{
-		u32 				Show;			//•\¦
-		u32					Back;			//•Â‚¶‚éA–ß‚é
-		u32					Select;			//‘I‘ğ
-		u32					Up;				//ã‚ÖˆÚ“®
-		u32					Down;			//‰º‚ÖˆÚ“®
-		u32					Left;			//¶‚ÖˆÚ“®
-		u32					Right;			//‰E‚ÖˆÚ“®
+		u32 				Show;			//è¡¨ç¤º
+		u32					Back;			//é–‰ã˜ã‚‹ã€æˆ»ã‚‹
+		u32					Select;			//é¸æŠ
+		u32					Up;				//ä¸Šã¸ç§»å‹•
+		u32					Down;			//ä¸‹ã¸ç§»å‹•
+		u32					Left;			//å·¦ã¸ç§»å‹•
+		u32					Right;			//å³ã¸ç§»å‹•
 	}HotKey;
 	
 	struct
 	{
-		u32					Active_Font;	//ƒAƒNƒeƒBƒu ƒAƒCƒeƒ€‚ÌƒtƒHƒ“ƒgF
-		u32					Active_Back;	//ƒAƒNƒeƒBƒu ƒAƒCƒeƒ€‚Ì”wŒiF
+		u32					Active_Font;	//ã‚¢ã‚¯ãƒ†ã‚£ãƒ– ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ•ã‚©ãƒ³ãƒˆè‰²
+		u32					Active_Back;	//ã‚¢ã‚¯ãƒ†ã‚£ãƒ– ã‚¢ã‚¤ãƒ†ãƒ ã®èƒŒæ™¯è‰²
 		
-		u32					Normal_Font;	//”ñƒAƒNƒeƒBƒu ƒAƒCƒeƒ€‚ÌƒtƒHƒ“ƒgF
-		u32					Normal_Back;	//”ñƒAƒNƒeƒBƒu ƒAƒCƒeƒ€‚Ì”wŒiF
+		u32					Normal_Font;	//éã‚¢ã‚¯ãƒ†ã‚£ãƒ– ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ•ã‚©ãƒ³ãƒˆè‰²
+		u32					Normal_Back;	//éã‚¢ã‚¯ãƒ†ã‚£ãƒ– ã‚¢ã‚¤ãƒ†ãƒ ã®èƒŒæ™¯è‰²
 		
-		u32					Disable_Font;	//–³Œø‚ÈƒAƒCƒeƒ€‚ÌƒtƒHƒ“ƒgF
-		u32					Disable_Back;	//–³Œø‚ÈƒAƒCƒeƒ€‚Ì”wŒiF
+		u32					Disable_Font;	//ç„¡åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ•ã‚©ãƒ³ãƒˆè‰²
+		u32					Disable_Back;	//ç„¡åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ ã®èƒŒæ™¯è‰²
 	}Color;
 	
-	//ƒƒjƒ…[•\¦‚ÉŠÖ‚·‚éİ’è
+	//ãƒ¡ãƒ‹ãƒ¥ãƒ¼è¡¨ç¤ºã«é–¢ã™ã‚‹è¨­å®š
 	struct
 	{
-		bool				Type;			//ƒƒjƒ…[‚Ìƒ^ƒCƒv ( true = ƒAƒNƒeƒBƒu‚È€–Ú‚Ì‚İ , false = ‘S‘Ì )
-		bool 				StopThread;		//ƒƒjƒ…[•\¦A‘¼ƒXƒŒƒbƒh‚ğ’â~‚³‚¹‚é‚©‚Ç‚¤‚©
-		bool				AutoReturn;		//ƒƒjƒ…[Åã•”E‰º•”‚Å©“®ƒ^[ƒ“‚·‚é‚©‚Ç‚¤‚©
-		u32					Lines;			//sŠÔiƒfƒtƒHƒ‹ƒg = 1A0‚¾‚Æ‰ºü•`‰æ‚ª–³Œø‚Éj
+		bool				Type;			//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã®ã‚¿ã‚¤ãƒ— ( true = ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªé …ç›®ã®ã¿ , false = å…¨ä½“ )
+		bool 				StopThread;		//ãƒ¡ãƒ‹ãƒ¥ãƒ¼è¡¨ç¤ºæ™‚ã€ä»–ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’åœæ­¢ã•ã›ã‚‹ã‹ã©ã†ã‹
+		bool				AutoReturn;		//ãƒ¡ãƒ‹ãƒ¥ãƒ¼æœ€ä¸Šéƒ¨ãƒ»ä¸‹éƒ¨ã§è‡ªå‹•ã‚¿ãƒ¼ãƒ³ã™ã‚‹ã‹ã©ã†ã‹
+		u32					Lines;			//è¡Œé–“ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ = 1ã€0ã ã¨ä¸‹ç·šæç”»ãŒç„¡åŠ¹ã«ï¼‰
 	}MenuInfo;
 	
 	MenuParams				Params;
 	
-	bool 					IsOpen;			//ƒƒjƒ…[‚ª•\¦’†‚©‚Ç‚¤‚©(•\¦A”ñ•\¦j
-	SceCtrlData				LastState;		//˜A‘±“®ì–h~—pA‘Oƒpƒbƒhî•ñ‚ğ•Û
-	MenuItem				*Root;			//rootƒAƒCƒeƒ€‚Ö‚Ìƒ|ƒCƒ“ƒ^[
-	MenuItem				*Active;		//Œ»İƒAƒNƒeƒBƒu‚ÈƒAƒCƒeƒ€‚Ö‚Ìƒ|ƒCƒ“ƒ^
+	bool 					IsOpen;			//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ãŒè¡¨ç¤ºä¸­ã‹ã©ã†ã‹(è¡¨ç¤ºã€éè¡¨ç¤ºï¼‰
+	SceCtrlData				LastState;		//é€£ç¶šå‹•ä½œé˜²æ­¢ç”¨ã€å‰ãƒ‘ãƒƒãƒ‰æƒ…å ±ã‚’ä¿æŒ
+	MenuItem				*Root;			//rootã‚¢ã‚¤ãƒ†ãƒ ã¸ã®ãƒã‚¤ãƒ³ã‚¿ãƒ¼
+	MenuItem				*Active;		//ç¾åœ¨ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¢ã‚¤ãƒ†ãƒ ã¸ã®ãƒã‚¤ãƒ³ã‚¿
 	
 	libmOpt *opt;
 	
@@ -227,57 +227,57 @@ typedef struct MenuContext
 
 typedef struct
 {
-	void	*buffer;	//•`‰æ‘ÎÛ‚ÌŠî€VRAMƒAƒhƒŒƒX
+	void	*buffer;	//æç”»å¯¾è±¡ã®åŸºæº–VRAMã‚¢ãƒ‰ãƒ¬ã‚¹
 	
-	int	width;			//‰æ–Ê•
-	int	height;			//‰æ–Ê‚
+	int	width;			//ç”»é¢å¹…
+	int	height;			//ç”»é¢é«˜
 	
-	int	format;			//ƒsƒNƒZƒ‹ƒtƒH[ƒ}ƒbƒg
-	int	lineWidth;		//‰æ–Ê•i•`‰æ‚Ég‚í‚ê‚Ä‚¢‚éÀÛ‚Ì•j
+	int	format;			//ãƒ”ã‚¯ã‚»ãƒ«ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ
+	int	lineWidth;		//ç”»é¢å¹…ï¼ˆæç”»ã«ä½¿ã‚ã‚Œã¦ã„ã‚‹å®Ÿéš›ã®å¹…ï¼‰
 	
-	int	frameSize;		//1‰æ–Ê‚ ‚½‚è‚ÌƒTƒCƒY(byte)
-	int	lineSize;		//1ƒ‰ƒCƒ“‚ ‚½‚è‚ÌƒTƒCƒY(byte)
-	u8	pixelSize;		//ƒsƒNƒZƒ‹ƒTƒCƒY
+	int	frameSize;		//1ç”»é¢ã‚ãŸã‚Šã®ã‚µã‚¤ã‚º(byte)
+	int	lineSize;		//1ãƒ©ã‚¤ãƒ³ã‚ãŸã‚Šã®ã‚µã‚¤ã‚º(byte)
+	u8	pixelSize;		//ãƒ”ã‚¯ã‚»ãƒ«ã‚µã‚¤ã‚º
 	
 } libm_vram_info;
 
 
 /*	#########################################################
-	#					ƒƒjƒ…[ŠÖ˜A						#
+	#					ãƒ¡ãƒ‹ãƒ¥ãƒ¼é–¢é€£						#
 	#########################################################
 */
 
 
 /*	libmSetActiveItem
-    ƒƒjƒ…[ã‚ÅƒAƒNƒeƒBƒu‚ÈƒAƒCƒeƒ€‚ğİ’è‚·‚é
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä¸Šã§ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¢ã‚¤ãƒ†ãƒ ã‚’è¨­å®šã™ã‚‹
     
     @param: MenuContext *Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒRƒ“ƒeƒLƒXƒg
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
     @param: MenuItem *Item
-    ƒAƒNƒeƒBƒuw’è‚·‚éƒAƒCƒeƒ€‚ğw’è
+    ã‚¢ã‚¯ãƒ†ã‚£ãƒ–æŒ‡å®šã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ã‚’æŒ‡å®š
  */
 #define	libmSetActive(Context,Item)		(Context)->Active = Item
 
 /*	libmGetActiveItem
-    ƒƒjƒ…[ã‚ÅƒAƒNƒeƒBƒu‚ÈƒAƒCƒeƒ€‚ğæ“¾‚·‚é
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä¸Šã§ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¢ã‚¤ãƒ†ãƒ ã‚’å–å¾—ã™ã‚‹
     
     @param: MenuContext *Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ ƒRƒ“ƒeƒLƒXƒg
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
-    @return: Œ»İƒAƒNƒeƒBƒu‚ÈƒAƒCƒeƒ€ (MenuItem*)
+    @return: ç¾åœ¨ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¢ã‚¤ãƒ†ãƒ  (MenuItem*)
  */
 #define	libmGetActive(Context)			(Context)->Active
 
 
 /*	libmIsOpen
-    ƒƒjƒ…[‚Ì•\¦/”ñ•\¦ ó‘Ô‚ğæ“¾
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã®è¡¨ç¤º/éè¡¨ç¤º çŠ¶æ…‹ã‚’å–å¾—
     
     @param: MenuContext *Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ ƒRƒ“ƒeƒLƒXƒg
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
-    @return : •\¦/”ñ•\¦‚Ìó‘Ô
-    false = ”ñ•\¦Atrue = •\¦
+    @return : è¡¨ç¤º/éè¡¨ç¤ºã®çŠ¶æ…‹
+    false = éè¡¨ç¤ºã€true = è¡¨ç¤º
  */
 #define libmIsOpen(Context)				(Context)->IsOpen
 
@@ -286,96 +286,96 @@ typedef struct
 #define	libmSetLineColor(item,color)	(item)->Color.Line = color
 
 /*	libmIsInvalidItem
-    ƒAƒCƒeƒ€‚ª‘I‘ğ•s‰Â (ƒXƒy[ƒT[A”ñ•\¦A–³Œøj‚È•¨‚©‚ğ’²‚×‚é
+    ã‚¢ã‚¤ãƒ†ãƒ ãŒé¸æŠä¸å¯ (ã‚¹ãƒšãƒ¼ã‚µãƒ¼ã€éè¡¨ç¤ºã€ç„¡åŠ¹ï¼‰ãªç‰©ã‹ã‚’èª¿ã¹ã‚‹
     
     @param: MenuItem *Item
-    ‘ÎÛ‚ÌƒAƒCƒeƒ€
+    å¯¾è±¡ã®ã‚¢ã‚¤ãƒ†ãƒ 
     
-    @return : false = ‘I‘ğ•s‰ÂƒAƒCƒeƒ€Atrue = ‘I‘ğ‰Â”\ƒAƒCƒeƒ€
+    @return : false = é¸æŠä¸å¯ã‚¢ã‚¤ãƒ†ãƒ ã€true = é¸æŠå¯èƒ½ã‚¢ã‚¤ãƒ†ãƒ 
  */
 bool libmIsInvalidItem(MenuItem *Item);
 
 /*	libmGetPrevItem
-    Šî€‚æ‚è‘O‚ÌƒAƒCƒeƒ€‚ğŒŸõ‚·‚é
+    åŸºæº–ã‚ˆã‚Šå‰ã®ã‚¢ã‚¤ãƒ†ãƒ ã‚’æ¤œç´¢ã™ã‚‹
     
     @param: MenuItem *Item
-    ŒŸõ‚ÌŠî€‚Æ‚·‚éƒAƒCƒeƒ€
+    æ¤œç´¢ã®åŸºæº–ã¨ã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ 
     
     @param: bool Invalid_Skip
-    –³Œø‚ÈƒAƒCƒeƒ€ (ƒXƒy[ƒT[A”ñ•\¦A–³Œøj‚ğœŠO‚µ‚ÄŒŸõ‚·‚é‚Ç‚¤‚©
+    ç„¡åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ  (ã‚¹ãƒšãƒ¼ã‚µãƒ¼ã€éè¡¨ç¤ºã€ç„¡åŠ¹ï¼‰ã‚’é™¤å¤–ã—ã¦æ¤œç´¢ã™ã‚‹ã©ã†ã‹
     
-    @return : —LŒø‚ÈƒAƒCƒeƒ€A‚È‚¯‚ê‚Î NULL
+    @return : æœ‰åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ ã€ãªã‘ã‚Œã° NULL
  */
 MenuItem* libmGetPrevItem( MenuItem *Item , bool Invalid_Skip );
 
 
 /*	libmGetNextItem
-    Šî€‚æ‚èŒã‚ÌƒAƒCƒeƒ€‚ğŒŸõ‚·‚é
+    åŸºæº–ã‚ˆã‚Šå¾Œã®ã‚¢ã‚¤ãƒ†ãƒ ã‚’æ¤œç´¢ã™ã‚‹
     
     @param: MenuItem *Item
-    ŒŸõ‚ÌŠî€‚Æ‚·‚éƒAƒCƒeƒ€
+    æ¤œç´¢ã®åŸºæº–ã¨ã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ 
     
     @param: bool Invalid_Skip
-    –³Œø‚ÈƒAƒCƒeƒ€ (ƒXƒy[ƒT[A”ñ•\¦A–³Œøj‚ğœŠO‚µ‚ÄŒŸõ‚·‚é‚Ç‚¤‚©
+    ç„¡åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ  (ã‚¹ãƒšãƒ¼ã‚µãƒ¼ã€éè¡¨ç¤ºã€ç„¡åŠ¹ï¼‰ã‚’é™¤å¤–ã—ã¦æ¤œç´¢ã™ã‚‹ã©ã†ã‹
     
-    @return : —LŒø‚ÈƒAƒCƒeƒ€A‚È‚¯‚ê‚Î NULL
+    @return : æœ‰åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ ã€ãªã‘ã‚Œã° NULL
  */
 MenuItem* libmGetNextItem( MenuItem *Item , bool Invalid_Skip );
 
 
 
 /*	libmGetBottomItem
-    Šî€‚©‚çŒŸõ‚µ‚Äˆê”ÔÅŒã‚É‚ ‚éƒAƒCƒeƒ€‚ğ’²‚×‚é
+    åŸºæº–ã‹ã‚‰æ¤œç´¢ã—ã¦ä¸€ç•ªæœ€å¾Œã«ã‚ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ã‚’èª¿ã¹ã‚‹
     
     @param: MenuItem *Item
-    ŒŸõ‚ÌŠî€‚Æ‚·‚éƒAƒCƒeƒ€
+    æ¤œç´¢ã®åŸºæº–ã¨ã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ 
     
     @param: bool Invalid_Skip
-    –³Œø‚ÈƒAƒCƒeƒ€ (ƒXƒy[ƒT[A”ñ•\¦A–³Œøj‚ğœŠO‚µ‚ÄŒŸõ‚·‚é‚Ç‚¤‚©
+    ç„¡åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ  (ã‚¹ãƒšãƒ¼ã‚µãƒ¼ã€éè¡¨ç¤ºã€ç„¡åŠ¹ï¼‰ã‚’é™¤å¤–ã—ã¦æ¤œç´¢ã™ã‚‹ã©ã†ã‹
     
-    @return : —LŒø‚ÈƒAƒCƒeƒ€A‚È‚¯‚ê‚Î NULL
+    @return : æœ‰åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ ã€ãªã‘ã‚Œã° NULL
  */
 MenuItem* libmGetBottomItem( MenuItem *Item , bool Invalid_Skip );
 	
 
 /*	libmGetTopItem
-    Šî€‚©‚çŒŸõ‚µ‚Äˆê”ÔÅ‰‚É‚ ‚éƒAƒCƒeƒ€‚ğ’²‚×‚é
+    åŸºæº–ã‹ã‚‰æ¤œç´¢ã—ã¦ä¸€ç•ªæœ€åˆã«ã‚ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ã‚’èª¿ã¹ã‚‹
     
     @param: MenuItem *Item
-    ŒŸõ‚ÌŠî€‚Æ‚·‚éƒAƒCƒeƒ€
+    æ¤œç´¢ã®åŸºæº–ã¨ã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ 
     
     @param: bool Invalid_Skip
-    –³Œø‚ÈƒAƒCƒeƒ€ (ƒXƒy[ƒT[A”ñ•\¦A–³Œøj‚ğœŠO‚µ‚ÄŒŸõ‚·‚é‚Ç‚¤‚©
+    ç„¡åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ  (ã‚¹ãƒšãƒ¼ã‚µãƒ¼ã€éè¡¨ç¤ºã€ç„¡åŠ¹ï¼‰ã‚’é™¤å¤–ã—ã¦æ¤œç´¢ã™ã‚‹ã©ã†ã‹
     
-    @return : —LŒø‚ÈƒAƒCƒeƒ€A‚È‚¯‚ê‚Î NULL
+    @return : æœ‰åŠ¹ãªã‚¢ã‚¤ãƒ†ãƒ ã€ãªã‘ã‚Œã° NULL
  */
 MenuItem* libmGetTopItem( MenuItem *Item , bool Invalid_Skip );
 
 /*	libmSetOpt
-    ƒƒjƒ…[ contextAitem ì¬‚ÌƒIƒvƒVƒ‡ƒ“‚ğw’è
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ contextã€item ä½œæˆæ™‚ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã‚’æŒ‡å®š
     
     @param: MenuContext* Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒRƒ“ƒeƒLƒXƒg
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
     @param: libmOpt *opt
 	
-	EƒAƒCƒeƒ€—p‚Ìƒƒ‚ƒŠ‚ğ•Ï”‚©‚çŠm•Û‚·‚éê‡‚Í‚±‚Ì‚æ‚¤‚ÈŠ´‚¶‚Åİ’è
+	ãƒ»ã‚¢ã‚¤ãƒ†ãƒ ç”¨ã®ãƒ¡ãƒ¢ãƒªã‚’å¤‰æ•°ã‹ã‚‰ç¢ºä¿ã™ã‚‹å ´åˆã¯ã“ã®ã‚ˆã†ãªæ„Ÿã˜ã§è¨­å®š
 	opt.type = LIBM_OPT_LIST;
-	opt.list.val	= item_list;			( item_list ‚Í MenuItem* ‚Ì”z—ñ )
-	opt.list.size 	= sizeof(item_list);	(opt.list.val‚Åw’è‚µ‚½”z—ñƒTƒCƒYj
+	opt.list.val	= item_list;			( item_list ã¯ MenuItem* ã®é…åˆ— )
+	opt.list.size 	= sizeof(item_list);	(opt.list.valã§æŒ‡å®šã—ãŸé…åˆ—ã‚µã‚¤ã‚ºï¼‰
 	libmSetOpt(&opt);
 	
-	EƒAƒCƒeƒ€—p‚Ìƒƒ‚ƒŠ‚ğ“®“IŠm•Û‚·‚éê‡‚Í‚±‚Ì‚æ‚¤‚ÈŠ´‚¶‚Åİ’è
+	ãƒ»ã‚¢ã‚¤ãƒ†ãƒ ç”¨ã®ãƒ¡ãƒ¢ãƒªã‚’å‹•çš„ç¢ºä¿ã™ã‚‹å ´åˆã¯ã“ã®ã‚ˆã†ãªæ„Ÿã˜ã§è¨­å®š
 	
 	
 	opt.type = LIBM_OPT_FUNC;
-	opt.func.malloc_p	= ƒƒ‚ƒŠŠm•ÛŠÖ”;
-	opt.func.free_p		= ƒƒ‚ƒŠ‰ğ•úŠÖ”;
+	opt.func.malloc_p	= ãƒ¡ãƒ¢ãƒªç¢ºä¿é–¢æ•°;
+	opt.func.free_p		= ãƒ¡ãƒ¢ãƒªè§£æ”¾é–¢æ•°;
 	libmSetOpt(&opt);
 	
     
-    @return : İ’èo—ˆ‚½‚©‚Ç‚¤‚©
-    false = ¸”sAtrue = ¬Œ÷
+    @return : è¨­å®šå‡ºæ¥ãŸã‹ã©ã†ã‹
+    false = å¤±æ•—ã€true = æˆåŠŸ
  */
 
 bool libmSetOpt(MenuContext* Context , libmOpt *opt );
@@ -384,14 +384,14 @@ bool libmSetOpt(MenuContext* Context , libmOpt *opt );
 
 
 /*	libmCreateContext
-    ƒƒjƒ…[ ƒRƒ“ƒeƒLƒXƒg‚ğì¬
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã‚’ä½œæˆ
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
-    @return: ì¬‚µ‚½ƒƒjƒ…[ƒRƒ“ƒeƒLƒXƒg
+    @return: ä½œæˆã—ãŸãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
-    ì¬‚É¬Œ÷‚·‚é‚ÆˆÈ‰º‚Ì’l‚ª‰Šú’l‚Æ‚µ‚Ä©“®İ’è‚³‚ê‚é
+    ä½œæˆã«æˆåŠŸã™ã‚‹ã¨ä»¥ä¸‹ã®å€¤ãŒåˆæœŸå€¤ã¨ã—ã¦è‡ªå‹•è¨­å®šã•ã‚Œã‚‹
     
 	context->HotKey.Show			= PSP_CTRL_NOTE ;
 	context->HotKey.Back			= PSP_CTRL_CIRCLE;
@@ -421,92 +421,92 @@ bool libmSetOpt(MenuContext* Context , libmOpt *opt );
 MenuContext* libmCreateContext(libmOpt *opt);
 
 /*	libmRemoveContext
-    ƒƒjƒ…[ ƒRƒ“ƒeƒLƒXƒg‚ğíœiƒƒ‚ƒŠ‰ğ•új‚·‚é
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã‚’å‰Šé™¤ï¼ˆãƒ¡ãƒ¢ãƒªè§£æ”¾ï¼‰ã™ã‚‹
     
     @param: MenuContext* Context
-    íœ‚·‚éƒƒjƒ…[ƒRƒ“ƒeƒLƒXƒg
+    å‰Šé™¤ã™ã‚‹ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
-    ¦libmSetOpt‚Åƒƒ‚ƒŠ“®“IŠm•Û‚·‚éİ’è‚Ìê‡‚Ì‚İƒƒ‚ƒŠ‰ğ•ú
+    â€»libmSetOptã§ãƒ¡ãƒ¢ãƒªå‹•çš„ç¢ºä¿ã™ã‚‹è¨­å®šã®å ´åˆã®ã¿ãƒ¡ãƒ¢ãƒªè§£æ”¾
     
  */
 void libmRemoveContext(MenuContext* Context);
 
 /*  libmAddItem
-    ƒƒjƒ…[ ƒRƒ“ƒeƒLƒXƒg‚ÉƒAƒCƒeƒ€‚ğ’Ç‰Á‚·‚é
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã«ã‚¢ã‚¤ãƒ†ãƒ ã‚’è¿½åŠ ã™ã‚‹
     
     @param: MenuContext* Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒRƒ“ƒeƒLƒXƒg
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
     @param: MenuItem* Parent
-    ƒAƒCƒeƒ€’Ç‰Á‘ÎÛ‚Ìe(ƒAƒCƒeƒ€j
+    ã‚¢ã‚¤ãƒ†ãƒ è¿½åŠ å¯¾è±¡ã®è¦ª(ã‚¢ã‚¤ãƒ†ãƒ ï¼‰
 	
     @param: MenuItem* Item
-    ’Ç‰Á‚·‚éƒAƒCƒeƒ€
+    è¿½åŠ ã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ 
     
     @param: u32 font_color
-    ’Ç‰Á‚·‚éƒAƒCƒeƒ€‚ÌƒtƒHƒ“ƒgF
-    0 ‚ğw’è‚·‚é‚Æ•`‰æ‚µ‚È‚¢
+    è¿½åŠ ã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ•ã‚©ãƒ³ãƒˆè‰²
+    0 ã‚’æŒ‡å®šã™ã‚‹ã¨æç”»ã—ãªã„
     
     @param: u32 back_color
-    ’Ç‰Á‚·‚éƒAƒCƒeƒ€‚Ì”wŒiF
-    0 ‚ğw’è‚·‚é‚Æ•`‰æ‚µ‚È‚¢
+    è¿½åŠ ã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ã®èƒŒæ™¯è‰²
+    0 ã‚’æŒ‡å®šã™ã‚‹ã¨æç”»ã—ãªã„
     
     @param: int actionID
-    ƒAƒCƒeƒ€‚ª‘€ì‚³‚ê‚½ÛA‹æ•Ê‚·‚é‚½‚ß‚ÌID(ƒAƒNƒVƒ‡ƒ“j
+    ã‚¢ã‚¤ãƒ†ãƒ ãŒæ“ä½œã•ã‚ŒãŸéš›ã€åŒºåˆ¥ã™ã‚‹ãŸã‚ã®ID(ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ï¼‰
     
     @param: int Data
-    ƒAƒCƒeƒ€‚ª‘€ì‚³‚ê‚½ÛA‹æ•Ê‚·‚é‚½‚ß‚ÌID(ƒAƒCƒeƒ€ŒÅ—Lj
+    ã‚¢ã‚¤ãƒ†ãƒ ãŒæ“ä½œã•ã‚ŒãŸéš›ã€åŒºåˆ¥ã™ã‚‹ãŸã‚ã®ID(ã‚¢ã‚¤ãƒ†ãƒ å›ºæœ‰ï¼‰
     
-    @return: ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+    @return: ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmAddItem(MenuContext* Context, MenuItem* Parent, MenuItem* Item,u32 font_color,u32 back_color, int actionID, int Data);
 
 /*	libmRemoveItem
-    ƒAƒCƒeƒ€‚ğíœiƒƒ‚ƒŠ‰ğ•új‚·‚é
+    ã‚¢ã‚¤ãƒ†ãƒ ã‚’å‰Šé™¤ï¼ˆãƒ¡ãƒ¢ãƒªè§£æ”¾ï¼‰ã™ã‚‹
     
     @param: MenuContext* Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒRƒ“ƒeƒLƒXƒg
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
     @param: MenuItem* Item
-    ‘ÎÛ‚ÌƒAƒCƒeƒ€
+    å¯¾è±¡ã®ã‚¢ã‚¤ãƒ†ãƒ 
     
-    ¦libmSetOpt‚Åƒƒ‚ƒŠ“®“IŠm•Û‚·‚éİ’è‚Ìê‡‚Ì‚İƒƒ‚ƒŠ‰ğ•ú
-    @
-    @‘ÎÛ‚ªƒRƒ“ƒeƒi[‚¾‚Á‚½ê‡‚ÍA
-    @’†‚É‚ ‚é‘SƒAƒCƒeƒ€‚à“¯íœ
+    â€»libmSetOptã§ãƒ¡ãƒ¢ãƒªå‹•çš„ç¢ºä¿ã™ã‚‹è¨­å®šã®å ´åˆã®ã¿ãƒ¡ãƒ¢ãƒªè§£æ”¾
+    ã€€
+    ã€€å¯¾è±¡ãŒã‚³ãƒ³ãƒ†ãƒŠãƒ¼ã ã£ãŸå ´åˆã¯ã€
+    ã€€ä¸­ã«ã‚ã‚‹å…¨ã‚¢ã‚¤ãƒ†ãƒ ã‚‚åŒæ™‚å‰Šé™¤
  */
 void libmRemoveItem( MenuContext *context , MenuItem* Item );
 
 /*	libmGetHandle
-    ƒƒjƒ…[ã‚Ì“®ì‚ğæ“¾‚·‚éi•`‰æ‚Í‚³‚ê‚È‚¢j
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä¸Šã®å‹•ä½œã‚’å–å¾—ã™ã‚‹ï¼ˆæç”»ã¯ã•ã‚Œãªã„ï¼‰
     
     @param: MenuContext* Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒRƒ“ƒeƒLƒXƒg
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
     
     @param: SceCtrlData* Input
-    Key“ü—Í( SceCtrlData )
+    Keyå…¥åŠ›( SceCtrlData )
     
-    @return: MenuParams (‘I‘ğ‚³‚ê‚½ƒAƒCƒeƒ€Aƒƒjƒ…[‚Ìó‘Ô‚È‚Çj
+    @return: MenuParams (é¸æŠã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ ã€ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã®çŠ¶æ…‹ãªã©ï¼‰
  */
 
 MenuParams* libmGetHandle(MenuContext* Context, SceCtrlData* Input);
 
 /*  libmRender
-    ‰æ–Ê‚Öƒƒjƒ…[‚ğ•`‰æ‚·‚é
+    ç”»é¢ã¸ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚’æç”»ã™ã‚‹
     
     @param: MenuContext* Context
-    ‘ÎÛ‚Ìƒƒjƒ…[ context
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ context
     
     @param:  int PosX
-    ƒƒjƒ…[‚Ì•\¦ˆÊ’u X
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã®è¡¨ç¤ºä½ç½® X
     
     @param: int PosY
-    ƒƒjƒ…[‚Ì•\¦ˆÊ’u Y
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã®è¡¨ç¤ºä½ç½® Y
     
     
-    ƒƒjƒ…[•\¦‚É‘¼ƒXƒŒƒbƒh’â~‚ğ—LŒø‚É‚µ‚Ä‚¢‚éê‡
-    •\¦(‘¼ƒXƒŒƒbƒh’â~)’†‚É HOMEƒ{ƒ^ƒ“ ‚ª‰Ÿ‚³‚ê‚é‚Æ
-    ƒQ[ƒ€I—¹‚ğ‰Â”\‚É‚·‚é‚½‚ß‚É©“®‚Å‘¼ƒXƒŒƒbƒhÄŠJ + ƒƒjƒ…[‚ğ•Â‚¶‚é
+    ãƒ¡ãƒ‹ãƒ¥ãƒ¼è¡¨ç¤ºæ™‚ã«ä»–ã‚¹ãƒ¬ãƒƒãƒ‰åœæ­¢ã‚’æœ‰åŠ¹ã«ã—ã¦ã„ã‚‹å ´åˆ
+    è¡¨ç¤º(ä»–ã‚¹ãƒ¬ãƒƒãƒ‰åœæ­¢)ä¸­ã« HOMEãƒœã‚¿ãƒ³ ãŒæŠ¼ã•ã‚Œã‚‹ã¨
+    ã‚²ãƒ¼ãƒ çµ‚äº†ã‚’å¯èƒ½ã«ã™ã‚‹ãŸã‚ã«è‡ªå‹•ã§ä»–ã‚¹ãƒ¬ãƒƒãƒ‰å†é–‹ + ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚’é–‰ã˜ã‚‹
  */
 void libmRender(MenuContext* Context,int PosX,int PosY ,char *buf ,int bufLen);
 
@@ -514,176 +514,176 @@ void libmRender(MenuContext* Context,int PosX,int PosY ,char *buf ,int bufLen);
 
 
 /*  libmCreateContainer
-    ƒAƒCƒeƒ€ì¬iƒRƒ“ƒeƒi[j
+    ã‚¢ã‚¤ãƒ†ãƒ ä½œæˆï¼ˆã‚³ãƒ³ãƒ†ãƒŠãƒ¼ï¼‰
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
     @param: const char* Name
-    ƒRƒ“ƒeƒi–¼
+    ã‚³ãƒ³ãƒ†ãƒŠå
     
-    @return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+    @return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmCreateContainer(libmOpt *opt ,const char* Name);
 
 /*  libmCreateRadioButton
-    ƒAƒCƒeƒ€ì¬iƒ‰ƒWƒIƒ{ƒ^ƒ“j
+    ã‚¢ã‚¤ãƒ†ãƒ ä½œæˆï¼ˆãƒ©ã‚¸ã‚ªãƒœã‚¿ãƒ³ï¼‰
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
     @param: const char* Name
-    ƒ‰ƒWƒIƒ{ƒ^ƒ“–¼
+    ãƒ©ã‚¸ã‚ªãƒœã‚¿ãƒ³å
     
     @param: bool State
-    ‘I‘ğó‘Ô
+    é¸æŠçŠ¶æ…‹
     
     @param: MenuItem * Group
-  @ŠÖ˜A•t‚¯‚éƒ‰ƒWƒIƒ{ƒ^ƒ“ ƒOƒ‹[ƒv
-  @libmCreateRadioButtonGroup‚Åì¬
-  @w’è•K{
-  @
-	@return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+  ã€€é–¢é€£ä»˜ã‘ã‚‹ãƒ©ã‚¸ã‚ªãƒœã‚¿ãƒ³ ã‚°ãƒ«ãƒ¼ãƒ—
+  ã€€libmCreateRadioButtonGroupã§ä½œæˆ
+  ã€€æŒ‡å®šå¿…é ˆ
+  ã€€
+	@return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
 	
-	libmAddItem‚ÅÀÛ‚É’Ç‰Á‚·‚é‚ÍA
-	Parent(e)‚ªƒRƒ“ƒeƒi[ ‚Ü‚½‚Í NULL‚Å‚È‚¢‚Æ–³‹‚³‚ê‚é
+	libmAddItemã§å®Ÿéš›ã«è¿½åŠ ã™ã‚‹æ™‚ã¯ã€
+	Parent(è¦ª)ãŒã‚³ãƒ³ãƒ†ãƒŠãƒ¼ ã¾ãŸã¯ NULLã§ãªã„ã¨ç„¡è¦–ã•ã‚Œã‚‹
  */
 MenuItem* libmCreateRadioButton(libmOpt *opt ,const char* Name, bool State,MenuItem * Group);
 
 /*  libmCreateRadioButtonGroup
-    ƒAƒCƒeƒ€‚ğì¬iƒ‰ƒWƒIƒ{ƒ^ƒ“ ƒOƒ‹[ƒv)
+    ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆï¼ˆãƒ©ã‚¸ã‚ªãƒœã‚¿ãƒ³ ã‚°ãƒ«ãƒ¼ãƒ—)
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
-    @return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+    @return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmCreateRadioButtonGroup(libmOpt *opt);
 
 
 
 /*  libmCreateCheckBox
-    ƒAƒCƒeƒ€ì¬iƒ`ƒFƒbƒNƒ{ƒbƒNƒXj
+    ã‚¢ã‚¤ãƒ†ãƒ ä½œæˆï¼ˆãƒã‚§ãƒƒã‚¯ãƒœãƒƒã‚¯ã‚¹ï¼‰
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
     @param: const char* Name
-    ƒ`ƒFƒbƒNƒ{ƒbƒNƒX–¼
+    ãƒã‚§ãƒƒã‚¯ãƒœãƒƒã‚¯ã‚¹å
     
     @param: bool State
-    ‘I‘ğó‘Ô
+    é¸æŠçŠ¶æ…‹
     
-	@return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+	@return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmCreateCheckBox(libmOpt *opt ,const char* Name, bool State);
 
 /*  libmCreateSelectBox
-    ƒAƒCƒeƒ€ì¬iƒ`ƒFƒbƒNƒ{ƒbƒNƒXj
+    ã‚¢ã‚¤ãƒ†ãƒ ä½œæˆï¼ˆãƒã‚§ãƒƒã‚¯ãƒœãƒƒã‚¯ã‚¹ï¼‰
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
     @param: const char* Name
-    ƒZƒŒƒNƒgƒ{ƒbƒNƒX–¼
+    ã‚»ãƒ¬ã‚¯ãƒˆãƒœãƒƒã‚¯ã‚¹å
     
     @param: const char *List[]
-    ƒZƒŒƒNƒgƒ{ƒbƒNƒX‚É•\¦‚·‚éƒAƒCƒeƒ€ƒŠƒXƒg
-    const char *‚Ì”z—ñAÅŒã‚ÉNULL‚ª•K—v
+    ã‚»ãƒ¬ã‚¯ãƒˆãƒœãƒƒã‚¯ã‚¹ã«è¡¨ç¤ºã™ã‚‹ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆ
+    const char *ã®é…åˆ—ã€æœ€å¾Œã«NULLãŒå¿…è¦
     
     @param: int Selected
-    ƒŠƒXƒg‚©‚çÅ‰‚É‘I‘ğÏ‚İ‚Æ‚·‚éˆÊ’u
+    ãƒªã‚¹ãƒˆã‹ã‚‰æœ€åˆã«é¸æŠæ¸ˆã¿ã¨ã™ã‚‹ä½ç½®
     
-    @return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+    @return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmCreateSelectBox(libmOpt *opt ,const char* Name, const char *List[],int Selected);
 
 /*  libmCreateUpDownCtrl
-    ƒAƒCƒeƒ€‚ğì¬iƒAƒbƒvƒ_ƒEƒ“ƒRƒ“ƒgƒ[ƒ‹j
+    ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆï¼ˆã‚¢ãƒƒãƒ—ãƒ€ã‚¦ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ï¼‰
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
     @param: const char* Name
-    ƒAƒbƒvƒ_ƒEƒ“ƒRƒ“ƒgƒ[ƒ‹–¼
+    ã‚¢ãƒƒãƒ—ãƒ€ã‚¦ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«å
     
     @param: float Now
-    Œ»İ’l
+    ç¾åœ¨å€¤
     
     @param: float Step
-    ‘Œ¸’l
+    å¢—æ¸›å€¤
     
     @param: float Min
-    Å¬’l
+    æœ€å°å€¤
     
     @param: float Max
-    Å‘å’l
+    æœ€å¤§å€¤
     
     @param: bool type
-    false = •`‰æ‚ÉŒ»İ’l‚ğ¬”“_•\¦‚³‚¹‚é ( 00.00 ‚Ì‚æ‚¤‚ÈŠ´‚¶j
-    true = •`‰æ‚ÉŒ»İ’l‚ğ®”•\¦‚·‚é
+    false = æç”»æ™‚ã«ç¾åœ¨å€¤ã‚’å°æ•°ç‚¹è¡¨ç¤ºã•ã›ã‚‹ ( 00.00 ã®ã‚ˆã†ãªæ„Ÿã˜ï¼‰
+    true = æç”»æ™‚ã«ç¾åœ¨å€¤ã‚’æ•´æ•°è¡¨ç¤ºã™ã‚‹
     
-    @return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+    @return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmCreateUpDownCtrl(libmOpt *opt ,const char* Name,float Now,float Step,float Min, float Max,bool type);
 
 /*  libmCreateSpacer
-    ƒAƒCƒeƒ€‚ğì¬iƒXƒy[ƒT[j
+    ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆï¼ˆã‚¹ãƒšãƒ¼ã‚µãƒ¼ï¼‰
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
     @param: const char* Name
-    ƒXƒy[ƒT[–¼
+    ã‚¹ãƒšãƒ¼ã‚µãƒ¼å
     
-    @return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+    @return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmCreateSpacer(libmOpt *opt ,const char* Name);
 
 /*  libmCreateTriggerButton
-    ƒAƒCƒeƒ€‚ğì¬iƒgƒŠƒK[ƒ{ƒ^ƒ“)
+    ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆï¼ˆãƒˆãƒªã‚¬ãƒ¼ãƒœã‚¿ãƒ³)
     
     @param: libmOpt *opt
-    ‘ÎÛ‚Ìƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“
+    å¯¾è±¡ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³
     
 	@param: const char* Name
-    ƒgƒŠƒK[ƒ{ƒ^ƒ“–¼
+    ãƒˆãƒªã‚¬ãƒ¼ãƒœã‚¿ãƒ³å
     
-    @return : ì¬‚³‚ê‚½ƒAƒCƒeƒ€
+    @return : ä½œæˆã•ã‚ŒãŸã‚¢ã‚¤ãƒ†ãƒ 
  */
 MenuItem* libmCreateTriggerButton(libmOpt *opt ,const char* Name);
 
 
 
 /*	#########################################################
-	#					‘¼ƒXƒŒƒbƒh‘€ì						#
+	#					ä»–ã‚¹ãƒ¬ãƒƒãƒ‰æ“ä½œ						#
 	#########################################################
 */
 
 
 
 /*  libmExecTCmd
-	ƒvƒ‰ƒOƒCƒ“ˆÈŠO‚ÌThread‚ğ‘€ì‚·‚é
+	ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ä»¥å¤–ã®Threadã‚’æ“ä½œã™ã‚‹
     
     @params : int cmd
     
-    ˆÈ‰º‚ÌƒRƒ}ƒ“ƒh‚ªg‚¦‚Ü‚·
+    ä»¥ä¸‹ã®ã‚³ãƒãƒ³ãƒ‰ãŒä½¿ãˆã¾ã™
     
-	LIBM_TCMD_SUSPEND	= Thread’â~
-	LIBM_TCMD_RESUME	= ThreadÄŠJ
-	LIBM_TCMD_DUMP		= Thread‚ÌƒZ[ƒtƒŠƒXƒg‚ğì‚é
-	LIBM_TCMD_GET		= ’â~/ÄŠJ‚Ìó‘Ôæ“¾
+	LIBM_TCMD_SUSPEND	= Threadåœæ­¢
+	LIBM_TCMD_RESUME	= Threadå†é–‹
+	LIBM_TCMD_DUMP		= Threadã®ã‚»ãƒ¼ãƒ•ãƒªã‚¹ãƒˆã‚’ä½œã‚‹
+	LIBM_TCMD_GET		= åœæ­¢/å†é–‹ã®çŠ¶æ…‹å–å¾—
     
     @return : 
 	
 	LIBM_TCMD_SUSPEND /	LIBM_TCMD_RESUME / 	LIBM_TCMD_DUMP
-    ‚±‚Ì3‚Â‚Í—v‹‚µ‚½ƒRƒ}ƒ“ƒh‚ªÀs‚³‚ê‚½‚©‚Ç‚¤‚©ifalse/true)
+    ã“ã®3ã¤ã¯è¦æ±‚ã—ãŸã‚³ãƒãƒ³ãƒ‰ãŒå®Ÿè¡Œã•ã‚ŒãŸã‹ã©ã†ã‹ï¼ˆfalse/true)
     
-    LIBM_TCMD_GET ‚ğÀs‚µ‚Ä“¾‚ç‚ê‚é’l‚Í
-    LIBM_TSUSPENDALIBM_TRESUME‚Ì‚Ç‚¿‚ç‚©
+    LIBM_TCMD_GET ã‚’å®Ÿè¡Œã—ã¦å¾—ã‚‰ã‚Œã‚‹å€¤ã¯
+    LIBM_TSUSPENDã€LIBM_TRESUMEã®ã©ã¡ã‚‰ã‹
     
-    ¦LIBM_TCMD_SUSPEND	/ LIBM_TCMD_RESUME ‚Í
-    @–‘O‚ÉƒZ[ƒtƒŠƒXƒg‚ªì¬iLIBM_TCMD_DUMPj‚³‚ê‚Ä‚¢‚È‚¢‚Æ‹@”\‚µ‚È‚¢
+    â€»LIBM_TCMD_SUSPEND	/ LIBM_TCMD_RESUME ã¯
+    ã€€äº‹å‰ã«ã‚»ãƒ¼ãƒ•ãƒªã‚¹ãƒˆãŒä½œæˆï¼ˆLIBM_TCMD_DUMPï¼‰ã•ã‚Œã¦ã„ãªã„ã¨æ©Ÿèƒ½ã—ãªã„
     
     */
 int libmExecTCmd( int cmd );
@@ -693,7 +693,7 @@ int libmExecTCmd( int cmd );
 
 
 /*	#############################################################
-	#							•`‰æ							#
+	#							æç”»							#
 	#############################################################
 */
 
@@ -701,296 +701,296 @@ int libmExecTCmd( int cmd );
 
 
 /*  libmInitBuffers
-    Œ»İ‚ÌƒfƒBƒXƒvƒŒƒC‚Ìó‘Ô‚É‡‚í‚¹‚Ä•`‰æ€”õ‚ğ‚·‚é
+    ç¾åœ¨ã®ãƒ‡ã‚£ã‚¹ãƒ—ãƒ¬ã‚¤ã®çŠ¶æ…‹ã«åˆã‚ã›ã¦æç”»æº–å‚™ã‚’ã™ã‚‹
     
     @param: bool is_blend
-	•`‰æ‚ÉŠe•`‰æF‚Ìƒ¿i”wŒi“§‰ßj‚ğ—LŒø‚É‚·‚é‚©‚Ç‚¤‚©
+	æç”»æ™‚ã«å„æç”»è‰²ã®Î±ï¼ˆèƒŒæ™¯é€éï¼‰ã‚’æœ‰åŠ¹ã«ã™ã‚‹ã‹ã©ã†ã‹
     
     @param: int sync
-    “¯Šú‘ÎÛ
+    åŒæœŸå¯¾è±¡
     
 	PSP_DISPLAY_SETBUF_IMMEDIATE
 	PSP_DISPLAY_SETBUF_NEXTFRAME
-	‚Ì‚Ç‚¿‚ç‚©‚ğw’è
+	ã®ã©ã¡ã‚‰ã‹ã‚’æŒ‡å®š
     
-    @return: true = ¬Œ÷Afalse = ¸”s
+    @return: true = æˆåŠŸã€false = å¤±æ•—
  */
 bool libmInitBuffers( bool is_blend ,int sync );
 
 
 /*  libmSwapBuffers
-    libmRender ‚Å•`‰æ‚Ég‚¤ƒoƒbƒtƒ@[‚Ì•ÏX
+    libmRender ã§æç”»ã«ä½¿ã†ãƒãƒƒãƒ•ã‚¡ãƒ¼ã®å¤‰æ›´
     
-	ƒƒjƒ…[•\¦‚ÉƒXƒŒƒbƒh’â~‚·‚é‚æ‚¤‚Éİ’è‚µ‚½ê‡
-	‚±‚ê‚ğg‚¤‚Æƒ_ƒuƒ‹ƒoƒbƒtƒ@ƒŠƒ“ƒO‚Ì‚æ‚¤‚È‚±‚Æ‚ªo—ˆ‚é‚ª
-	À‘•‚Í“K“–‚È‚Ì‚Å•Ï‚È“®‚«‚ğ‚·‚é‚©‚à‚µ‚ê‚È‚¢
+	ãƒ¡ãƒ‹ãƒ¥ãƒ¼è¡¨ç¤ºæ™‚ã«ã‚¹ãƒ¬ãƒƒãƒ‰åœæ­¢ã™ã‚‹ã‚ˆã†ã«è¨­å®šã—ãŸå ´åˆ
+	ã“ã‚Œã‚’ä½¿ã†ã¨ãƒ€ãƒ–ãƒ«ãƒãƒƒãƒ•ã‚¡ãƒªãƒ³ã‚°ã®ã‚ˆã†ãªã“ã¨ãŒå‡ºæ¥ã‚‹ãŒ
+	å®Ÿè£…ã¯é©å½“ãªã®ã§å¤‰ãªå‹•ãã‚’ã™ã‚‹ã‹ã‚‚ã—ã‚Œãªã„
 	
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
  */
 void libmSwapBuffers( int bufsync );
 
 /*  libmClearBuffers
-    libmRender ‚Å•`‰æ‚Ég‚¤ƒoƒbƒtƒ@[‚ğƒNƒŠƒAi•Fj
+    libmRender ã§æç”»ã«ä½¿ã†ãƒãƒƒãƒ•ã‚¡ãƒ¼ã‚’ã‚¯ãƒªã‚¢ï¼ˆé»’è‰²ï¼‰
     
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
  */
 void libmClearBuffers();
 
 
 /*  libmPrint
 	
-	libmenu‚Ì“à•”ƒtƒHƒ“ƒg‚ğg‚Á‚Ä •¶š—ñ ‚ğ•`‰æ‚·‚é
+	libmenuã®å†…éƒ¨ãƒ•ã‚©ãƒ³ãƒˆã‚’ä½¿ã£ã¦ æ–‡å­—åˆ— ã‚’æç”»ã™ã‚‹
 	
 	@params : int x
-	•\¦ˆÊ’u X
+	è¡¨ç¤ºä½ç½® X
 	
 	@params : int y
-	•\¦ˆÊ’u Y
+	è¡¨ç¤ºä½ç½® Y
 	
 	@params : unsigned int fg
-	ƒtƒHƒ“ƒgF(32bit)
-	0 ‚¾‚Æ•`‰æ‚µ‚È‚¢
+	ãƒ•ã‚©ãƒ³ãƒˆè‰²(32bit)
+	0 ã ã¨æç”»ã—ãªã„
 	
 	@params : unsigned int bg
-	”wŒiF(32bit)
-	0 ‚¾‚Æ•`‰æ‚µ‚È‚¢
+	èƒŒæ™¯è‰²(32bit)
+	0 ã ã¨æç”»ã—ãªã„
 	
 	@params : const char *str
-    •`‰æ‘ÎÛ •¶š—ñ
+    æç”»å¯¾è±¡ æ–‡å­—åˆ—
     
-    @return: •`‰æ‚µ‚½•¶š”
+    @return: æç”»ã—ãŸæ–‡å­—æ•°
     
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
  */
 inline int libmPrint( int x, int y, u32 fg, u32 bg, const char *str );
 
 
 /*  libmPrintf
 	
-	libmenu‚Ì“à•”ƒtƒHƒ“ƒg‚ğg‚Á‚Ä ‘®•t‚«•¶š—ñ ‚ğ•`‰æ‚·‚é
+	libmenuã®å†…éƒ¨ãƒ•ã‚©ãƒ³ãƒˆã‚’ä½¿ã£ã¦ æ›¸å¼ä»˜ãæ–‡å­—åˆ— ã‚’æç”»ã™ã‚‹
 	
 	@params : int x
-	•\¦ˆÊ’u X
+	è¡¨ç¤ºä½ç½® X
 	
 	@params : int y
-	•\¦ˆÊ’u Y
+	è¡¨ç¤ºä½ç½® Y
 	
 	@params : unsigned int fg
-	ƒtƒHƒ“ƒgF(32bit)
-	0 ‚¾‚Æ•`‰æ‚µ‚È‚¢
+	ãƒ•ã‚©ãƒ³ãƒˆè‰²(32bit)
+	0 ã ã¨æç”»ã—ãªã„
 	
 	@params : unsigned int bg
-	”wŒiF(32bit)
-	0 ‚¾‚Æ•`‰æ‚µ‚È‚¢
+	èƒŒæ™¯è‰²(32bit)
+	0 ã ã¨æç”»ã—ãªã„
 	
 	@params : char *buf
-	‘®‚©‚ç•¶š—ñ‚ğ¶¬‚·‚éÛ‚Ég‚í‚ê‚éƒoƒbƒtƒ@[
+	æ›¸å¼ã‹ã‚‰æ–‡å­—åˆ—ã‚’ç”Ÿæˆã™ã‚‹éš›ã«ä½¿ã‚ã‚Œã‚‹ãƒãƒƒãƒ•ã‚¡ãƒ¼
 	
 	@params : int bufLen
-	ƒoƒbƒtƒ@[ƒTƒCƒYichar *bufj
+	ãƒãƒƒãƒ•ã‚¡ãƒ¼ã‚µã‚¤ã‚ºï¼ˆchar *bufï¼‰
 	
 	@params : format, ...
-    •`‰æ‘ÎÛ ‘®•t‚« •¶š—ñ
+    æç”»å¯¾è±¡ æ›¸å¼ä»˜ã æ–‡å­—åˆ—
     
-    @return: •`‰æ‚µ‚½•¶š”
+    @return: æç”»ã—ãŸæ–‡å­—æ•°
     
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
  */
 inline int libmPrintf( int x, int y, u32 fg, u32 bg, char *buf ,int bufLen ,const char *format, ... );
 
 /*  libmPutChar
 	
-	libmenu‚Ì“à•”ƒtƒHƒ“ƒg‚ğg‚Á‚Ä •¶š ‚ğ•`‰æ‚·‚é
+	libmenuã®å†…éƒ¨ãƒ•ã‚©ãƒ³ãƒˆã‚’ä½¿ã£ã¦ æ–‡å­— ã‚’æç”»ã™ã‚‹
 	
 	@params : int x
-	•\¦ˆÊ’u X
+	è¡¨ç¤ºä½ç½® X
 	
 	@params : int y
-	•\¦ˆÊ’u Y
+	è¡¨ç¤ºä½ç½® Y
 	
 	@params : unsigned int fg
-	ƒtƒHƒ“ƒgF(32bit)
-	0 ‚¾‚Æ•`‰æ‚µ‚È‚¢
+	ãƒ•ã‚©ãƒ³ãƒˆè‰²(32bit)
+	0 ã ã¨æç”»ã—ãªã„
 	
 	@params : unsigned int bg
-	”wŒiF(32bit)
-	0 ‚¾‚Æ•`‰æ‚µ‚È‚¢
+	èƒŒæ™¯è‰²(32bit)
+	0 ã ã¨æç”»ã—ãªã„
 	
 	@params : const char *str
-    •`‰æ‘ÎÛ •¶š
+    æç”»å¯¾è±¡ æ–‡å­—
     
-    @return: •`‰æ‚µ‚½•¶š”
+    @return: æç”»ã—ãŸæ–‡å­—æ•°
     
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
  */
 inline int libmPutChar( int x, int y, u32 fg, u32 bg, const char chr );
 
 
 /*	libmLine
-	‰æ–Ê‚Éü‚ğ•`‰æ‚·‚é
+	ç”»é¢ã«ç·šã‚’æç”»ã™ã‚‹
 	
 	@params : int sx
-	•`‰æŠJnˆÊ’uX
+	æç”»é–‹å§‹ä½ç½®X
 	
 	@params : int sy
-	•`‰æŠJnˆÊ’uY
+	æç”»é–‹å§‹ä½ç½®Y
 	
 	@params : int ex
-	•`‰æI—¹ˆÊ’uX
+	æç”»çµ‚äº†ä½ç½®X
 	
 	@params : int ey
-	•`‰æI—¹ˆÊ’uY
+	æç”»çµ‚äº†ä½ç½®Y
     
 	@params : u32 color
-	•`‰æF(32bit)
+	æç”»è‰²(32bit)
 	
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline void libmLine( int sx, int sy, int ex, int ey, u32 color );
 
 
 /*	libmPoint
-	‰æ–Ê‚É“_‚ğ•`‰æ‚·‚é
-	¦w’è‚µ‚½32bitF‚ğŒ»İ‚Ì‰æ–Êİ’è‚É‡‚í‚¹‚Ä©“®•ÏŠ·‚µ‚Ä
+	ç”»é¢ã«ç‚¹ã‚’æç”»ã™ã‚‹
+	â€»æŒ‡å®šã—ãŸ32bitè‰²ã‚’ç¾åœ¨ã®ç”»é¢è¨­å®šã«åˆã‚ã›ã¦è‡ªå‹•å¤‰æ›ã—ã¦
 	
 	@params : void *adr
-	•`‰æ‚·‚éVRAMƒAƒhƒŒƒX
-	(libmMakeDrawAddr‚ÅÀ•W‚ğƒAƒhƒŒƒX‚Ö•ÏŠ·)
+	æç”»ã™ã‚‹VRAMã‚¢ãƒ‰ãƒ¬ã‚¹
+	(libmMakeDrawAddrã§åº§æ¨™ã‚’ã‚¢ãƒ‰ãƒ¬ã‚¹ã¸å¤‰æ›)
 	
 	@params : u32 color
-	•`‰æF(32bit)
+	æç”»è‰²(32bit)
     
-    g—p—á
+    ä½¿ç”¨ä¾‹
     
     if( libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME) )
     {
- 		//X=50,Y=100‚ÌˆÊ’u‚ÉÔ‚¢“_‚ğ•`‰æ‚·‚é
+ 		//X=50,Y=100ã®ä½ç½®ã«èµ¤ã„ç‚¹ã‚’æç”»ã™ã‚‹
  		void *adr = libmMakeDrawAddr(50,100);
  		u32 color = libmMake32bitColor(255,0,0,255);
     	libmPoint(adr,color);
     }
     
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline void libmPoint( void *adr, u32 src );
 
 
 /*	libmPointEx
-	‰æ–Ê‚É“_‚ğ•`‰æ‚·‚é
-	¦‰æ–Êİ’è‚É‡‚í‚¹‚Ä•ÏŠ·Ï‚İ‚ÌF‚ğw’è
+	ç”»é¢ã«ç‚¹ã‚’æç”»ã™ã‚‹
+	â€»ç”»é¢è¨­å®šã«åˆã‚ã›ã¦å¤‰æ›æ¸ˆã¿ã®è‰²ã‚’æŒ‡å®š
 	
 	@params : void *adr
-	•`‰æ‚·‚éVRAMƒAƒhƒŒƒX
-	(libmMakeDrawAddr‚ÅÀ•W‚ğƒAƒhƒŒƒX‚Ö•ÏŠ·)
+	æç”»ã™ã‚‹VRAMã‚¢ãƒ‰ãƒ¬ã‚¹
+	(libmMakeDrawAddrã§åº§æ¨™ã‚’ã‚¢ãƒ‰ãƒ¬ã‚¹ã¸å¤‰æ›)
 	
 	@params : u32 color
-	‰æ–Êİ’è‚É‡‚í‚¹‚Ä•ÏŠ·Ï‚İ‚Ì•`‰æF
+	ç”»é¢è¨­å®šã«åˆã‚ã›ã¦å¤‰æ›æ¸ˆã¿ã®æç”»è‰²
 	
     
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline void libmPointEx( void *adr, u32 src );
 
 /*	libmFillRect
-	w’è”ÍˆÍ‚ğw’èF‚Å“h‚è‚Â‚Ô‚·
+	æŒ‡å®šç¯„å›²ã‚’æŒ‡å®šè‰²ã§å¡—ã‚Šã¤ã¶ã™
 	
 	@params : int sx
-	ŠJnˆÊ’uX (0-480)
+	é–‹å§‹ä½ç½®X (0-480)
 	
 	@params : int sy
-	ŠJnˆÊ’uY (0-272)
+	é–‹å§‹ä½ç½®Y (0-272)
 	
 	@params : int ex
-	I—¹ˆÊ’uX (0-480)
+	çµ‚äº†ä½ç½®X (0-480)
 	
 	@params : int ey
-	I—¹ˆÊ’uY (0-272)
+	çµ‚äº†ä½ç½®Y (0-272)
 	
 	@params : u32 color
-	•`‰æF(32bit)
+	æç”»è‰²(32bit)
 	
     
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline void libmFillRect( int sx, int sy, int ex, int ey, u32 color );
 
 
 
 /*	libmCircle
-	‰æ–Ê‚É‰~‚ğ•`‰æ‚·‚é
+	ç”»é¢ã«å††ã‚’æç”»ã™ã‚‹
 	
 	@params : int x
-	ŠJnˆÊ’uX (0-480)
+	é–‹å§‹ä½ç½®X (0-480)
 	
 	@params : int y
-	ŠJnˆÊ’uY (0-272)
+	é–‹å§‹ä½ç½®Y (0-272)
 	
 	@params : u32 radius
-	‰~‚Ì”¼Œa
+	å††ã®åŠå¾„
 	
 	@params : u32 color
-	•`‰æF(32bit)
+	æç”»è‰²(32bit)
 	
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline void libmCircle( int x, int y, u32 radius, u32 color );
 
 
 
 /*	libmFrame
-	‰æ–Ê‚É˜g‚ğ•`‰æ‚·‚é
+	ç”»é¢ã«æ ã‚’æç”»ã™ã‚‹
 	
 	@params : int sx
-	ŠJnˆÊ’uX (0-480)
+	é–‹å§‹ä½ç½®X (0-480)
 	
 	@params : int sy
-	ŠJnˆÊ’uY (0-272)
+	é–‹å§‹ä½ç½®Y (0-272)
 	
 	@params : int ex
-	I—¹ˆÊ’uX (0-480)
+	çµ‚äº†ä½ç½®X (0-480)
 	
 	@params : int ey
-	I—¹ˆÊ’uY (0-272)
+	çµ‚äº†ä½ç½®Y (0-272)
 	
 	@params : u32 color
-	•`‰æF(32bit)
+	æç”»è‰²(32bit)
 	
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline void libmFrame( int sx, int sy, int ex, int ey, u32 color );
 
 /*	libmMakeDrawAddr
-	À•W‚ğŒ»İ‚Ì‰æ–Êİ’è‚É‡‚í‚¹‚ÄVRAMƒAƒhƒŒƒX‚É•ÏŠ·‚·‚é
+	åº§æ¨™ã‚’ç¾åœ¨ã®ç”»é¢è¨­å®šã«åˆã‚ã›ã¦VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã«å¤‰æ›ã™ã‚‹
 	
 	@params : int x
-	•`‰æˆÊ’uX (0-480)
+	æç”»ä½ç½®X (0-480)
 	
 	@params : int y
-	•`‰æˆÊ’uY (0-272)
+	æç”»ä½ç½®Y (0-272)
 	
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline void* libmMakeDrawAddr( int x, int y );
 
 /*	libmConvert8888_XXXX
-	32bitF(R:8 G:8 B:8 A:8)‚ğŠeƒtƒH[ƒ}ƒbƒg‚ÌF‚Ö•ÏŠ·‚·‚é
+	32bitè‰²(R:8 G:8 B:8 A:8)ã‚’å„ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã®è‰²ã¸å¤‰æ›ã™ã‚‹
 	
 	@params : u32 src
-	•ÏŠ·Œ³‚ÌF
+	å¤‰æ›å…ƒã®è‰²
 	
-    @return: w’èƒtƒH[ƒ}ƒbƒg‚Ö•ÏŠ·‚³‚ê‚½F
+    @return: æŒ‡å®šãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã¸å¤‰æ›ã•ã‚ŒãŸè‰²
 */
 inline u32 libmConvert8888_5650( u32 src );
 inline u32 libmConvert8888_5551( u32 src );
 inline u32 libmConvert8888_4444( u32 src );
 
 /*	libmConvertXXXX_8888
-	ŠeƒtƒH[ƒ}ƒbƒg‚ÌF‚ğ32bitF(R:8 G:8 B:8 A:8)‚Ö•ÏŠ·‚·‚é
+	å„ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã®è‰²ã‚’32bitè‰²(R:8 G:8 B:8 A:8)ã¸å¤‰æ›ã™ã‚‹
 	
 	@params : u32 src
-	•ÏŠ·Œ³‚ÌF
+	å¤‰æ›å…ƒã®è‰²
 	
-    @return: •ÏŠ·‚³‚ê‚½32bitF(8888ƒtƒH[ƒ}ƒbƒg)
+    @return: å¤‰æ›ã•ã‚ŒãŸ32bitè‰²(8888ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ)
 */
 inline u32 libmConvert4444_8888(u32 src);
 inline u32 libmConvert5551_8888(u32 src);
@@ -1000,20 +1000,20 @@ inline u32 libmConvert5650_8888(u32 src);
 
 
 /*	libmAlphaBlendXXXX
-	ŠeƒtƒH[ƒ}ƒbƒg‚ÌF(srcAdst)‚Éƒ¿ƒuƒŒƒ“ƒh‚·‚é
+	å„ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã®è‰²(srcã€dst)ã«Î±ãƒ–ãƒ¬ãƒ³ãƒ‰ã™ã‚‹
 	
 	@params : u8 alpha
-	ƒuƒŒƒ“ƒh‚·‚éƒAƒ‹ƒtƒ@’l (0-255)
+	ãƒ–ãƒ¬ãƒ³ãƒ‰ã™ã‚‹ã‚¢ãƒ«ãƒ•ã‚¡å€¤ (0-255)
 	
 	@params : u32 src
-	ƒuƒŒƒ“ƒh‚·‚éFiŒ³j
-	¦ƒsƒNƒZƒ‹ƒtƒH[ƒ}ƒbƒg‚É‡‚í‚¹‚Ä•ÏŠ·Ï‚İ‚ÌF
+	ãƒ–ãƒ¬ãƒ³ãƒ‰ã™ã‚‹è‰²ï¼ˆå…ƒï¼‰
+	â€»ãƒ”ã‚¯ã‚»ãƒ«ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã«åˆã‚ã›ã¦å¤‰æ›æ¸ˆã¿ã®è‰²
 	
 	@params : u32 dst
-	ƒuƒŒƒ“ƒh‚·‚éFiæj
-	¦ƒsƒNƒZƒ‹ƒtƒH[ƒ}ƒbƒg‚É‡‚í‚¹‚Ä•ÏŠ·Ï‚İ‚ÌF
+	ãƒ–ãƒ¬ãƒ³ãƒ‰ã™ã‚‹è‰²ï¼ˆå…ˆï¼‰
+	â€»ãƒ”ã‚¯ã‚»ãƒ«ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã«åˆã‚ã›ã¦å¤‰æ›æ¸ˆã¿ã®è‰²
 	
-    @return: ƒ¿ƒuƒŒƒ“ƒh‚³‚ê‚½F
+    @return: Î±ãƒ–ãƒ¬ãƒ³ãƒ‰ã•ã‚ŒãŸè‰²
 */
 inline u32 libmAlphaBlend8888( u8 alpha, u32 src, u32 dst );
 inline u32 libmAlphaBlend4444( u8 alpha, u32 src, u32 dst );
@@ -1023,7 +1023,7 @@ inline u32 libmAlphaBlend5650( u8 alpha, u32 src, u32 dst );
 
 
 /*	libmMake32bitColor
-	RGBA‚©‚ç32bit(8888ƒtƒH[ƒ}ƒbƒg)‚ÌF‚ğ¶¬‚·‚é
+	RGBAã‹ã‚‰32bit(8888ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ)ã®è‰²ã‚’ç”Ÿæˆã™ã‚‹
 	
 	@params : u8 R
 	Color Red (0-255)
@@ -1037,52 +1037,52 @@ inline u32 libmAlphaBlend5650( u8 alpha, u32 src, u32 dst );
 	@params : u8 A
 	Alpha (0-255)
 	
-	@return : 8888ƒtƒH[ƒ}ƒbƒg‚Ì32bitF
+	@return : 8888ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã®32bitè‰²
 */
 #define	libmMake32bitColor(R,G,B,A)	 ((R & 255) | ((G & 255) << 8) | ((B & 255) << 16) | ((A & 255) << 24))
 
 
 /*	libmGetColor
-	w’è‚µ‚½À•WXY‚©‚ç•`‰æF‚ğæ“¾
+	æŒ‡å®šã—ãŸåº§æ¨™XYã‹ã‚‰æç”»è‰²ã‚’å–å¾—
 	
 	@params : int x
-	À•WX(0-480)
+	åº§æ¨™X(0-480)
 	
 	@params : int y
-	À•WX(0-272)
+	åº§æ¨™X(0-272)
 	
-	@return : w’è‚µ‚½À•W‚©‚ç“¾‚½F
+	@return : æŒ‡å®šã—ãŸåº§æ¨™ã‹ã‚‰å¾—ãŸè‰²
 	
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 inline u32 libmGetColor(void *addr);
 
 
 /*	libmGetCurVInfo
-	libmenu Še•`‰æŠÖ”‚Åg‚í‚ê‚Ä‚¢‚éŒ»İ‚ÌŠeİ’è‚ğæ“¾
-	¦æ“¾o—ˆ‚éî•ñ‚É‚Â‚¢‚Ä‚Í libm_vram_info ‚Ì’è‹`•”•ª‚ğQÆ
+	libmenu å„æç”»é–¢æ•°ã§ä½¿ã‚ã‚Œã¦ã„ã‚‹ç¾åœ¨ã®å„è¨­å®šã‚’å–å¾—
+	â€»å–å¾—å‡ºæ¥ã‚‹æƒ…å ±ã«ã¤ã„ã¦ã¯ libm_vram_info ã®å®šç¾©éƒ¨åˆ†ã‚’å‚ç…§
 	
 	@params : libm_vram_info *info
-	æ“¾æ‚Ì•Ï”
+	å–å¾—å…ˆã®å¤‰æ•°
 	
-	@return : true = ¬Œ÷Afalse = ¸”s
+	@return : true = æˆåŠŸã€false = å¤±æ•—
 	
-	¦–‘O‚É libmInitBuffers ‚ğÀs‚µ‚Ä‚È‚¢‚Æ³í“®ì‚µ‚È‚¢
+	â€»äº‹å‰ã« libmInitBuffers ã‚’å®Ÿè¡Œã—ã¦ãªã„ã¨æ­£å¸¸å‹•ä½œã—ãªã„
 */
 bool libmGetCurVInfo(libm_vram_info *info);
 
 
 /*	libmSetCurVInfo
-	libmenu Še•`‰æŠÖ”‚Åg‚í‚ê‚Ä‚¢‚éŒ»İ‚Ìİ’è‚ğ•ÏX‚·‚é
+	libmenu å„æç”»é–¢æ•°ã§ä½¿ã‚ã‚Œã¦ã„ã‚‹ç¾åœ¨ã®è¨­å®šã‚’å¤‰æ›´ã™ã‚‹
 	
 	@params : format
-	ƒsƒNƒZƒ‹ƒtƒH[ƒ}ƒbƒg
+	ãƒ”ã‚¯ã‚»ãƒ«ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ
 	
 	@params : buf
-	•`‰ææ‚ÌŠî€VRAMƒAƒhƒŒƒX
+	æç”»å…ˆã®åŸºæº–VRAMã‚¢ãƒ‰ãƒ¬ã‚¹
 	
 	@params : width
-	•`‰æ•
+	æç”»å¹…
 */
 void libmSetCurVInfo(int format, void *buf, int width);
 

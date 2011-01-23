@@ -1,7 +1,7 @@
 
 
 /*
-    umd dump‚ÌƒR[ƒh‚ªƒx[ƒX
+    umd dumpã®ã‚³ãƒ¼ãƒ‰ãŒãƒ™ãƒ¼ã‚¹
 */
 
 
@@ -10,8 +10,9 @@
 
 #include <stdbool.h>
 #include <pspctrl.h>
+#include <pspkernel.h>
 
-// ƒ}ƒNƒ‚Ì’è‹`
+// ãƒã‚¯ãƒ­ã®å®šç¾©
 #define CHEACK_KEY (PSP_CTRL_SELECT | PSP_CTRL_START | PSP_CTRL_UP | PSP_CTRL_RIGHT | \
     PSP_CTRL_DOWN | PSP_CTRL_LEFT | PSP_CTRL_LTRIGGER | PSP_CTRL_RTRIGGER | PSP_CTRL_TRIANGLE | \
     PSP_CTRL_CIRCLE | PSP_CTRL_CROSS | PSP_CTRL_SQUARE | PSP_CTRL_NOTE | PSP_CTRL_HOME)
@@ -28,17 +29,17 @@
 #define GET_KEY_NAME(key,str) \
 if( key& PSP_CTRL_SELECT ) strcat(str,"SELECT + "); \
 if( key& PSP_CTRL_START ) strcat(str,"START + "); \
-if( key& PSP_CTRL_UP ) strcat(str,"ª + "); \
-if( key& PSP_CTRL_RIGHT ) strcat(str,"¨ + "); \
-if( key& PSP_CTRL_DOWN ) strcat(str,"« + "); \
-if( key& PSP_CTRL_LEFT ) strcat(str,"© + "); \
+if( key& PSP_CTRL_UP ) strcat(str,"â†‘ + "); \
+if( key& PSP_CTRL_RIGHT ) strcat(str,"â†’ + "); \
+if( key& PSP_CTRL_DOWN ) strcat(str,"â†“ + "); \
+if( key& PSP_CTRL_LEFT ) strcat(str,"â† + "); \
 if( key& PSP_CTRL_LTRIGGER ) strcat(str,"[L] + "); \
 if( key& PSP_CTRL_RTRIGGER ) strcat(str,"[R] + "); \
-if( key& PSP_CTRL_TRIANGLE ) strcat(str,"¢ + "); \
-if( key& PSP_CTRL_CIRCLE ) strcat(str,"› + "); \
-if( key& PSP_CTRL_CROSS ) strcat(str,"~ + "); \
-if( key& PSP_CTRL_SQUARE ) strcat(str,"  + "); \
-if( key& PSP_CTRL_NOTE ) strcat(str,"ô + "); \
+if( key& PSP_CTRL_TRIANGLE ) strcat(str,"â–³ + "); \
+if( key& PSP_CTRL_CIRCLE ) strcat(str,"â—‹ + "); \
+if( key& PSP_CTRL_CROSS ) strcat(str,"Ã— + "); \
+if( key& PSP_CTRL_SQUARE ) strcat(str,"â–¡ + "); \
+if( key& PSP_CTRL_NOTE ) strcat(str,"â™ª + "); \
 if( key& PSP_CTRL_HOME ) strcat(str,"HOME(PS) + "); \
 if( key& PSP_CTRL_HOLD ) strcat(str,"HOLD + "); \
 if( key& PSP_CTRL_SCREEN ) strcat(str,"SCREEN + "); \
@@ -73,15 +74,19 @@ void waitButtonUpEx(unsigned int exception_key);
 bool isButtonDown(unsigned int key);
 
 
-//CHEACK_KEY_2‚Å’è‹`‚³‚ê‚½ƒL[‚¾‚¯get
+//CHEACK_KEY_2ã§å®šç¾©ã•ã‚ŒãŸã‚­ãƒ¼ã ã‘get
 void get_button(SceCtrlData *data);
 
 
-//‘æˆêˆø”‚Ébuffer(SceCtrlData)‚ğ‚í‚½‚·•K—v‚ ‚è
+//ç¬¬ä¸€å¼•æ•°ã«buffer(SceCtrlData)ã‚’ã‚ãŸã™å¿…è¦ã‚ã‚Š
 void wait_button_up(SceCtrlData *data);
 void wait_button_down(SceCtrlData *data,unsigned int key);
 void wait_any_button_down(SceCtrlData *data,unsigned int key);
 void wait_button_up_ex(SceCtrlData *data,unsigned int exception_key);
 bool is_button_down(SceCtrlData *data,unsigned int key);
+
+//made by plum
+//thank you plum
+int Count_Buttons(u32 buttons, int count);
 
 #endif
