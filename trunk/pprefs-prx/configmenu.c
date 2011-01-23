@@ -47,7 +47,7 @@ int config_menu(void)
 {
 	Conf_Key newConfig = config;
 	char *temp;
-	int now_arrow = 0,menuNum = 8;
+	int now_arrow = 0,menuNum = 9;
 	char *lineFeedCodeName[] = {
 		"CR+LF",
 		"LF",
@@ -77,11 +77,14 @@ int config_menu(void)
 		libmPrintf(15, 46 + 8*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "改行コード:%s", lineFeedCodeName[newConfig.lineFeedCode]);
 		libmPrint (15, 46 + 9*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "このプラグインがテキストを書き出すときに使う改行コード(デフォルトはCR+LF)");
 
-		libmPrint (15, 46 +10*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "上記の設定で保存する");
+		libmPrintf(15, 46 + 10*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "デフォルトパス:%s", (newConfig.defaultPath == 0)?"ms0:/seplugins/":"ms0:/plugins/" );
+		libmPrint (15, 46 + 11*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "vsh.txt,game.txt,pops.txtのパス(この項目を変更したら手動でリロードして下さい)");
 
-		libmPrint (15, 46 +12*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "デフォルト値にする");
+		libmPrint (15, 46 +12*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "上記の設定で保存する");
 
-		libmPrint (15, 46 +14*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "やめる");
+		libmPrint (15, 46 +14*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "デフォルト値にする");
+
+		libmPrint (15, 46 +16*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "やめる");
 
 		libmPrintf(5, 46 + now_arrow*2*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, ">");
 
@@ -120,6 +123,10 @@ int config_menu(void)
 					newConfig.lineFeedCode++;
 					if( newConfig.lineFeedCode > 1 ) newConfig.lineFeedCode = 0;
 					break;
+				}else if( now_arrow == 5 ){
+					newConfig.defaultPath++;
+					if( newConfig.defaultPath > 1 ) newConfig.defaultPath = 0;
+					break;
 				}else if( now_arrow == (menuNum -3) ){
 					SUSPEND_THREADS();
 					config = newConfig;
@@ -130,6 +137,7 @@ int config_menu(void)
 						buttonNum[0] = 0;
 						buttonNum[1] = 1;
 					}
+					Set_Default_Path( sepluginsTextPath,config.defaultPath);
 					Write_Conf(ownPath,&newConfig);
 					wait_button_up(&padData);
 					return 0;

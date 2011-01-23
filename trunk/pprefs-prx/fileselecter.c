@@ -16,7 +16,7 @@ extern const char dir_type_sort_default[];
 #define MAX_DISPLAY_NUM 21
 //selectType == 0 通常
 //selectType == 1 ディレクトリも選択できる
-int fileSelecter(char *startPath, dir_t *rtn, char* titleLabel,int selectType, char *dir_type_sort)
+int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectType, char *dir_type_sort)
 {
 	int dir_num,offset,i,now_arrow;
 	u32 beforeButtons = 0;

@@ -159,7 +159,7 @@ bool Get_Bool(const char *str,bool defaultValue)
 
 int Get_LineFeedCode(const char *str)
 {
-	bool rtn = 0;
+	int rtn = 0;
 	
 	if( strcasecmp(str,"CR+LF") == 0 )
 	{
@@ -173,6 +173,32 @@ int Get_LineFeedCode(const char *str)
 	{
 		rtn = 2;
 	}*/
+	
+	return rtn;
+}
+
+int Get_Number(const char *str, int defaultNum, int maxNum)
+{
+	int rtn = defaultNum;
+	
+	if( strcasecmp(str,"0") == 0 )
+	{
+		rtn = 0;
+	}
+	else if(  strcasecmp(str,"1") == 0 )
+	{
+		rtn = 1;
+	}
+	else if(  strcasecmp(str,"2") == 0 )
+	{
+		rtn = 2;
+	}
+	else if(  strcasecmp(str,"3") == 0 )
+	{
+		rtn = 3;
+	}
+	
+	if( rtn > maxNum ) rtn = defaultNum;
 	
 	return rtn;
 }
@@ -245,6 +271,10 @@ int Read_Conf(const char *path, Conf_Key *key)
 			else if(strcasecmp(buf, "LINEFEEDCODE") == 0)
 			{
 				key->lineFeedCode = Get_LineFeedCode(ptr);
+			}
+			else if(strcasecmp(buf, "DEFAULTPATH") == 0)
+			{
+				key->defaultPath = Get_Number(ptr,0,1);
 			}
 			/*
 			else if(strcasecmp(buf, "???") == 0)
@@ -373,6 +403,11 @@ int Write_Conf(const char *path, Conf_Key *key)
 			}
 			sprintf(buf,"LineFeedCode = %s%s", tmp,lineFeedCode[key->lineFeedCode]);
 		}
+		else if(strcasecmp(buf, "DEFAULTPATH") == 0 && (!(flag & 32)) )
+		{
+			flag |= 32;
+			sprintf(buf,"defaultPath = %d%s", key->defaultPath, lineFeedCode[key->lineFeedCode]);
+		}
 		/*
 			else if(strcasecmp(buf, "???") == 0 && (!(flag & ?)) )
 			{
@@ -434,11 +469,18 @@ int Write_Conf(const char *path, Conf_Key *key)
 		}
 		sprintf(buf,"LineFeedCode = %s%s", tmp,lineFeedCode[key->lineFeedCode]);
 		sceIoWrite(fdw,buf,strlen(buf));
-	}	/*
+	}
+	if( (!(flag & 32)) )
+	{
+		flag |= 32;
+		sprintf(buf,"DefaultPath = %d%s", key->defaultPath,lineFeedCode[key->lineFeedCode]);
+		sceIoWrite(fdw,buf,strlen(buf));
+	}
+	/*
 	if( (!(flag & ?)) )
 	{
 		flag |= ?;
-		sprintf(buf,"??? = %s%s", ???, ,lineFeedCode[key->lineFeedCode]);
+		sprintf(buf,"??? = %s%s", ??? ,lineFeedCode[key->lineFeedCode]);
 		sceIoWrite(fdw,buf,strlen(buf));
 	}
 	*/
@@ -461,12 +503,29 @@ void Set_Default_Conf(Conf_Key *key)
 	key->bootMessage = true;
 	key->onePushRestart = false;
 	key->lineFeedCode = 0;
+	key->defaultPath = 0;
 	/*
 	key->??? = ???;
 	*/
 }
-
 //4箇所
+
+
+
+void Set_Default_Path(char path[3][64], int num)
+{
+	if( num == 1 ){
+		strcpy(path[0],"ms0:/plugins/vsh.txt");
+		strcpy(path[1],"ms0:/plugins/game.txt");
+		strcpy(path[2],"ms0:/plugins/pops.txt");
+	}else{
+		strcpy(path[0],"ms0:/seplugins/vsh.txt");
+		strcpy(path[1],"ms0:/seplugins/game.txt");
+		strcpy(path[2],"ms0:/seplugins/pops.txt");
+	}
+}
+
+
 
 
 
