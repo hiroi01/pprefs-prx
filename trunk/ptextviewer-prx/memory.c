@@ -1,3 +1,5 @@
+// from libmenu
+
 #include "memory.h"
 
 void *memoryAlloc( SceSize size )
