@@ -1,10 +1,8 @@
-#ifndef LIBMENU_MENU_H
-#define LIBMENU_MENU_H
+#ifndef LIBMENU_H
+#define LIBMENU_H
 
 #include <stdbool.h>
 #include <pspctrl.h>
-
-
 
 
 #ifdef __cplusplus
@@ -12,28 +10,35 @@ extern "C" {
 #endif
 
 
-// libmExecTCmd で指定可能なコマンド一覧
+
+// libmInitBuffers で第1引数に指定出来るVRAM初期化オプション
 enum
 {
-	LIBM_TCMD_SUSPEND	,	//他スレッドを停止
-	LIBM_TCMD_RESUME	,	//他スレッドを再開
-	LIBM_TCMD_DUMP		,	//他スレッドを停止・再開させる為のセーフリストを作る
-	LIBM_TCMD_GET		,	//他スレッドの停止・再開状態を取得
+	LIBM_DRAW_INIT8888	= 0x01 ,
+	LIBM_DRAW_INIT4444	= 0x02 ,
+	LIBM_DRAW_INIT5650	= 0x04 ,
+	LIBM_DRAW_INIT5551	= 0x08 ,
+	LIBM_DRAW_BLEND		= 0x10 ,
+	LIBM_DRAW_RETURN	= 0x20 ,
 };
 
-#define	LIBM_TSUSPEND			LIBM_TCMD_SUSPEND
-#define	LIBM_TRESUME			LIBM_TCMD_RESUME
+#define	LIBM_FMT_MASK			(LIBM_DRAW_INIT8888 | LIBM_DRAW_INIT4444 | LIBM_DRAW_INIT5650 | LIBM_DRAW_INIT5551)
 
+
+#define	LIBM_DRAW_INIT			(LIBM_FMT_MASK | LIBM_DRAW_RETURN)
+
+//libmDebugScreenSetXYで指定可能なX,Yの最大値
+#define	LIBM_SETX_MAX			59
+#define	LIBM_SETY_MAX			33
+
+//libmenu内部フォントの縦横サイズ
 #define LIBM_CHAR_WIDTH			8
 #define LIBM_CHAR_HEIGHT		8
-
 
 #define	LIBM_NO_DRAW			0
 
 #define	LIBM_VIEW_ALL			false
 #define	LIBM_VIEW_ACTIVE		true
-
-
 
 
 typedef enum
@@ -206,7 +211,6 @@ typedef struct MenuContext
 	struct
 	{
 		bool				Type;			//メニューのタイプ ( true = アクティブな項目のみ , false = 全体 )
-		bool 				StopThread;		//メニュー表示時、他スレッドを停止させるかどうか
 		bool				AutoReturn;		//メニュー最上部・下部で自動ターンするかどうか
 		u32					Lines;			//行間（デフォルト = 1、0だと下線描画が無効に）
 	}MenuInfo;
@@ -238,6 +242,7 @@ typedef struct
 	int	frameSize;		//1画面あたりのサイズ(byte)
 	int	lineSize;		//1ラインあたりのサイズ(byte)
 	u8	pixelSize;		//ピクセルサイズ
+	int opt;
 	
 } libm_vram_info;
 
@@ -400,8 +405,6 @@ bool libmSetOpt(MenuContext* Context , libmOpt *opt );
 	context->HotKey.Down			= PSP_CTRL_DOWN;
 	context->HotKey.Left			= PSP_CTRL_LEFT;
 	context->HotKey.Right			= PSP_CTRL_RIGHT;
-	
-	context->MenuInfo.StopThread	= false;
 	
 	context->MenuInfo.Type			= false;
 	
@@ -655,43 +658,6 @@ MenuItem* libmCreateTriggerButton(libmOpt *opt ,const char* Name);
 
 
 
-/*	#########################################################
-	#					他スレッド操作						#
-	#########################################################
-*/
-
-
-
-/*  libmExecTCmd
-	プラグイン以外のThreadを操作する
-    
-    @params : int cmd
-    
-    以下のコマンドが使えます
-    
-	LIBM_TCMD_SUSPEND	= Thread停止
-	LIBM_TCMD_RESUME	= Thread再開
-	LIBM_TCMD_DUMP		= Threadのセーフリストを作る
-	LIBM_TCMD_GET		= 停止/再開の状態取得
-    
-    @return : 
-	
-	LIBM_TCMD_SUSPEND /	LIBM_TCMD_RESUME / 	LIBM_TCMD_DUMP
-    この3つは要求したコマンドが実行されたかどうか（false/true)
-    
-    LIBM_TCMD_GET を実行して得られる値は
-    LIBM_TSUSPEND、LIBM_TRESUMEのどちらか
-    
-    ※LIBM_TCMD_SUSPEND	/ LIBM_TCMD_RESUME は
-    　事前にセーフリストが作成（LIBM_TCMD_DUMP）されていないと機能しない
-    
-    */
-int libmExecTCmd( int cmd );
-
-
-
-
-
 /*	#############################################################
 	#							描画							#
 	#############################################################
@@ -703,8 +669,19 @@ int libmExecTCmd( int cmd );
 /*  libmInitBuffers
     現在のディスプレイの状態に合わせて描画準備をする
     
-    @param: bool is_blend
-	描画時に各描画色のα（背景透過）を有効にするかどうか
+    @param: int opt
+	準備する際に設定する描画オプション
+	以下から有効にしたい物を設定
+	
+	LIBM_DRAW_INIT8888		ピクセルフォーマット8888で初期化
+	LIBM_DRAW_INIT4444		ピクセルフォーマット4444で初期化
+	LIBM_DRAW_INIT5650		ピクセルフォーマット5650で初期化
+	LIBM_DRAW_INIT5551		ピクセルフォーマット5551で初期化
+	LIBM_DRAW_BLEND			背景透過を有効にする
+	LIBM_DRAW_RETURN		文字が描画位置が画面外だった場合は折り返して表示させる
+	
+	LIBM_DRAW_INIT			ピクセルフォーマット8888、文字は自動折り返しで画面を初期化する
+							主に自作アプリでlibmenuの文字描画関数を pspDebugScreenXXXX の様に使えるようにする
     
     @param: int sync
     同期対象
@@ -712,10 +689,13 @@ int libmExecTCmd( int cmd );
 	PSP_DISPLAY_SETBUF_IMMEDIATE
 	PSP_DISPLAY_SETBUF_NEXTFRAME
 	のどちらかを指定
+	
+	※opt に LIBM_DRAW_INITを指定した場合は、sync に PSP_DISPLAY_SETBUF_NEXTFRAME を指定
     
     @return: true = 成功、false = 失敗
  */
-bool libmInitBuffers( bool is_blend ,int sync );
+bool libmInitBuffers( int opt ,int sync );
+
 
 
 /*  libmSwapBuffers
@@ -727,7 +707,7 @@ bool libmInitBuffers( bool is_blend ,int sync );
 	
 	※事前に libmInitBuffers を実行してないと正常動作しない
  */
-void libmSwapBuffers( int bufsync );
+void libmSwapBuffers();
 
 /*  libmClearBuffers
     libmRender で描画に使うバッファーをクリア（黒色）
@@ -737,9 +717,9 @@ void libmSwapBuffers( int bufsync );
 void libmClearBuffers();
 
 
-/*  libmPrint
+/*  libmPrintXY
 	
-	libmenuの内部フォントを使って 文字列 を描画する
+	libmenuの内部フォントを使って 文字列 を描画する（座標指定あり）
 	
 	@params : int x
 	表示位置 X
@@ -762,12 +742,13 @@ void libmClearBuffers();
     
 	※事前に libmInitBuffers を実行してないと正常動作しない
  */
-inline int libmPrint( int x, int y, u32 fg, u32 bg, const char *str );
+inline int libmPrintXY( int x, int y, u32 fg, u32 bg, const char *str );
 
 
-/*  libmPrintf
+
+/*  libmPrintfXY
 	
-	libmenuの内部フォントを使って 書式付き文字列 を描画する
+	libmenuの内部フォントを使って 書式付き文字列 を描画する（座標指定あり）
 	
 	@params : int x
 	表示位置 X
@@ -796,11 +777,13 @@ inline int libmPrint( int x, int y, u32 fg, u32 bg, const char *str );
     
 	※事前に libmInitBuffers を実行してないと正常動作しない
  */
-inline int libmPrintf( int x, int y, u32 fg, u32 bg, char *buf ,int bufLen ,const char *format, ... );
+inline int libmPrintfXY( int x, int y, u32 fg, u32 bg, char *buf ,int bufLen ,const char *format, ... );
 
-/*  libmPutChar
+
+
+/*  libmPutCharXY
 	
-	libmenuの内部フォントを使って 文字 を描画する
+	libmenuの内部フォントを使って 文字 を描画する（座標指定あり）
 	
 	@params : int x
 	表示位置 X
@@ -823,7 +806,113 @@ inline int libmPrintf( int x, int y, u32 fg, u32 bg, char *buf ,int bufLen ,cons
     
 	※事前に libmInitBuffers を実行してないと正常動作しない
  */
-inline int libmPutChar( int x, int y, u32 fg, u32 bg, const char chr );
+inline int libmPutCharXY( int x, int y, u32 fg, u32 bg, const char chr );
+
+
+
+
+/*  libmDebugScreenInit
+	
+	画面に描画する準備をする
+	pspDebugScreenInit と似たような動作
+ */
+#define	libmDebugScreenInit()		libmInitBuffers(LIBM_DRAW_INIT,PSP_DISPLAY_SETBUF_NEXTFRAME)
+
+
+
+
+/*  libmDebugScreenPrint
+	
+	libmenuの内部フォントを使って 文字列 を描画する（座標指定なし）
+	pspDebugScreenPrintf と似たような動作
+	
+	@params : unsigned int fg
+	フォント色(32bit)
+	0 だと描画しない
+	
+	@params : unsigned int bg
+	背景色(32bit)
+	0 だと描画しない
+	
+	@params : const char *str
+    描画対象 文字列
+    
+    @return: 描画した文字数
+    
+	※事前に libmInitBuffers または libmDebugScreenInit を実行してないと正常動作しない
+ */
+#define	libmDebugScreenPrint(fg,bg,str)							libmPrintXY(-1,-1,fg,bg,str)
+
+
+
+/*  libmDebugScreenPrintf
+	
+	libmenuの内部フォントを使って 書式付き文字列 を描画する（座標指定なし）
+	pspDebugScreenPrintf と似たような動作
+	
+	@params : unsigned int fg
+	フォント色(32bit)
+	0 だと描画しない
+	
+	@params : unsigned int bg
+	背景色(32bit)
+	0 だと描画しない
+	
+	@params : char *buf
+	書式から文字列を生成する際に使われるバッファー
+	
+	@params : int bufLen
+	バッファーサイズ（char *buf）
+	
+	@params : format, ...
+    描画対象 書式付き 文字列
+    
+    @return: 描画した文字数
+    
+	※事前に libmInitBuffers または libmDebugScreenInit を実行してないと正常動作しない
+ */
+#define	libmDebugScreenPrintf(fg,bg,buf,bufLen,format,...)		libmPrintfXY(-1,-1,fg,bg,buf,bufLen,format, __VA_ARGS__)
+
+
+/*  libmDebugScreenPutChar
+	
+	libmenuの内部フォントを使って 文字 を描画する（座標指定なし）
+	pspDebugScreenPrintf と似たような動作
+	
+	@params : unsigned int fg
+	フォント色(32bit)
+	0 だと描画しない
+	
+	@params : unsigned int bg
+	背景色(32bit)
+	0 だと描画しない
+	
+	@params : const char *str
+    描画対象 文字
+    
+    @return: 描画した文字数
+    
+	※事前に libmInitBuffers または libmDebugScreenInit を実行してないと正常動作しない
+ */
+#define	libmDebugScreenPutChar(fg,bg,chr)							libmPrintfXY(-1,-1,fg,bg,chr)
+
+
+/*  libmDebugScreenSetXY
+	
+	座標指定なしの文字/文字列描画関数で
+	描画を開始する位置を指定する
+	
+	@params : int x
+	描画開始位置X　(0 - 59)
+	1文字 8x8 ドットなので1行最大60文字まで
+	
+	@params : int y
+	描画開始位置Y　(0 - 33)
+	1文字 8x8 ドットなので1列最大34文字まで
+    
+    @return: true = 成功、false = 失敗（X/Yどちらかの値が異常）
+ */
+bool libmDebugScreenSetXY( int x ,int y );
 
 
 /*	libmLine
@@ -958,6 +1047,7 @@ inline void libmCircle( int x, int y, u32 radius, u32 color );
 	※事前に libmInitBuffers を実行してないと正常動作しない
 */
 inline void libmFrame( int sx, int sy, int ex, int ey, u32 color );
+
 
 /*	libmMakeDrawAddr
 	座標を現在の画面設定に合わせてVRAMアドレスに変換する

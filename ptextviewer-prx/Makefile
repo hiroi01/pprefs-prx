@@ -4,16 +4,17 @@ BUILD_PRX = 1
 
 OBJS =	\
 	main.o \
-	memory.o \
 	file.o \
+	pprefsmenu.o \
 	button.o \
-	iniconfig.o \
 	exports.o \
-	syslibc.o \
-	strncasecmp.o \
-	qsort.o \
-	thread.o
-
+	thread.o \
+	conf.o \
+	fileselecter.o \
+	syslibc/syslibc.o \
+	syslibc/strncasecmp.o \
+	syslibc/qsort.o \
+	syslibc/memory.o \
 
 PRX_EXPORTS = exports.exp
 USE_KERNEL_LIBC	= 1
@@ -36,11 +37,13 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = libini.a libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm
+LIBS = libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm -lz
 
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 
 all:
-	psp-packer ptextviewer.prx
+	psp-packer *.prx
+clean:
+	\rm *.o *.elf *.prx

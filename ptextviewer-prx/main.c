@@ -1,99 +1,531 @@
 /*
 	
-	Ç†ÇËÇ™Ç∆Ç§ÅA
-	maxemÇ≥ÇÒÅAtakkaÇ≥ÇÒ(ÉAÉãÉtÉ@ÉxÉbÉgèá)
+	„ÅÇ„Çä„Åå„Å®„ÅÜ„ÄÅ
+	maxem„Åï„Çì„ÄÅplum„Åï„Çì„ÄÅtakka„Åï„Çì(„Ç¢„É´„Éï„Ç°„Éô„ÉÉ„ÉàÈ†Ü)
 
 */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdbool.h>
 
+#include <pspkernel.h>
 #include <pspsdk.h>
-#include <pspctrl.h>
-#include <pspdisplay.h>
+#include <psputilsforkernel.h>
+#include <pspsysmem_kernel.h>
+
+#include <systemctrl.h>
+#include <pspinit.h>
+
+#include <psprtc.h>
 
 
-#include "main.h"
+
+#include "common.h"
 #include "libmenu.h"
 #include "memory.h"
 #include "file.h"
 #include "button.h"
 #include "thread.h"
+#include "pprefsmenu.h"
+#include "fileselecter.h"
+#include "language.h"
 
-// ÉÇÉWÉÖÅ[ÉãÇÃíËã`
+// „É¢„Ç∏„É•„Éº„É´„ÅÆÂÆöÁæ©
 PSP_MODULE_INFO( "PTEXTVIEWER", PSP_MODULE_KERNEL, 0, 0 );
 
 
 
-#define INI_PATH "/ptextviewer.ini"
+/*------------------------------------------------------
+ COMMON
+------------------------------------------------------*/
+
+char commonBuf[COMMON_BUF_LEN];
+char sepluginsTextPath[3][64];
+const char *sepluginsBasePath[] = {
+	"ms0:/seplugins/",
+	"ms0:/plugins/"
+};
+Conf_Key config;
+
+//ÊîπË°å„Ç≥„Éº„Éâ
+const char *lineFeedCode[] = { "\r\n", "\n", "\r"};
+
+SceCtrlData padData;
 
 
-#define LEN_PER_LINE 256
-#define MAX_LINE 21
+//buttonNum buttonData„ÅØ,„Éú„Çø„É≥ÂÖ•„ÇåÊõø„Åà„Å´‰Ωø„ÅÜ
+//buttonNum„ÅÆÊï∞Â≠ó„ÇíÂÖ•„ÇåÊõø„Åà„Çå„Å∞ÂΩπÂâ≤„ÇÇÂÖ•„ÇåÊõø„Çè„Çã
+//
+//e.g. 1)
+// if( pad.Buttons & buttonData.flag[butttonNum[0]] )  {  }
+//e.g. 2)
+//printf( "select:%s", buttonData.name[butttonNum[0]] );
+
+struct pprefsButtonDatas buttonData[] = {
+	{PSP_CTRL_CROSS,PB_SYM_PSP_CROSS},
+	{PSP_CTRL_CIRCLE,PB_SYM_PSP_CIRCLE}
+};
+int buttonNum[] = {0,1};
+char ownPath[256];
+
+int now_type = 0;
+
+bool now_state = false; // = true suspending   = false no suspending
+
+
+
+
+/*------------------------------------------------------*/
+
+// http://katsura-kotonoha.sakura.ne.jp/prog/c/tip00010.shtml
+#define jms1(c) \
+(((0x81 <= ((unsigned char)(c))) && (((unsigned char)(c)) <= 0x9F)) || ((0xE0 <= ((unsigned char)(c))) && (((unsigned char)(c)) <= 0xFC) ))
+
+#define jms2(c) \
+((0x7F != (unsigned char)(c)) && (0x40 <= ((unsigned char)(c))) && (((unsigned char)(c)) <= 0xFC))
+
+
+#define MAXDISPLAY_X 60
+#define MAXDISPLAY_Y 28
+
+#define PTXTBUF_SIZE (1024*5 + 1)
+
+enum
+{
+	SELECTED_TOP		= 1,
+	SELECTED_BOTTOM		= 2,
+	TAIL_IS_EOF			= 4,
+	TAIL_IS_N			= 8,
+};
+
+/*-----------------------------------------------------*/
+
+
+int stop_flag;
+
+char *ptxtBuf;
 
 
 
 
 
 
-
+/*----------------------------------------------------------------------------*/
 int module_start( SceSize arglen, void *argp );
 int module_stop( void );
 
 int main_thread( SceSize arglen, void *argp );
-void main_menu(void);
-
-int read_line_file(SceUID fp, char* line, int num);
-
-void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
 
 
-//dir_t *dirBuf = NULL;
-dir_t dirBuf[128];
-
-int stop_flag;
 
 
-SceCtrlData padData;
+
+
+
+/*----------------------------------------------------------------------------*/
+
+
+/*-----------------------------------------------------------------*/
+
+//ÊñáÂ≠óÂàó„Åã„Çâ\r„ÇíÂèñ„ÇäÈô§„Åè
+int remove_r(char *str)
+{
+	int i,j;
+	
+	for( i = 0; str[i] != '\0'; i++ ){
+		if( str[i] == '\r' ){
+			for( j = i; str[j] != '\0'; j++ ) str[j] = str[j+1]; //1ÊñáÂ≠óË©∞„ÇÅ„Çã
+		}
+	}
+	
+	return i;
+}
+
+
+//Ê¨°„ÅÆË°å„ÅÆ„Ç™„Éï„Çª„ÉÉ„Éà„Çíget
+int getOffsetOfTrueNextLine(char *str,int offset)
+{
+	int i;
+	for( i = offset; str[i] != '\0'; i++ ){
+		if( str[i] == '\n' ) return i+1;
+	}
+	//if str[i] == '\0'
+	return offset;
+}
+
+//(Ë°®Á§∫‰∏ä„ÅÆ)Ê¨°„ÅÆË°å„ÅÆ„Ç™„Éï„Çª„ÉÉ„Éà„Çíget
+int getOffsetOfNextLine(char *str,int offset)
+{
+	int i;
+	int count = 0;
+	for( i = offset; str[i] != '\0'; i++ ){
+		if( str[i] == '\n' ) return i+1;
+		//2byteÊñáÂ≠ó„Å™„Çâ
+		if( jms1(str[i]) && jms2(str[i+1]) ) i++;
+		count++;
+		if( count >= MAXDISPLAY_X ) return i+1;
+	}
+	//if str[i] == '\0'
+	return offset;
+}
+
+int getOffsetOfTruePreviousLine(char *str,int offset)
+{
+	int i;
+	for( i = (str[offset-1] == '\n')?(offset-2):(offset-1); i >= 0 && str[i] != '\n' ; i-- );
+	i++;
+	return i;
+}
+
+int getOffsetOfPreviousLine(char *str,int offset)
+{
+	int i,tmp;
+	i = getOffsetOfTruePreviousLine(str, offset);
+	while(1){
+		tmp = getOffsetOfNextLine(str,i);
+		if( tmp == offset ) return i;
+		i = tmp;
+	}
+}
+
+
+//1ÊñáÂ≠óÊèèÁîª
+int pprefsPutChar( int x, int y, u32 fg, u32 bg, const char *str )
+{
+	int ret = 1;
+	char tmp[] = { str[0], str[1], '\0' };
+	if( ! jms1(str[0]) ){//2byteÊñáÂ≠ó„Åò„ÇÉ„Å™„ÅÑ„Å™„Çâ
+		tmp[2] = '\0';
+		ret = 0;
+	}
+	libmPrint( x, y, fg, bg, tmp );
+	return ret;
+}
+
+
+u16  printText(char *ptxtBuf, int headOffset, int end_y)
+{
+	int i,x_count = 0,y_count = 0;
+	
+	
+	for( i = headOffset; ptxtBuf[i] != '\0'; i++ ){
+		if( ptxtBuf[i] == '\n' ){
+			x_count = 0;
+			y_count++;
+			if( y_count >= end_y ) break;
+			continue;
+		}
+		
+		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,36+LIBM_CHAR_HEIGHT*y_count ,FG_COLOR, BG_COLOR, &ptxtBuf[i])
+		   == 1 ) i++; //2byteÊñáÂ≠ó„Å™„Çâ
+		
+		x_count++;
+		if( x_count >= MAXDISPLAY_X ){
+			x_count = 0;
+			y_count++;
+			if( y_count >= end_y ) break;
+		}
+	}
+	
+	return 0;
+	
+}
+
+
+//buf, buf„ÅÆÂßã„Åæ„Çä„ÅÆ‰ΩçÁΩÆ, Âßã„Åæ„Çä„ÅÆË°åÊï∞, ÁèæÂú®„ÅÆÈÅ∏Êäû„Åï„Çå„Å¶„ÅÑ„ÇãË°åÊï∞, y„ÅÆÊúÄÂ§ßÊï∞
+u16  noPrintText(char *ptxtBuf, int headOffset, int lineCount, int selectedLine, int end_y)
+{
+	int i,x_count = 0,y_count = 0,ret = 0;
+	
+	//ÊúÄ‰∏ä„Å´Ë°®Á§∫„Åï„Çå„Å¶„ÅÑ„ÇãË°å„ÅåÈÅ∏Êäû„Åï„Çå„Å¶„ÅÑ„Çã
+	if( selectedLine  == lineCount ) ret |= SELECTED_TOP;
+	
+	for( i = headOffset; ptxtBuf[i] != '\0'; i++ ){
+		if( ptxtBuf[i] == '\n' ){
+			x_count = 0;
+			y_count++;
+			if( y_count >= end_y ) break;
+			lineCount++;
+			continue;
+		}
+		
+		//		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,36+LIBM_CHAR_HEIGHT*y_count ,(lineCount==selectedLine)?RED:FG_COLOR, BG_COLOR, &ptxtBuf[i])
+		//		    == 1 ) i++; //2byteÊñáÂ≠ó„Å™„Çâ
+		if(  jms1(ptxtBuf[i]) ){//2byteÊñáÂ≠ó„Å™„Çâ
+			i++;
+		}
+		
+		
+		x_count++;
+		if( x_count >= MAXDISPLAY_X ){
+			x_count = 0;
+			y_count++;
+			if( y_count >= end_y ) break;
+		}
+	}
+	
+	if( lineCount == selectedLine ) ret |= SELECTED_BOTTOM; //ÊúÄ‰∏ã„Å´Ë°®Á§∫„Åï„Çå„Å¶„ÅÑ„ÇãË°å„ÅåÈÅ∏Êäû„Åï„Çå„Å¶„ÅÑ„Çã
+	if( ptxtBuf[i] == '\0' ) ret |= TAIL_IS_EOF;
+	else if( ptxtBuf[i] == '\n' ) ret |= TAIL_IS_N;
+	
+	return ret;
+}
+
+//start = Ë°å„ÅÆÂÖàÈ†≠„ÅÆ„Ç™„Éï„Çª„ÉÉ„Éà
+//ÊåáÂÆö„Åï„Çå„ÅüË°å„ÇíÂâäÈô§
+void deleteLineOfString(char *str,int start)
+{
+	int i;
+	int flag = 1;
+	
+	while( flag != 0 ){
+		if( str[start] == '\n' ||  str[start] == '\0' ) flag = 0;
+		for( i = start; str[i] != '\0'; i++ ) str[i] = str[i+1]; //1ÊñáÂ≠óË©∞„ÇÅ„Çã
+	}
+}
+
+//Ê∏°„Åï„Çå„ÅüË°å„ÅÆ„Ç≥„É°„É≥„Éà„Ç¢„Ç¶„Éà„ÇíÂÖ•„ÇåÊõø„Åà
+void changeHeadChar(char *str, int start,char c, int maxSize)
+{
+	int i;
+	if( str[start] == c ){
+		for( i = start; str[i] != '\0'; i++ ) str[i] = str[i+1]; //1ÊñáÂ≠óË©∞„ÇÅ„Çã
+	}else{
+		if( start+1 >= maxSize ) return;
+		for( i = strlen(str); i >= start; i-- ) str[i+1] = str[i];//1ÊñáÂ≠óÂè≥„Å´„Ç∑„Éï„Éà
+		str[start] = c;
+	}
+}
 
 /*
-int buttonNumBuf[2];
- = buttonNumBuf;
-*/
+ shift„Å®„ÅÑ„ÅÜ„Çà„Çäswap„Å™Ê∞ó„Åå„Åô„Çã
+ str[start]„ÅÆÊñáÂ≠ó„ÇíÂ∑¶„Å´num„Å†„ÅëÂÖ•„ÇåÊõø„Åà„Åö„Çâ„Åô
+ str = "abcdEf"; start = 4; num = 2;„Å™„Çâ str„ÅØ "abEcdf"„Å´„Å™„Çã / if str = "abcdEf"; start = 4; num = 2; , str will become "abEcdf"
+ */
+void leftShiftChar(char *str, int start, int num)
+{
+	int i;
+	char tmp;
+	for( i = 0; num + i > 0; i-- ){
+		tmp = str[start+i];
+		str[start+i] = str[start+i-1];
+		str[start+i-1] = tmp;
+	}
+}
 
-struct {
-	unsigned int flag;
-	char *name;
-}buttonData[] = {
-	{PSP_CTRL_CROSS,"Å~"},
-	{PSP_CTRL_CIRCLE,"Åõ"}
-};
+void rightShiftChar(char *str, int start, int num)
+{
+	int i;
+	char tmp;
+	for( i = 0; i < num; i++ ){
+		tmp = str[start+i];
+		str[start+i] = str[start+i+1];
+		str[start+i+1] = tmp;
+	}
+}
+
+//‰∏çÊ≠£„Å™ÊñáÂ≠óÂàó„ÇíÊ∏°„Åô„Å®„Å©„ÅÜ„Å™„Çã„ÅãÂàÜ„Åã„Çâ„Å™„ÅÑ
+//str = "abcdefg\nhijklmn\nopqrstu\0" „ÅÆ„Çà„ÅÜ„Å™„Çø„Ç§„Éó„ÅÆÊñáÂ≠óÂàó„ÅÆË°å„ÇíÂÖ•„ÇåÊõø„Åà„Çã
+void swapLineOfString(char *str, int first, int second)
+{
+	char tmp;
+	int i,shiftNum;
+	
+	i = 0;
+	while(1){
+		tmp = str[first+i];
+		str[first+i] = str[second+i];
+		str[second+i] = tmp;
+		
+		if( str[first+i] == '\n' || str[first+i] == '\0' || str[second+i] == '\n' || str[second+i] == '\0' ) break;
+		i++;
+	}
+	
+	if( str[second+i] == '\n' || str[second+i] == '\0' ){
+		i = second + i + 1;
+		shiftNum = i-second;
+		tmp = 1;//tmp is used as flag here
+		while( tmp != 0 ){
+			if( str[i] == '\n' || str[i] == '\0' ) tmp = 0;
+			leftShiftChar(str,i,shiftNum);
+			i++;
+		}
+	}else if( str[first+i] == '\n' || str[first+i] == '\0'){
+		i = first + i + 1;
+		shiftNum = second - first -1;
+		tmp = 1;//tmp is used as flag here
+		while( tmp != 0 ){
+			if( str[i] == '\n' || str[i] == '\0'  ) tmp = 0;
+			rightShiftChar(str,i,shiftNum);
+		}
+	}
+	
+}
+
+int getNumberOfLineOfString(char *str)
+{
+	int lineCount = 0,i = 0;
+	
+	for( i = 0; str[i] != '\0'; i++ ){
+		if( str[i] == '\n' ) lineCount++;
+	}
+	lineCount++;
+	return lineCount;
+}
+int getOffsetOfSelecteLine(char *str, int selectedLine)
+{
+	int i,tmp;
+	i = 0;
+	tmp = 0;
+	while( i != selectedLine ){
+		tmp = getOffsetOfTrueNextLine(str, tmp);
+		i++;
+	}
+	return tmp;
+}
+
+int getNumberOfLineOfStringFormOffset(char *str, int offset)
+{
+	int lineCount = 0,i = 0;
+	
+	for( i = 0; i <= offset; i++ ){
+		if( str[i] == '\n' ) lineCount++;
+	}
+	//	lineCount++;
+	return lineCount;
+}
 
 
-int buttonNum[2] = {0,1};
 
-#define COMMON_BUF_LEN 256
-char commonBuf[COMMON_BUF_LEN];
-
-#define libmPrintf(x,y,fg,bg,format, ... ) libmPrintf(x,y,fg,bg,commonBuf,COMMON_BUF_LEN,format, ##__VA_ARGS__)
-
+/*---------------------------------------------------------------------------*/
+int main_menu()
+{
+	wait_button_up(&padData);
 
 
-char ownPath[256];
+		
+	SceUID fd;
+	int readSize,headOffset,i;
+	u32 beforeButtons;
+	clock_t timesec;
 
-char currentPath[256] = "ms0:/";
+	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
 
+	libmClearBuffers();
+	libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); 
+
+	if( ptxtBuf == NULL ){
+		ptxtBuf = malloc(PTXTBUF_SIZE);
+		if( ptxtBuf == NULL ) return -1;
+	}
+
+SELECTFILE:
+
+
+	if( fileSelecter(config.startPath,&dirTmp, PTXTMSG_SELECTER_TITLE, 0, NULL) != 0 ){
+		RESUME_THREADS();
+		return 0;
+	}
+	SUSPEND_THREADS();
+	 
+	fd = sceIoOpen(dirTmp.name, PSP_O_RDONLY, 0777);
+	if( fd < 0 ){
+		RESUME_THREADS();
+		return -2;
+	}
+	readSize = sceIoRead(fd, ptxtBuf, PTXTBUF_SIZE - 1);
+	sceIoClose(fd);
+	if( readSize < 0 ){
+		RESUME_THREADS();
+		return -3;
+	}
+	ptxtBuf[readSize] = '\0';
+	
+	readSize = remove_r(ptxtBuf);
+	
+	headOffset = 0;
+	beforeButtons = 0;
+	timesec = 0;
+	
+	
+	PRINT_SCREEN();
+	libmPrint(24, 22,  FG_COLOR,BG_COLOR ,PTXTMSG_VIEW_TOP);
+	libmPrint (0, 264, FG_COLOR,BG_COLOR, PTXTMSG_VIEW_HOTOUSE);
+	
+	
+	while(1){
+		
+		
+		libmFillRect( 0 , 31 , 480 , 263 , BG_COLOR); 
+
+		printText(ptxtBuf, headOffset, MAXDISPLAY_Y );
+		
+		
+		if( beforeButtons == 0 ) wait_button_up(&padData);
+		while(1){
+			get_button(&padData);
+			if( padData.Buttons & PSP_CTRL_UP && headOffset != 0 ){
+				if( beforeButtons & PSP_CTRL_UP ){
+					if( (sceKernelLibcClock() - timesec) >= (2 * 100 * 1000) ){
+						timesec = sceKernelLibcClock();
+					}else{
+						continue;
+					}
+				}else{
+					beforeButtons = PSP_CTRL_UP;
+					timesec = sceKernelLibcClock();
+				}
+				
+				headOffset = getOffsetOfPreviousLine(ptxtBuf,headOffset);
+				break;
+			}else if( padData.Buttons & PSP_CTRL_DOWN ){
+				if( beforeButtons & PSP_CTRL_DOWN ){
+					if( (sceKernelLibcClock() - timesec) >= (2 *100 * 1000) ){
+						timesec = sceKernelLibcClock();
+					}else{
+						continue;
+					}
+				}else{
+					beforeButtons = PSP_CTRL_DOWN;
+					timesec = sceKernelLibcClock();
+				}
+				
+				headOffset = getOffsetOfNextLine(ptxtBuf,headOffset);
+				
+				
+				break;
+			}else if( padData.Buttons & PSP_CTRL_HOME ){
+				wait_button_up(&padData);
+				goto SELECTFILE;//gotoÊñá„Å£„Å¶‰Ωø„Å£„Å°„ÇÉ„Å†„ÇÅ„Åã„Å™?
+			}else if( padData.Buttons & PSP_CTRL_RTRIGGER ){
+				beforeButtons = PSP_CTRL_RTRIGGER;
+				
+				while(1){
+					i = getOffsetOfNextLine(ptxtBuf,headOffset);
+					if( i == headOffset ) break;
+					headOffset = i;
+				}
+				
+				wait_button_up(&padData);
+				break;
+			}else if( padData.Buttons & PSP_CTRL_LTRIGGER ){				
+				beforeButtons = PSP_CTRL_LTRIGGER;
+				
+				headOffset = 0;
+				
+				wait_button_up(&padData);
+				break;
+			}else{
+				beforeButtons = 0;
+			}
+		}
+	}
+	
+	return 0;
+}
 
 
 int main_thread( SceSize arglen, void *argp )
 {
-	unsigned int key;
-
 	
-
 	while( 1 )
 	{
 		if(
@@ -111,254 +543,36 @@ int main_thread( SceSize arglen, void *argp )
 		sceKernelDelayThread(1000);
 	}
 	
-//	Get_FirstThreads();
 
-
-	strcpy(ownPath, argp);
-
-	key = PSP_CTRL_RTRIGGER | PSP_CTRL_LTRIGGER | PSP_CTRL_NOTE;
-
+	Read_Conf(argp,&config);
+	if( config.startPath[strlen(config.startPath)-1] != '/' ) strcat(config.startPath,"/");
+	
+	
+	padData.Buttons = 0;
+	
 	
 	while( stop_flag ){
 		sceKernelDelayThread( 50000 );
 		sceCtrlPeekBufferPositive( &padData, 1 );
-		if((padData.Buttons & key) == key){
+		if((padData.Buttons & config.bootKey) == config.bootKey){
 			main_menu();
 		}
-
 	}
 
   return 0;
 }
 
-#define MAX_DISPLAY_NUM 21
-
-#define PRINT_SCREEN() \
-libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(13,5,FG_COLOR,BG_COLOR,"ptextviewer É¿ Ver. 0.01   by hiroi01");
-
-#define fillLine(sy,color) libmFillRect( 0 , sy , 480 , sy + LIBM_CHAR_HEIGHT ,color);
-
-
-// http://katsura-kotonoha.sakura.ne.jp/prog/c/tip00010.shtml
-
-#define jms1(c) \
-(((0x81 <= ((unsigned char)(c))) && (((unsigned char)(c)) <= 0x9F)) || ((0xE0 <= ((unsigned char)(c))) && (((unsigned char)(c)) <= 0xFC) ))
-
-#define jms2(c) \
-((0x7F != (unsigned char)(c)) && (0x40 <= ((unsigned char)(c))) && (((unsigned char)(c)) <= 0xFC))
-
-#define MAX_LINE_NUM 28
-
-
-void text_viewer(char *path)
-{
-	SceUID fd;
-	int readSize,x_count,y_count,i;
-	char buf[129];
-	char tmp[3];// 60ï∂éö * 2byteï∂éö + \0 = 121
-	
-
-	
-	PRINT_SCREEN();
-	libmPrintf(5,264,FG_COLOR,BG_COLOR," HOME:èIóπ ",buttonData[buttonNum[0]].name);
-	libmPrint(5,20,FG_COLOR,BG_COLOR,path);
-	libmFillRect( 0 , 30 , 480 , 32 ,FG_COLOR);
-	
-	
-	
-	fd = sceIoOpen(path,PSP_O_RDONLY, 0777);
-	if( fd < 0 ){
-		libmPrint( 0 , 38 , FG_COLOR , BG_COLOR ,"ÉtÉ@ÉCÉãÇÃì«Ç›çûÇ›Ç…é∏îsÇµÇ‹ÇµÇΩ");
-		while(1){
-			get_button(&padData);
-			if( padData.Buttons & PSP_CTRL_HOME ){
-				return;
-			}
-		}
-	}
-	
-	x_count = 0; y_count = 0;
-	while(1){
-		
-		readSize = sceIoRead( fd, buf, 128 );
-		if( readSize <= 0 ) break;
-
-		i = 0;
-		while(  i < readSize  ){
-			
-			//2ÉoÉCÉgï∂éöÇÃ1ï∂éöñ⁄
-			if( jms1(buf[i]) ){
-				if( !( (i + 1) < readSize ) ){
-					sceIoLseek(fd, -1, SEEK_CUR);
-					break;
-				}else{
-					tmp[0] = buf[i];
-					tmp[1] = buf[i+1];
-					tmp[2] = '\0';
-					i += 2;
-				}
-			//2ÉoÉCÉgï∂éöÇÃ2ï∂éöñ⁄ Ç±ÇÃèåèÇ…à¯Ç¡Ç©Ç©Ç¡ÇΩÇÁÉoÉO
-			}else if( buf[i] == '\n'){
-				x_count = 0;
-				y_count++;
-				if( y_count >= MAX_LINE_NUM ) break;
-				i++;
-				continue;
-			}else{
-				tmp[0] = buf[i];
-				tmp[1] = '\0';
-				i++;
-			}
-
-			libmPrint( x_count*LIBM_CHAR_WIDTH , 35 + y_count*LIBM_CHAR_HEIGHT , FG_COLOR , BG_COLOR ,tmp);
-			x_count++;
-			if( x_count >= 60 ){
-				x_count = 0;
-				y_count++;
-				if( y_count >= MAX_LINE_NUM ) break;
-			}
-		}
-		if( y_count >= MAX_LINE_NUM ) break;
-	}
-
-	sceIoClose(fd);
-
-
-	
-	while(1){
-		get_button(&padData);
-		if( padData.Buttons & PSP_CTRL_HOME ){
-			return;
-		}
-	}
-
-}
-
-
-int file_selecter(void){
-	int dir_num,offset,i,now_arrow = 0;
-
-	
-	while(1){
-		
-		dir_num = read_dir(dirBuf,currentPath, 0);
-		offset = 0;
-		now_arrow = 0;
-
-PRINT_ALL:
-		PRINT_SCREEN();
-		libmPrintf(5,20,FG_COLOR,BG_COLOR," [%s] [%d] ",currentPath,dir_num);
-		libmFillRect( 0 , 30 , 480 , 32 ,FG_COLOR);
-
-		libmPrintf(5,264,FG_COLOR,BG_COLOR," %s:ëIë HOME:èIóπ L:ÉtÉHÉãÉ_äKëwè„Ç÷ R:ÉtÉHÉãÉ_äJÇ≠ ",buttonData[buttonNum[0]].name);
-
-PRINT_LIST:
-		libmFillRect( 0 , 46 , 480 , 46 + MAX_DISPLAY_NUM*(LIBM_CHAR_HEIGHT+2),BG_COLOR );
-		if( dir_num != 0 ){
-			for( i = 0; i < dir_num && i < MAX_DISPLAY_NUM; i++ ){
-				if( dirBuf[i+offset].type == TYPE_DIR )
-					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",dirBuf[i+offset].name);
-				else
-					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dirBuf[i+offset].name);
-			}
-			libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
-		}
-		
-		while(1){
-			get_button(&padData);
-			if( padData.Buttons & PSP_CTRL_DOWN ){
-				wait_button_up(&padData);
-				if( now_arrow + 1 < MAX_DISPLAY_NUM && now_arrow + 1 < dir_num ){
-					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
-					now_arrow++;
-					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
-				}else{
-					if( offset+MAX_DISPLAY_NUM < dir_num ) offset++;
-					goto PRINT_LIST;
-				}
-			}else if( padData.Buttons & PSP_CTRL_UP ){
-				wait_button_up(&padData);
-				if( now_arrow - 1 >= 0 ){
-					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
-					now_arrow--;
-					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
-				}else{
-					if( offset > 0 ) offset--;
-					goto PRINT_LIST;
-				}
-			}else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) ){
-				//Ç©ÇÁÇÃÉtÉHÉãÉ_Å[Ç≈ÇÕÇ»Ç¢
-				if(  dir_num != 0 ){
-					//ëIëÇ≥ÇÍÇΩÇ‡ÇÃÇ™ÉtÉHÉãÉ_Å[
-					if( dirBuf[offset+now_arrow].type == TYPE_DIR ){
-						strcat(currentPath,dirBuf[offset+now_arrow].name);
-						strcat(currentPath,"/");
-						wait_button_up(&padData);
-						break;
-					//ëIëÇ≥ÇÍÇΩÇ‡ÇÃÇ™ÉtÉHÉãÉ_Å[Ç≈ÇÕÇ»Ç¢ && buttonData[buttonNum[0]].flagÉ{É^ÉìÇ™âüÇ≥ÇÍÇƒÇ¢ÇÈ
-					}else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && dir_num != 0 ){
-						strcat( currentPath , dirBuf[offset+now_arrow].name );
-						text_viewer(currentPath);
-						up_dir(currentPath);
-						wait_button_up(&padData);
-						goto PRINT_ALL;
-					}
-				}
-				wait_button_up(&padData);
-			}else if( padData.Buttons & PSP_CTRL_LTRIGGER ){
-				wait_button_up(&padData);
-				if( up_dir(currentPath) >= 0 ){
-					break;
-				}
-			}else if( padData.Buttons & PSP_CTRL_HOME ){
-				wait_button_up(&padData);
-				return 0;
-			}
-			wait_button_up(&padData);
-		}
-	}
-}
-
-
-
-void main_menu(void)
-{
-	// wait till releasing buttons
-	wait_button_up(&padData);
-
-	// suspend XMB
-	Suspend_Resume_Threads(SUSPEND_MODE);
-	
-	//prepare for displaying and display
-	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
-	libmClearBuffers();
-	PRINT_SCREEN();
-
-	file_selecter();
-
-	// resume XMB
-	Suspend_Resume_Threads(RESUME_MODE);
-	return;
-
-}
-
 
 int module_start( SceSize arglen, void *argp )
 {
+	
 	Get_FirstThreads();
-
+	
 	SceUID thid;
 	
-//	while(1){
-//		dirBuf = (dir_t *)memoryAlloc( sizeof(dir_t) * 128 );
-//		if( dir != NULL ) break;
-//		sceKernelDelayThread(10000);
-//	}
-	
-	//umd dumpÇ∆ÇÕãtÇ≈ flag == 0 ÇÃéûÇ…ÉXÉgÉbÉvÇ∑ÇÈédól
+	//umd dump„Å®„ÅØÈÄÜ„Åß flag == 0 „ÅÆÊôÇ„Å´„Çπ„Éà„ÉÉ„Éó„Åô„Çã‰ªïÊßò
 	stop_flag = 1;
-	thid = sceKernelCreateThread( "PTEXTVIEW", main_thread, 30, 0x6000, PSP_THREAD_ATTR_NO_FILLSTACK, 0 );
+	thid = sceKernelCreateThread( "PTEXTVIEWER", main_thread, 30, 0x6000, PSP_THREAD_ATTR_NO_FILLSTACK, 0 );
 	if( thid ) sceKernelStartThread( thid, arglen, argp );
 
   return 0;
@@ -366,46 +580,9 @@ int module_start( SceSize arglen, void *argp )
 
 int module_stop( void )
 {
-//	memoryFree(dir);
 	stop_flag = 0;
-	  return 0;
-}
-
-
-
-int read_line_file(SceUID fp, char* line, int num)
-{
-  char buff[num];
-  char* end;
-  int len;
-  int tmp;
-
-  tmp = 0;
-  len = sceIoRead(fp, buff, num);
-  // ÉGÉâÅ[ÇÃèÍçá / on error
-  if(len == 0)
-    return -1;
-
-  end = strchr(buff, '\n');
-
-  // \nÇ™å©Ç¬Ç©ÇÁÇ»Ç¢èÍçá / not found \n
-  if(end == NULL)
-  {
-    buff[num - 1] = '\0';
-    strcpy(line, buff);
-    return len;
-  }
-
-  end[0] = '\0';
-  if((end != buff) && (end[-1] == '\r'))
-  {
-    end[-1] = '\0';
-    tmp = -1;
-  }
-
-  strcpy(line, buff);
-  sceIoLseek(fp, - len + (end - buff) + 1, SEEK_CUR);
-  return end - buff + tmp;
+	if( ptxtBuf != NULL ) free(ptxtBuf);
+	return 0;
 }
 
 
@@ -414,19 +591,9 @@ int read_line_file(SceUID fp, char* line, int num)
 
 
 
-void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor){
-	int nowx = sx,nowy = sy;
-	while(1){
-		nowx += 8;
-		nowy += 8;
-		if( nowx > ex ) nowx = ex;
-		if( nowy > ey ) nowy = ey;
-		libmFillRect(sx , sy , nowx , nowy , bgcolor );
-		libmFrame(sx , sy , nowx ,nowy , fgcolor );
-		if( nowx == ex && nowy == ey ) break;
-		sceKernelDelayThread(8000);
-	}
 
-}
+
+
+
 
 
