@@ -12,7 +12,7 @@
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"ptextviewer Ver. 1.00   by hiroi01"); \
+libmPrint(10,5,FG_COLOR,BG_COLOR,"ptextviewer Ver. 1.01   by hiroi01"); \
 
 
 extern char pprefsPrintBuf[128];
