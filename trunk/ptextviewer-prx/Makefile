@@ -10,7 +10,6 @@ OBJS =	\
 	exports.o \
 	thread.o \
 	conf.o \
-	fileselecter.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \

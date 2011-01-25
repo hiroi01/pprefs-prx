@@ -203,6 +203,24 @@ int Get_Number(const char *str, int defaultNum, int maxNum)
 	return rtn;
 }
 
+
+void Get_String(const char *str, const char *defaultValue , char *rtn)
+{
+	if( str[0] == '"' ){
+		int i;
+		for( i = 1; str[i] != '\0' && str[i] != '"' ; i++ ){
+			rtn[i-1] = str[i];
+		}
+		if( str[i] == '"' ){
+			rtn[i-1] = '\0';
+			return;
+		}
+	}
+	
+	strcpy(rtn,defaultValue);
+	return;
+}
+
 int Read_Conf(const char *path, Conf_Key *key)
 {
 	SceUID fd;
@@ -263,7 +281,7 @@ int Read_Conf(const char *path, Conf_Key *key)
 			}
 			else if(strcasecmp(buf, "STARTPATH") == 0)
 			{
-				strcpy(key->startPath,ptr);
+				Get_String(ptr,"ms0:/",key->startPath);
 			}
 
 			/*
