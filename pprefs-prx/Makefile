@@ -2,10 +2,14 @@ TARGET = pprefs
 PSP_FW_VERSION = 500
 BUILD_PRX = 1
 
+#6.35 Pro用で作る場合は PSP_HEN_VERSION を有効にしてコンパイル (先頭の#を外してコメントアウト）
+#PSP_HEN_VERSION	= 	635
+
+
 OBJS =	\
 	main.o \
-	pprefs.o \
 	file.o \
+	pprefsmenu.o \
 	button.o \
 	exports.o \
 	thread.o \
@@ -18,6 +22,13 @@ OBJS =	\
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \
 	syslibc/memory.o \
+
+
+ifeq ($(PSP_HEN_VERSION),635)
+OBJS		+=	../nidResolve/635/sceCtrl_driver.o
+OBJS		+=	../nidResolve/635/sceDisplay_driver.o 
+endif
+
 
 PRX_EXPORTS = exports.exp
 USE_KERNEL_LIBC	= 1
@@ -48,6 +59,8 @@ include $(PSPSDK)/lib/build_prx.mak
 
 all:
 	psp-packer pprefs.prx
+#clean:
+#	\rm *.o *.elf *.prx
 
 main.o: main.c main.h libmenu.h memory.h file.h conf.h button.h thread.h color.h
 
@@ -61,8 +74,7 @@ conf.o: conf.c conf.h button.h file.h
 
 configmenu.o: configmenu.c common.h libmenu.h button.h main.h language.h
 
-editpergame.o: editpergame.c common.h libmenu.h memory.h button.h fileselecter.h pprefs.h main.h language.h
+editpergame.o: editpergame.c common.h libmenu.h memory.h button.h fileselecter.h  main.h language.h
 
-fileselecter.o: fileselecter.c fileselecter.h common.h button.h libmenu.h main.h language.h 
+fileselecter.o: fileselecter.c fileselecter.h common.h button.h libmenu.h  language.h 
 
-pprefs.o: pprefs.c

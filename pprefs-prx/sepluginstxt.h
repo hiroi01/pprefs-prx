@@ -33,8 +33,8 @@ struct pdatas{
 int removeAnItem(int type,int num);
 int addNewItem(int type,struct pdataLine *lineData);
 
-
-int readSepluginsText( int ptype ,bool checkFlag );
-int writeSepluginsText(int ptype);
+char *getSepluginsTextName(char *str,char *basePath, int type);
+int readSepluginsText( int ptype ,bool checkFlag ,char *basePath);
+int writeSepluginsText(int ptype, char *basePath);
 
 #endif

@@ -1,14 +1,23 @@
 #include "common.h"
-#include "libmenu.h"
 #include "button.h"
-#include "main.h"
+#include "pprefsmenu.h"
 #include "language.h"
-#include "pprefs.h"
+#include "fileselecter.h"
 
+
+
+void selectBasePath(char *path)
+{
+	wait_button_up(&padData);
+	if(  fileSelecter(config.basePath,&dirTmp, PPREFSMSG_SELECTBASEPATH, 2, NULL ) == 0  ){
+		strcpy(path,dirTmp.name);
+	}
+	wait_button_up(&padData);
+}
 u32 detect_key(void)
 {
 	
-	double timesec;
+	clock_t timesec;
 	char *temp;
 	u32 beforeKey = 0;
 	
@@ -24,7 +33,7 @@ u32 detect_key(void)
 		if( padData.Buttons != 0 ) break;
 	}
 
-	timesec = gettimeofday_sec();
+	timesec = sceKernelLibcClock();
 	while(1){
 		get_button(&padData);
 		if( beforeKey != padData.Buttons ){
@@ -36,121 +45,136 @@ u32 detect_key(void)
 			libmPrint   ( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT*2+2, FG_COLOR, BG_COLOR, commonBuf);
 			beforeKey = padData.Buttons;
 		}
-		libmPrintf  ( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT    , FG_COLOR, BG_COLOR, "キー検出 残り%d秒", (int)(3 - (gettimeofday_sec() - timesec)) );
-		if( (gettimeofday_sec() - timesec) >= 3 ) break;
+		libmPrintf  ( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT    , FG_COLOR, BG_COLOR, "キー検出 残り%d秒", (int)( 3 -  ( (sceKernelLibcClock() - timesec)/1000000) )  );
+		if( (sceKernelLibcClock() - timesec) >= (3 * 1000 * 1000) ) break;
 	}
 	
 	return padData.Buttons;
 }
 
+#define SPACE_BETWEEN_THE_LINES (LIBM_CHAR_HEIGHT + 2)
+/*
+#define ARROW_POSITION ( \
+( now_arrow < conf[0].keyNum )? \
+( now_arrow *2 ): \
+( conf[0].keyNum * 2 + now_arrow - conf[0].keyNum + 1 ) \
+)
+*/
+
+#define ARROW_POSITION ( now_arrow * 2 )
+
 int config_menu(void)
 {
-	Conf_Key newConfig = config;
-	char *temp;
-	int now_arrow = 0,menuNum = 9;
-	char *lineFeedCodeName[] = {
-		"CR+LF",
-		"LF",
-//		"CF"
+	Conf_Key oldConfig = config;
+	char *temp,**listPtr;
+	char iniPath[256];
+	int now_arrow = 0,i;
+	char *whatIsThis[] = {
+		"pprefsを起動させるボタンの指定(デフォルトはHOME)",
+		"本体を起動したときに左下に表\示される「pprefs起動準備完了!～」を表\示するか?(デフォルトはtrue)",
+		"×/○ボタンの役割を入れ替える true→○決定/×キャンセル false→×決定/○キャンセル(デフォルトはfalse)",
+		"VSH再起動するのにSTARTを一度押すか二度押すか true→一度押し true→二度押し(デフォルトはfalse)",
+		"このプラグインがテキストを書き出すときに使う改行コード(デフォルトはCR+LF)",
+		"vsh.txt,game.txt,pops.txtがあるフォルダのパス",
+		"通常の文字色",
+		"背景の色",
+		"選択された文字色",
+		"下に表\示される説明の文字色",
 	};
+
 	
 	while(1){
 		PRINT_SCREEN();
 		
 		libmPrint(15,28,BG_COLOR,FG_COLOR," 設定 ");
-		strcpy(commonBuf,"起動キー:");
-		GET_KEY_NAME(newConfig.bootKey, commonBuf);
-		temp = strrchr(commonBuf, '+');
-		if( temp != NULL ) temp[-1] = '\0';
-		libmPrint (15, 46                         , FG_COLOR, BG_COLOR,commonBuf);
-		libmPrint (15, 46 + 1*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "pprefsを起動させるボタンの指定(デフォルトはHOME)");
+		for( i = 0; i < conf[0].keyNum; i++ ){
+			if( 
+				strcasecmp( "Color0", conf[i].key ) == 0 ||
+				strcasecmp( "Color2", conf[i].key ) == 0 ||
+				strcasecmp( "Color3", conf[i].key ) == 0
+			){
+				libmPrintf(15, 46 + i*2*SPACE_BETWEEN_THE_LINES, *conf[i].value.u, BG_COLOR,"%s = %x",conf[i].key, *conf[i].value.u);
+				libmPrint (15, 46 + (i*2+1)*SPACE_BETWEEN_THE_LINES, EX_COLOR , BG_COLOR, whatIsThis[i]);
+				continue;
+			}else if( conf[i].type & INI_TYPE_BUTTON ){
+				sprintf(commonBuf,"%s = ",conf[i].key);
+				GET_KEY_NAME(*conf[i].value.u, commonBuf);
+				temp = strrchr(commonBuf, '+');
+				if( temp != NULL ) temp[-1] = '\0';
+			}else if( conf[i].type & INI_TYPE_LIST ){
+				listPtr = (char **)conf[i].ex;
+				sprintf(commonBuf,"%s = %s", conf[i].key, listPtr[*conf[i].value.i]);
+			}else if( conf[i].type & INI_TYPE_BOOL ){
+				sprintf(commonBuf,"%s = %s",conf[i].key, *conf[i].value.b?"true":"false");
+			}else if( conf[i].type & INI_TYPE_HEX ){
+				sprintf(commonBuf,"%s = %x",conf[i].key, *conf[i].value.u);
+			}else if( conf[i].type & INI_TYPE_STRING ){
+				sprintf(commonBuf,"%s = %s",conf[i].key, conf[i].value.s);
+			}
+			libmPrint (15, 46 + i*2*SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR,commonBuf);
+			libmPrint (15, 46 + (i*2+1)*SPACE_BETWEEN_THE_LINES, EX_COLOR , BG_COLOR, whatIsThis[i]);
+		}
+/*		
+		libmPrint (15, 46 +(i*2+1)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, "上記の設定で保存する");
+		libmPrint (15, 46 +(i*2+2)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, "デフォルト値にする");
+		libmPrint (15, 46 +(i*2+3)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, "やめる");
+*/
+		libmPrintf(5, 46 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
 
-		libmPrintf(15, 46 + 2*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "本体起動時メッセージ:%s",newConfig.bootMessage?"O N":"OFF");
-		libmPrint (15, 46 + 3*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "本体を起動したときに左下に表\示される「pprefs起動準備完了!～」を表\示するか?(デフォルトはON)");
-	
-		libmPrintf(15, 46 + 4*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "×/○の役割入れ替え:%s", newConfig.swapButton?"O N":"OFF");
-		libmPrint (15, 46 + 5*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "×/○ボタンの役割を入れ替える ON→○決定/×キャンセル OFF→×決定/○キャンセル(デフォルトはOFF)");
-		
-		libmPrintf(15, 46 + 6*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "一度押しでVSH再起動:%s", newConfig.onePushRestart?"O N":"OFF");
-		libmPrint (15, 46 + 7*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "VSH再起動するのにSTARTを一度押すか二度押すか ON→一度押し OFF→二度押し(デフォルトはOFF)");
-
-		libmPrintf(15, 46 + 8*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "改行コード:%s", lineFeedCodeName[newConfig.lineFeedCode]);
-		libmPrint (15, 46 + 9*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "このプラグインがテキストを書き出すときに使う改行コード(デフォルトはCR+LF)");
-
-		libmPrintf(15, 46 + 10*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "デフォルトパス:%s", (newConfig.defaultPath == 0)?"ms0:/seplugins/":"ms0:/plugins/" );
-		libmPrint (15, 46 + 11*(LIBM_CHAR_HEIGHT+2), SILVER  , BG_COLOR, "vsh.txt,game.txt,pops.txtのパス(この項目を変更したら手動でリロードして下さい)");
-
-		libmPrint (15, 46 +12*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "上記の設定で保存する");
-
-		libmPrint (15, 46 +14*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "デフォルト値にする");
-
-		libmPrint (15, 46 +16*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, "やめる");
-
-		libmPrintf(5, 46 + now_arrow*2*(LIBM_CHAR_HEIGHT+2), FG_COLOR, BG_COLOR, ">");
-
-		libmPrintf(5,264,FG_COLOR,BG_COLOR," %s:選択 HOME:やめる",buttonData[buttonNum[0]].name);
+		libmPrintf(5,264,EX_COLOR ,BG_COLOR," %s:選択 START:保存 HOME:やめる SELECT:デフォルト値にする ",buttonData[buttonNum[0]].name);
 
 		wait_button_up(&padData);
 		while(1){
 			get_button(&padData);
 			if( padData.Buttons & PSP_CTRL_DOWN ){
-				libmPrintf(5,46 + now_arrow*2*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
-				if( now_arrow + 1 < menuNum ) now_arrow++;
-				else now_arrow = 0;
-				libmPrintf(5,46 + now_arrow*2*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+				libmPrintf(5, 46 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, " ");
+				now_arrow++;
+				if( now_arrow >= conf[0].keyNum ) now_arrow = 0;
+				libmPrintf(5, 46 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
 				wait_button_up(&padData);
 			}else if( padData.Buttons & PSP_CTRL_UP ){
-				libmPrintf(5,46 + now_arrow*2*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
-				if( now_arrow - 1 >= 0 ) now_arrow--;
-				else now_arrow = menuNum - 1;
-				libmPrintf(5,46 + now_arrow*2*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+				libmPrintf(5, 46 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, " ");
+				now_arrow--;
+				if( now_arrow < 0 ) now_arrow = conf[0].keyNum - 1;
+				libmPrintf(5, 46 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
 				wait_button_up(&padData);
 			}else if( padData.Buttons & buttonData[buttonNum[0]].flag ){
-				if( now_arrow == 0 ){
-					newConfig.bootKey = detect_key();
-					if( newConfig.bootKey == 0 ) newConfig.bootKey = PSP_CTRL_HOME;
-					break;
-				}else if( now_arrow == 1 ){
-					newConfig.bootMessage = ! newConfig.bootMessage;
-					break;
-				}else if( now_arrow == 2 ){
-					newConfig.swapButton = ! newConfig.swapButton;
-					break;
-				}else if( now_arrow == 3 ){
-					newConfig.onePushRestart = ! newConfig.onePushRestart;
-					break;
-				}else if( now_arrow == 4 ){
-					newConfig.lineFeedCode++;
-					if( newConfig.lineFeedCode > 1 ) newConfig.lineFeedCode = 0;
-					break;
-				}else if( now_arrow == 5 ){
-					newConfig.defaultPath++;
-					if( newConfig.defaultPath > 1 ) newConfig.defaultPath = 0;
-					break;
-				}else if( now_arrow == (menuNum -3) ){
-					SUSPEND_THREADS();
-					config = newConfig;
-					if( config.swapButton ){
-						buttonNum[0] = 1;
-						buttonNum[1] = 0;
-					}else{
-						buttonNum[0] = 0;
-						buttonNum[1] = 1;
+				if( strcasecmp( "BasePath", conf[now_arrow].key ) == 0 ){
+					selectBasePath(conf[now_arrow].value.s);
+				}else if( strcasecmp( "Color2", conf[now_arrow].key ) == 0 ){
+					if( *conf[now_arrow].value.u == RED ){
+						*conf[now_arrow].value.u = GREEN;
+					}else if( *conf[now_arrow].value.u == GREEN ){
+						*conf[now_arrow].value.u = RED;
 					}
-					Set_Default_Path( sepluginsTextPath,config.defaultPath);
-					Write_Conf(ownPath,&newConfig);
-					wait_button_up(&padData);
-					return 0;
-				}else if( now_arrow == (menuNum -2) ){
-					Set_Default_Conf(&newConfig);
-					break;
-				}else if( now_arrow == (menuNum -1) ){
-					wait_button_up(&padData);
-					return 1;
+				}else if( conf[now_arrow].type & INI_TYPE_BUTTON ){
+					*conf[now_arrow].value.u = detect_key();
+					if( *conf[now_arrow].value.u == 0 ) *conf[now_arrow].value.u = conf[now_arrow].defaultValue.u;
+				}else if( conf[now_arrow].type & INI_TYPE_LIST ){
+					listPtr = (char **)conf[now_arrow].ex;
+					(*conf[now_arrow].value.i)++;
+					if( listPtr[*conf[now_arrow].value.i] == NULL ) *conf[now_arrow].value.i = 0;
+				}else if( conf[now_arrow].type & INI_TYPE_BOOL ){
+					*conf[now_arrow].value.b = !*conf[now_arrow].value.b;
 				}
+				break;
+			}else if( padData.Buttons & PSP_CTRL_START ){
+				strcpy(iniPath, ownPath);
+				temp = strrchr(iniPath, '/');
+				if( temp != NULL ) *temp = '\0';
+				strcat(iniPath,INI_NAME);
+				INI_Write_Conf(iniPath, conf, lineFeedCode[config.lineFeedCode]);
+				SET_CONFIG();
+				wait_button_up(&padData);
+				return 0;
+			}else if( padData.Buttons & PSP_CTRL_SELECT ){
+				INI_Set_Default(conf);
+				wait_button_up(&padData);
+				break;
 			}else if( padData.Buttons & PSP_CTRL_HOME ){
-					wait_button_up(&padData);
-					return 1;
+				config = oldConfig;
+				wait_button_up(&padData);
+				return 1;
 			}
 		}
 

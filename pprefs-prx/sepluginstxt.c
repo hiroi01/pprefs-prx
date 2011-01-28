@@ -3,7 +3,12 @@
 #include "file.h"
 
 
-extern char sepluginsTextPath[3][64];
+static const char *textFileName[] = {
+	"vsh.txt",
+	"game.txt",
+	"pops.txt"
+};
+
 extern char commonBuf[COMMON_BUF_LEN];
 extern const char *lineFeedCode[3];
 extern Conf_Key config;
@@ -20,6 +25,16 @@ extern Conf_Key config;
 	= 0 no problem
 	< 0 on error
 */
+
+
+char *getSepluginsTextName(char *str,char *basePath, int type)
+{
+	if( !(0 <= type &&  type <= 2) ) return NULL;
+	strcpy(str, basePath);
+	strcat(str, textFileName[type]);
+	
+	return str;
+}
 
 int removeAnItem(int type,int num){
 	if( !(0 <= type &&  type <= 2) ) return -1;
@@ -79,18 +94,24 @@ int addNewItem(int type,struct pdataLine *lineData)
 
 */
 
-int writeSepluginsText(int ptype){
+int writeSepluginsText(int ptype, char *basePath)
+{
 	if( !(0 <= ptype &&  ptype <= 2) ){
 		return -1;
 	}
 
+
 	int i,type = ptype;
 	SceUID fp;
-
+	char path[128];
 	
 	checkMs();
 
-	fp = sceIoOpen(sepluginsTextPath[type], PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
+	strcpy(path, basePath);
+	strcat(path, textFileName[type]);
+
+
+	fp = sceIoOpen(path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
 	if( fp < 0 ) return (type+1);
 
 	for( i = 0; i < pdata[type].num; i++ ){
@@ -104,7 +125,7 @@ int writeSepluginsText(int ptype){
 	sceIoClose(fp);
 	
 	//各種情報更新
-	sceIoGetstat(sepluginsTextPath[type], &pdata[type].stat);
+	sceIoGetstat(path, &pdata[type].stat);
 	pdata[type].edit = false;
 	pdata[type].exist = true;
 
@@ -122,19 +143,20 @@ int writeSepluginsText(int ptype){
 	= 3 all
 	@param : checkFlag
 	= true ファイルを読む必要があるかチェックして、必要なら読み込む
-	= true 必要かどうか関係なく、ファイルを読み込む
+	= false 必要かどうか関係なく、ファイルを読み込む
 	@return : 
 	 = 0 no problem
 	!= 0 on error
 */
 
-int readSepluginsText( int ptype ,bool checkFlag )
+int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 {
 
 	SceUID fp;
 	int type,i,readSize,loopend,ret = 0;
 	char line[LEN_PER_LINE],*ptr;
 	SceIoStat stat;
+	char path[128];
 
 
 	if( 0 <= ptype &&  ptype <= 2 ){
@@ -151,8 +173,11 @@ int readSepluginsText( int ptype ,bool checkFlag )
 	
 	for( ; type < loopend; type++){
 		pdata[type].edit = false;
+		
+		strcpy(path, basePath);
+		strcat(path, textFileName[type]);
 
-		if( sceIoGetstat(sepluginsTextPath[type], &stat) < 0 ){//ファイルが存在しない
+		if( sceIoGetstat(path, &stat) < 0 ){//ファイルが存在しない
 			pdata[type].exist = false;
 			pdata[type].num = 0;
 			continue;
@@ -168,7 +193,7 @@ int readSepluginsText( int ptype ,bool checkFlag )
 		}
 
 		
-		fp = sceIoOpen(sepluginsTextPath[type], PSP_O_RDONLY, 0777);
+		fp = sceIoOpen(path, PSP_O_RDONLY, 0777);
 		if( fp < 0 ){//ファイルオープンエラー
 			pdata[type].exist = false;
 			pdata[type].num = 0;
