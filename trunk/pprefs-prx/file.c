@@ -26,9 +26,8 @@
 
 
 #include "button.h"
-#include "libmenu.h"
 #include "file.h"
-#include "pprefs.h"
+#include "pprefsmenu.h"
 #include "common.h"
 
 #define FIO_CST_SIZE    0x0004

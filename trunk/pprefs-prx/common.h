@@ -18,10 +18,6 @@
 
 #include "conf.h"
 #include "thread.h"
-#include "color.h"
-
-#define FG_COLOR WHITE
-#define BG_COLOR BLACK
 
 #define compareScePspDateTime(a,b) ( \
 a.second == b.second && \
@@ -54,8 +50,28 @@ if( now_state ){ \
 	now_state = false; \
 }
 
+#define SET_CONFIG() \
+{ \
+	int i; \
+	if( config.swapButton ){ \
+		buttonNum[0] = 1; \
+		buttonNum[1] = 0; \
+	}else{ \
+		buttonNum[0] = 0; \
+		buttonNum[1] = 1; \
+	} \
+	i = strlen(config.basePathOri) - 1; \
+	if( config.basePathOri[i] != '/' ){ \
+		config.basePathOri[i+1] = '/'; \
+		config.basePathOri[i+2] = '\0'; \
+	} \
+	strcpy(config.basePath,config.basePathOri); \
+}
 
-extern char sepluginsTextPath[3][64];
+
+#define INI_NAME "/pprefs.ini"
+
+//extern char sepluginsTextPath[3][64];
 extern const char *sepluginsBasePath[];
 extern char commonBuf[COMMON_BUF_LEN];
 extern const char *lineFeedCode[];
@@ -63,9 +79,13 @@ extern Conf_Key config;
 extern SceCtrlData padData;
 extern char ownPath[256];
 extern int deviceModel;
-extern char *modelName[6];
+extern char *modelName[];
 extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
 extern bool now_state;
+extern INI_Key conf[10];
+
+
+extern bool hitobashiraFlag;
 
 #endif

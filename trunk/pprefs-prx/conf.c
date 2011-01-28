@@ -1,6 +1,4 @@
-//from mp3play
-
-// キーコンフィグ
+//base is mp3play
 
 // ヘッダー
 #include <pspkernel.h>
@@ -16,15 +14,9 @@ int Check_EOF(SceUID fd);
 u32 Conv_Key(const char *buf);
 char *ch_token(char *str, const char *delim);
 
-u32 Get_Key(const char *str);
-bool Get_Bool(const char *str,bool defaultValue);
-int Get_LineFeedCode(const char *str);
 
-int Write_Conf(const char *path, Conf_Key *key);
 
 int removeSpace(char *str);
-
-void Set_Default_Conf(Conf_Key *key);
 
 
 
@@ -121,12 +113,14 @@ char *ch_token(char *str, const char *delim)
 	return ptr + strlen(delim);
 }
 
-u32 Get_Key(const char *str)
+
+void INI_Get_Key(const char *str, u32 *rtn ,u32 defaultValue )
 {
-	u32 key = 0;
 	char buf[256];
 	char *ptr;
 
+	//初期化
+	*rtn = 0;
 	// コピー
 	strcpy(buf, str);
 
@@ -134,106 +128,137 @@ u32 Get_Key(const char *str)
 	do
 	{
 		ptr = ch_token(buf, "+");
-		key |= Conv_Key(buf);
-
+		*rtn |= Conv_Key(buf);
+		
 		if(ptr != NULL)
 			strcpy(buf, ptr);
 	}
 	while (ptr != NULL);
 
-	return key;
+	if( *rtn == 0 ){
+		*rtn = defaultValue;
+	}
+	
+	return;
 }
 
-bool Get_Bool(const char *str,bool defaultValue)
+
+
+void INI_Get_String(const char *str, char *rtn, const char *defaultValue)
 {
-	bool rtn = defaultValue;
+	if( str[0] == '"' ){
+		int i;
+		for( i = 1; str[i] != '\0' && str[i] != '"' ; i++ ){
+			rtn[i-1] = str[i];
+		}
+		if( str[i] == '"' ){
+			rtn[i-1] = '\0';
+			return;
+		}
+	}
+	
+	strcpy(rtn,defaultValue);
+	return;
+}
+
+void INI_Get_Number_From_List(const char *str, int *rtn ,int defaultNum, char **list )
+{
+	int i;
+	
+	for( i = 0; list[i] != NULL; i++ ){
+		if( strcasecmp(str,list[i]) == 0 ){
+			*rtn = i;
+			return;
+		}
+	}
+	
+	*rtn = defaultNum;
+	return;
+}
+
+void INI_Get_Hex(const char *str, u32 *rtn ,u32 defaultNum)
+{
+	int i;
+
+	*rtn = 0;
+	for( i = 0; str[i] != '\0'; i++ ){
+		*rtn *= 16;
+		if( str[i] == '0' ){ *rtn += 0;
+		}else if( str[i] == '1' ){ *rtn += 1;
+		}else if( str[i] == '2' ){ *rtn += 2;
+		}else if( str[i] == '3' ){ *rtn += 3;
+		}else if( str[i] == '4' ){ *rtn += 4;
+		}else if( str[i] == '5' ){ *rtn += 5;
+		}else if( str[i] == '6' ){ *rtn += 6;
+		}else if( str[i] == '7' ){ *rtn += 7;
+		}else if( str[i] == '8' ){ *rtn += 8;
+		}else if( str[i] == '9' ){ *rtn += 9;
+		}else if( str[i] == 'A' || str[i] == 'a' ){ *rtn += 10;
+		}else if( str[i] == 'B' || str[i] == 'b' ){ *rtn += 11;
+		}else if( str[i] == 'C' || str[i] == 'c' ){ *rtn += 12;
+		}else if( str[i] == 'D' || str[i] == 'd' ){ *rtn += 13;
+		}else if( str[i] == 'E' || str[i] == 'e' ){ *rtn += 14;
+		}else if( str[i] == 'F' || str[i] == 'f' ){ *rtn += 15;
+		}else{
+			*rtn = defaultNum;
+			return;
+		}
+	}
+	return;
+}
+
+void INI_Get_Bool(const char *str, bool *rtn, bool defaultValue)
+{
+	*rtn = defaultValue;
 	
 	if( strcasecmp(str,"true") == 0 ){
-		rtn = true;
+		*rtn = true;
 	}else if(  strcasecmp(str,"false") == 0 ){
-		rtn = false;
+		*rtn = false;
 	}
 	
-	return rtn;
 }
 
-int Get_LineFeedCode(const char *str)
+void INI_Set_Default(INI_Key *key)
 {
-	int rtn = 0;
-	
-	if( strcasecmp(str,"CR+LF") == 0 )
-	{
-		rtn = 0;
+	int i;
+	for( i = 0; i < key[0].keyNum; i++ ){
+		if( key[i].type & INI_TYPE_LIST )
+		{
+			*key[i].value.i = key[i].defaultValue.i;
+		}
+		else if( key[i].type & INI_TYPE_HEX )
+		{
+			*key[i].value.u = key[i].defaultValue.u;
+		}
+		else if( key[i].type & INI_TYPE_BUTTON )
+		{
+			*key[i].value.u = key[i].defaultValue.u;
+		}
+		else if( key[i].type & INI_TYPE_STRING )
+		{
+			strcpy(key[i].value.s,key[i].defaultValue.s);
+		}
+		else if( key[i].type & INI_TYPE_BOOL )
+		{
+			*key[i].value.b = key[i].defaultValue.b;
+		}
 	}
-	else if(  strcasecmp(str,"LF") == 0 )
-	{
-		rtn = 1;
-	}
-	/*else if(  strcasecmp(str,"CR") == 0 )
-	{
-		rtn = 2;
-	}*/
-	
-	return rtn;
 }
 
-int Get_Number(const char *str, int defaultNum, int maxNum)
-{
-	int rtn = defaultNum;
-	
-	if( strcasecmp(str,"0") == 0 )
-	{
-		rtn = 0;
-	}
-	else if(  strcasecmp(str,"1") == 0 )
-	{
-		rtn = 1;
-	}
-	else if(  strcasecmp(str,"2") == 0 )
-	{
-		rtn = 2;
-	}
-	else if(  strcasecmp(str,"3") == 0 )
-	{
-		rtn = 3;
-	}
-	
-	if( rtn > maxNum ) rtn = defaultNum;
-	
-	return rtn;
-}
-
-int Read_Conf(const char *path, Conf_Key *key)
+int INI_Read_Conf(const char *path, INI_Key *key)
 {
 	SceUID fd;
 	char buf[256];
-	char ms_path[128];
 	char *ptr;
+	int i;
 
-	// コピー
-	strcpy(ms_path, path);
-
-	// パス取得
-	ptr = strrchr(ms_path, '/');
-	ptr++;
-	*ptr++	= 'p';
-	*ptr++	= 'p';
-	*ptr++	= 'r';
-	*ptr++	= 'e';
-	*ptr++	= 'f';
-	*ptr++	= 's';
-	*ptr++	= '.';
-	*ptr++	= 'i';
-	*ptr++	= 'n';
-	*ptr++	= 'i';
-	*ptr	= '\0';
-
-	// 読み取れなっかった場合はデフォルトの設定
-	Set_Default_Conf(key);
 	
+	INI_Set_Default(key);
+
 	
 	// 設定ファイル・オープン
-	fd = sceIoOpen(ms_path, PSP_O_RDONLY, 0777);
+	fd = sceIoOpen(path, PSP_O_RDONLY, 0777);
 	if(fd < 0)
 	{
 		return -1;
@@ -245,99 +270,197 @@ int Read_Conf(const char *path, Conf_Key *key)
 		// 一行読み込む
 		Read_Line(fd, buf, 255);
 
-		// コメントと改行は除外
-		if(buf[0] != '#' && buf[0] != '\n' && buf[0] != '\0')
-		{
-			ptr = ch_token(buf, "=");
-			if(ptr == NULL) continue;
-
-			if(strcasecmp(buf, "BOOTKEY") == 0)
-			{
-				key->bootKey = Get_Key(ptr);
-				if( key->bootKey == 0 ) key->bootKey = PSP_CTRL_HOME;
+		// コメントと改行ならスキップ
+		if(buf[0] == '#' || buf[0] == '\n' || buf[0] == '\0') continue;
+		
+		//=でsplit
+		ptr = ch_token(buf, "=");
+		if(ptr == NULL) continue;
+		
+		for( i = 0; i < key[0].keyNum; i++ ){
+			//左辺を探す
+			if(strcasecmp( buf, key[i].key ) == 0){
+				//見つかったらTYPE別に値をget
+				if( key[i].type & INI_TYPE_HEX )
+				{
+					INI_Get_Hex(ptr, key[i].value.u, key[i].defaultValue.u);
+					if( key[i].ex != NULL ){
+						if( *key[i].value.u > *(int *)key[i].ex ) *key[i].value.u = key[i].defaultValue.u;
+					}
+				}
+				else if( key[i].type & INI_TYPE_BUTTON )
+				{
+					INI_Get_Key(ptr, key[i].value.u, key[i].defaultValue.u);
+				}
+				else if( key[i].type & INI_TYPE_STRING )
+				{
+					INI_Get_String(ptr, key[i].value.s, key[i].defaultValue.s );
+				}
+				else if( key[i].type & INI_TYPE_LIST )
+				{
+					INI_Get_Number_From_List(ptr, key[i].value.i, key[i].defaultValue.i, (char **)key[i].ex);
+				}
+				else if( key[i].type & INI_TYPE_BOOL )
+				{
+					INI_Get_Bool(ptr, key[i].value.b, key[i].defaultValue.b);
+				}
 			}
-			else if(strcasecmp(buf, "SWAPBUTTON") == 0)
-			{
-				key->swapButton = Get_Bool(ptr,false);
-			}
-			else if(strcasecmp(buf, "BOOTMESSAGE") == 0)
-			{
-				key->bootMessage = Get_Bool(ptr,true);
-			}
-			else if(strcasecmp(buf, "ONEPUSHRESTART") == 0)
-			{
-				key->onePushRestart = Get_Bool(ptr,false);
-			}
-			else if(strcasecmp(buf, "LINEFEEDCODE") == 0)
-			{
-				key->lineFeedCode = Get_LineFeedCode(ptr);
-			}
-			else if(strcasecmp(buf, "DEFAULTPATH") == 0)
-			{
-				key->defaultPath = Get_Number(ptr,0,1);
-			}
-			/*
-			else if(strcasecmp(buf, "???") == 0)
-			{
-				key->??? = ???
-			}
-			*/
 		}
+
 	}
 
 	sceIoClose(fd);
 	return 0;
 }
 
+/*------------------------------------------------------------------
+-----if INI_TYPE_HEX-----
+@params : ex
+          最大値が必要ならexにその最大値の値の入った変数のポインタ(exの中身の値が変更されることはない(=const))
+          必要ないならNULL
+-----if INI_TYPE_LIST-----
+@params : ex
+          const char *list[] = {
+               "1st",
+               "2nd",
+               "3rd",
+               NULL
+          }
+          のような変数のポインタ
+          (exの中身の値が変更されることはない(=const))
+-----the others-----
+@params : ex
+          set NULL
+          
 
 
-int Write_Conf(const char *path, Conf_Key *key)
+-----common-----
+@params : keyName
+@params : value
+@params : defaultValue
+@params : type
+@returns : 
+             < 0 on error
+            == 0 no problem
+--------------------------------------------------------------------*/
+
+void INI_Add_Hex(INI_Key *key, char *keyName,  u32 *value, u32 defaultValue, int *ex)
+{
+	key[key[0].keyNum].value.u = value;
+	key[key[0].keyNum].defaultValue.u = defaultValue;
+
+	key[key[0].keyNum].type = INI_TYPE_STATIC;
+	key[key[0].keyNum].type |= INI_TYPE_HEX;
+	
+	key[key[0].keyNum].ex = ex;
+
+	//左辺をセット
+	strcpy(key[key[0].keyNum].key,keyName);
+
+	key[0].keyNum++;
+}
+
+void INI_Add_Button(INI_Key *key, char *keyName,  u32 *value, u32 defaultValue)
+{
+	key[key[0].keyNum].value.u = value;
+	key[key[0].keyNum].defaultValue.u = defaultValue;
+
+	key[key[0].keyNum].type = INI_TYPE_STATIC;
+	key[key[0].keyNum].type |= INI_TYPE_BUTTON;
+	
+//	key[key[0].keyNum].ex = ex;
+	key[key[0].keyNum].ex = NULL;
+
+	//左辺をセット
+	strcpy(key[key[0].keyNum].key,keyName);
+	
+	key[0].keyNum++;
+}
+
+void INI_Add_String(INI_Key *key, char *keyName, char *value, char *defaultValue)
+{
+	key[key[0].keyNum].value.s = value;
+	key[key[0].keyNum].defaultValue.s = defaultValue;
+
+	key[key[0].keyNum].type = INI_TYPE_STATIC;
+	key[key[0].keyNum].type |= INI_TYPE_STRING;
+	
+//	key[key[0].keyNum].ex = ex;
+	key[key[0].keyNum].ex = NULL;
+
+	//左辺をセット
+	strcpy(key[key[0].keyNum].key,keyName);
+	
+	key[0].keyNum++;
+}
+
+void INI_Add_List(INI_Key *key, char *keyName, int *value, int defaultValue,  const char *list[] )
+{
+	key[key[0].keyNum].value.i = value;
+	key[key[0].keyNum].defaultValue.i = defaultValue;
+
+	key[key[0].keyNum].type = INI_TYPE_STATIC;
+	key[key[0].keyNum].type |= INI_TYPE_LIST;
+	
+	key[key[0].keyNum].ex = list;
+
+	//左辺をセット
+	strcpy(key[key[0].keyNum].key,keyName);
+
+	key[0].keyNum++;
+}
+
+void INI_Add_Bool(INI_Key *key, char *keyName, bool *value, bool defaultValue)
+{
+	key[key[0].keyNum].value.b = value;
+	key[key[0].keyNum].defaultValue.b = defaultValue;
+
+	key[key[0].keyNum].type = INI_TYPE_STATIC;
+	key[key[0].keyNum].type |= INI_TYPE_BOOL;
+	
+	key[key[0].keyNum].ex = NULL;
+
+	//左辺をセット
+	strcpy(key[key[0].keyNum].key,keyName);
+
+	key[0].keyNum++;
+}
+
+void INI_Init_Key(INI_Key *key)
+{
+	key[0].keyNum = 0;
+}
+
+
+
+
+void Set_Default_Path(char path[3][64], int num)
+{
+	if( num == 1 ){
+		strcpy(path[0],"ms0:/plugins/vsh.txt");
+		strcpy(path[1],"ms0:/plugins/game.txt");
+		strcpy(path[2],"ms0:/plugins/pops.txt");
+	}else{
+		strcpy(path[0],"ms0:/seplugins/vsh.txt");
+		strcpy(path[1],"ms0:/seplugins/game.txt");
+		strcpy(path[2],"ms0:/seplugins/pops.txt");
+	}
+}
+
+
+
+int INI_Write_Conf(const char *ms_path, INI_Key *key, const char *lineFeedCode)
 {
 	SceUID fd,fdw;
-	int readSize;
+	int readSize,i;
 	char buf[256],tmp[256];
-	char ms_path[128],ms_write_path[128];
-	char *ptr;
+	char ms_write_path[128];
+	char *ptr,**listPtr;
 	u32 flag = 0;
 	
 
-	// コピー
-	strcpy(ms_path, path);
-
-	// パス取得
-	ptr = strrchr(ms_path, '/');
-	ptr++;
-	*ptr++	= 'p';
-	*ptr++	= 'p';
-	*ptr++	= 'r';
-	*ptr++	= 'e';
-	*ptr++	= 'f';
-	*ptr++	= 's';
-	*ptr++	= '.';
-	*ptr++	= 'i';
-	*ptr++	= 'n';
-	*ptr++	= 'i';
-	*ptr	= '\0';
-
-	strcpy(ms_write_path, path);
-
-	ptr = strrchr(ms_write_path, '/');
-	ptr++;
-	*ptr++	= 'p';
-	*ptr++	= 'p';
-	*ptr++	= 'r';
-	*ptr++	= 'e';
-	*ptr++	= 'f';
-	*ptr++	= 's';
-	*ptr++	= '.';
-	*ptr++	= 'i';
-	*ptr++	= 'n';
-	*ptr++	= 'i';
-	*ptr++	= '.';
-	*ptr++	= 't';
-	*ptr++	= 'm';
-	*ptr++	= 'p';
-	*ptr	= '\0';
+	strcpy(ms_write_path, ms_path);
+	strcat(ms_write_path, ".tmp");
 
 	fdw = sceIoOpen(ms_write_path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
 	if( fdw < 0 ) return -1;
@@ -362,128 +485,72 @@ int Write_Conf(const char *path, Conf_Key *key)
 		ptr = ch_token(buf, "=");
 		if(ptr == NULL) continue; //ダメな行
 		
-		if(strcasecmp(buf, "BOOTKEY") == 0 && (!(flag & 1)) )
-		{
-			flag |= 1;
-			tmp[0] = '\0';
-			GET_KEY_NAME_FOR_CONF(key->bootKey,tmp);
-			ptr = strrchr(tmp, '+');
-			if( ptr != NULL ) ptr[-1] = '\0';
-			sprintf(buf,"BootKey = %s%s",tmp,lineFeedCode[key->lineFeedCode]);
-		}
-		else if(strcasecmp(buf, "SWAPBUTTON") == 0 && (!(flag & 2)) )
-		{
-			flag |= 2;
-			sprintf(buf,"SwapButton = %s%s",key->swapButton?"true":"false",lineFeedCode[key->lineFeedCode]);
-		}
-		else if(strcasecmp(buf, "BOOTMESSAGE") == 0 && (!(flag & 4)) )
-		{
-			flag |= 4;
-			sprintf(buf,"BootMessage = %s%s",key->bootMessage?"true":"false",lineFeedCode[key->lineFeedCode]);
-		}
-		else if(strcasecmp(buf, "ONEPUSHRESTART") == 0 && (!(flag & 8)) )
-		{
-			flag |= 8;
-			sprintf(buf,"OnePushRestart = %s%s",key->onePushRestart?"true":"false",lineFeedCode[key->lineFeedCode]);
-		}
-		else if(strcasecmp(buf, "LINEFEEDCODE") == 0 && (!(flag & 16)) )
-		{
-			flag |= 16;
-			if( key->lineFeedCode == 1 )
-			{
-				strcpy(tmp,"LF");
+		
+		for( i = 0; i < key[0].keyNum; i++ ){
+			if(strcasecmp( buf, key[i].key ) == 0  && (!(flag & (1<<i))) ){
+				flag |= (1<<i);
+				if( key[i].type & INI_TYPE_BUTTON )
+				{
+					tmp[0] = '\0';
+					GET_KEY_NAME_FOR_CONF(*key[i].value.u,tmp);
+					ptr = strrchr(tmp, '+');
+					if( ptr != NULL ) ptr[-1] = '\0';
+					sprintf(buf,"%s = %s%s",key[i].key,tmp,lineFeedCode);
+				}
+				else if( key[i].type & INI_TYPE_BOOL )
+				{
+					sprintf(buf,"%s = %s%s",key[i].key, *key[i].value.b?"true":"false", lineFeedCode);
+				}
+				else if( key[i].type & INI_TYPE_LIST )
+				{
+					listPtr = (char **)key[i].ex;
+					sprintf(buf,"%s = %s%s", key[i].key, listPtr[*key[i].value.i], lineFeedCode);
+				}
+				else if( key[i].type & INI_TYPE_HEX )
+				{
+					sprintf(buf,"%s = %x%s", key[i].key, *key[i].value.u, lineFeedCode);
+				}
+				else if( key[i].type & INI_TYPE_STRING )
+				{
+					sprintf(buf,"%s = \"%s\"%s", key[i].key, key[i].value.s, lineFeedCode);
+				}
+				sceIoWrite(fdw,buf,strlen(buf));
 			}
-			/*else if( key->lineFeedCode == 2 )
+		}
+	}
+
+
+	for( i = 0; i < key[0].keyNum; i++ ){
+		if( (!(flag & (1<<i))) ){
+			flag |= (1<<i);
+			if( key[i].type & INI_TYPE_BUTTON )
 			{
-				strcpy(tmp,"CR");
-			}*/
-			else /*if( key->lineFeedCode == 0 )*/
-			{
-				strcpy(tmp,"CR+LF");
+				tmp[0] = '\0';
+				GET_KEY_NAME_FOR_CONF(*key[i].value.u,tmp);
+				ptr = strrchr(tmp, '+');
+				if( ptr != NULL ) ptr[-1] = '\0';
+				sprintf(buf,"%s = %s%s",key[i].key,tmp,lineFeedCode);
 			}
-			sprintf(buf,"LineFeedCode = %s%s", tmp,lineFeedCode[key->lineFeedCode]);
-		}
-		else if(strcasecmp(buf, "DEFAULTPATH") == 0 && (!(flag & 32)) )
-		{
-			flag |= 32;
-			sprintf(buf,"defaultPath = %d%s", key->defaultPath, lineFeedCode[key->lineFeedCode]);
-		}
-		/*
-			else if(strcasecmp(buf, "???") == 0 && (!(flag & ?)) )
+			else if( key[i].type & INI_TYPE_BOOL )
 			{
-				flag |= ?;
-				sprintf(buf,"??? = %s%s", ???, lineFeedCode[key->lineFeedCode]);
+				sprintf(buf,"%s = %s%s",key[i].key, *key[i].value.b?"true":"false", lineFeedCode);
 			}
-		*/
-		else
-		{
-			//ダメな行
-			continue;
+			else if( key[i].type & INI_TYPE_LIST )
+			{
+				listPtr = (char **)key[i].ex;
+				sprintf(buf,"%s = %s%s", key[i].key, listPtr[*key[i].value.i], lineFeedCode);
+			}
+			else if( key[i].type & INI_TYPE_HEX )
+			{
+				sprintf(buf,"%s = %x%s", key[i].key, *key[i].value.u, lineFeedCode);
+			}
+			else if( key[i].type & INI_TYPE_STRING )
+			{
+				sprintf(buf,"%s = \"%s\"%s", key[i].key, key[i].value.s, lineFeedCode);
+			}
+			sceIoWrite(fdw,buf,strlen(buf));
 		}
-		sceIoWrite(fdw,buf,strlen(buf));
 	}
-	
-	
-	if( (!(flag & 1)) )
-	{
-		flag |= 1;
-		tmp[0] = '\0';
-		GET_KEY_NAME_FOR_CONF(key->bootKey,tmp);
-		ptr = strrchr(tmp, '+');
-		if( ptr != NULL ) ptr[-1] = '\0';
-		sprintf(buf,"BootKey = %s%s",tmp,lineFeedCode[key->lineFeedCode]);
-		sceIoWrite(fdw,buf,strlen(buf));
-	}
-	if( (!(flag & 2)) )
-	{
-		flag |= 2;
-		sprintf(buf,"SwapButton = %s%s",key->swapButton?"true":"false",lineFeedCode[key->lineFeedCode]);
-		sceIoWrite(fdw,buf,strlen(buf));
-	}
-	if( (!(flag & 4)) )
-	{
-		flag |= 4;
-		sprintf(buf,"BootMessage = %s%s",key->bootMessage?"true":"false",lineFeedCode[key->lineFeedCode]);
-		sceIoWrite(fdw,buf,strlen(buf));
-	}
-	if( (!(flag & 8)) )
-	{
-		flag |= 8;
-		sprintf(buf,"OnePushRestart = %s%s",key->onePushRestart?"true":"false",lineFeedCode[key->lineFeedCode]);
-		sceIoWrite(fdw,buf,strlen(buf));
-	}
-	if( (!(flag & 16)) )
-	{
-		flag |= 16;
-		if( key->lineFeedCode == 1 )
-		{
-			strcpy(tmp,"LF");
-		}
-		/*else if( key->lineFeedCode == 2 )
-		{
-			strcpy(tmp,"CR");
-		}*/
-		else /*if( key->lineFeedCode == 0 )*/
-		{
-			strcpy(tmp,"CR+LF");
-		}
-		sprintf(buf,"LineFeedCode = %s%s", tmp,lineFeedCode[key->lineFeedCode]);
-		sceIoWrite(fdw,buf,strlen(buf));
-	}
-	if( (!(flag & 32)) )
-	{
-		flag |= 32;
-		sprintf(buf,"DefaultPath = %d%s", key->defaultPath,lineFeedCode[key->lineFeedCode]);
-		sceIoWrite(fdw,buf,strlen(buf));
-	}
-	/*
-	if( (!(flag & ?)) )
-	{
-		flag |= ?;
-		sprintf(buf,"??? = %s%s", ??? ,lineFeedCode[key->lineFeedCode]);
-		sceIoWrite(fdw,buf,strlen(buf));
-	}
-	*/
 
 
 	if( fd >= 0 ) sceIoClose(fd);
@@ -495,36 +562,6 @@ int Write_Conf(const char *path, Conf_Key *key)
 	
 	return 0;
 }
-
-void Set_Default_Conf(Conf_Key *key)
-{
-	key->bootKey = PSP_CTRL_HOME;
-	key->swapButton = false;
-	key->bootMessage = true;
-	key->onePushRestart = false;
-	key->lineFeedCode = 0;
-	key->defaultPath = 0;
-	/*
-	key->??? = ???;
-	*/
-}
-//4箇所
-
-
-
-void Set_Default_Path(char path[3][64], int num)
-{
-	if( num == 1 ){
-		strcpy(path[0],"ms0:/plugins/vsh.txt");
-		strcpy(path[1],"ms0:/plugins/game.txt");
-		strcpy(path[2],"ms0:/plugins/pops.txt");
-	}else{
-		strcpy(path[0],"ms0:/seplugins/vsh.txt");
-		strcpy(path[1],"ms0:/seplugins/game.txt");
-		strcpy(path[2],"ms0:/seplugins/pops.txt");
-	}
-}
-
 
 
 

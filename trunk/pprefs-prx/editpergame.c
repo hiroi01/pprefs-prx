@@ -1,10 +1,8 @@
 #include "common.h"
-#include "libmenu.h"
 #include "memory.h"
 #include "button.h"
 #include "fileselecter.h"
-#include "pprefs.h"
-#include "main.h"
+#include "pprefsmenu.h"
 #include "language.h"
 
 /*-----------------------------------------------------------------*/
@@ -20,6 +18,8 @@
 
 #define MAXDISPLAY_X 60
 #define MAXDISPLAY_Y 27
+
+#define TOP_PRINT_Y 36
 
 #define PERGAMEBUF_SIZE (1024*5 + 1)
 
@@ -56,8 +56,8 @@ int is_idOrPath(void){
 
 	makeWindow(24, 28, 24 + LIBM_CHAR_WIDTH*26, 28 + LIBM_CHAR_HEIGHT*5, FG_COLOR, BG_COLOR);
 	while(1){
-		libmPrint(24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT  , (i == 0)?RED:FG_COLOR, BG_COLOR, "GAME ID");
-		libmPrint(24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT*3, (i == 1)?RED:FG_COLOR, BG_COLOR, "FULL PATH");
+		libmPrint(24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT  , (i == 0)?SL_COLOR:FG_COLOR, BG_COLOR, "GAME ID");
+		libmPrint(24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT*3, (i == 1)?SL_COLOR:FG_COLOR, BG_COLOR, "FULL PATH");
 		while(1){
 			wait_button_up(&padData);
 			get_button(&padData);
@@ -72,7 +72,7 @@ int is_idOrPath(void){
 }
 
 //次の行のオフセットをget
-int getTrueHeadOfNextLine(char *str,int offset)
+int getOffsetOfTrueNextLine(char *str,int offset)
 {
 	int i;
 	for( i = offset; str[i] != '\0'; i++ ){
@@ -83,7 +83,7 @@ int getTrueHeadOfNextLine(char *str,int offset)
 }
 
 //(表示上の)次の行のオフセットをget
-int getHeadOfNextLine(char *str,int offset)
+int getOffsetOfNextLine(char *str,int offset)
 {
 	int i;
 	int count = 0;
@@ -98,20 +98,26 @@ int getHeadOfNextLine(char *str,int offset)
 	return offset;
 }
 
-int getTrueHeadOfPreviousLine(char *str,int offset)
+int getOffsetOfTruePreviousLine(char *str,int offset)
 {
+
+	if( offset <= 0 ) return offset;
+
 	int i;
-	for( i = (str[offset-1] == '\n')?(offset-2):(offset-1); i > -1 && str[i] != '\n' ; i-- );
+	
+	for( i = (str[offset-1] == '\n')?(offset-2):(offset-1); i >= 0 && str[i] != '\n' ; i-- );
 	i++;
 	return i;
 }
 
-int getHeadOfPreviousLine(char *str,int offset)
+int getOffsetOfPreviousLine(char *str,int offset)
 {
+	
+	if( offset <= 0 ) return offset;
 	int i,tmp;
-	i = getTrueHeadOfPreviousLine(str, offset);
+	i = getOffsetOfTruePreviousLine(str, offset);
 	while(1){
-		tmp = getHeadOfNextLine(str,i);
+		tmp = getOffsetOfNextLine(str,i);
 		if( tmp == offset ) return i;
 		i = tmp;
 	}
@@ -148,7 +154,7 @@ u16  printText(char *pergameBuf, int headOffset, int lineCount, int selectedLine
 			continue;
 		}
 		
-		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,36+LIBM_CHAR_HEIGHT*y_count ,(lineCount==selectedLine)?RED:FG_COLOR, BG_COLOR, &pergameBuf[i])
+		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,TOP_PRINT_Y+LIBM_CHAR_HEIGHT*y_count ,(lineCount==selectedLine)?SL_COLOR:FG_COLOR, BG_COLOR, &pergameBuf[i])
 		   == 1 ) i++; //2byte文字なら
 		
 		x_count++;
@@ -184,7 +190,7 @@ u16  noPrintText(char *pergameBuf, int headOffset, int lineCount, int selectedLi
 			continue;
 		}
 		
-//		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,36+LIBM_CHAR_HEIGHT*y_count ,(lineCount==selectedLine)?RED:FG_COLOR, BG_COLOR, &pergameBuf[i])
+//		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,36+LIBM_CHAR_HEIGHT*y_count ,(lineCount==selectedLine)?SL_COLOR:FG_COLOR, BG_COLOR, &pergameBuf[i])
 //		    == 1 ) i++; //2byte文字なら
 		if(  jms1(pergameBuf[i]) ){//2byte文字なら
 			i++;
@@ -268,11 +274,14 @@ void swapLineOfString(char *str, int first, int second)
 	
 	i = 0;
 	while(1){
+		if(  str[first+i] == '\0'  || str[second+i] == '\0' )break;
+		
 		tmp = str[first+i];
 		str[first+i] = str[second+i];
 		str[second+i] = tmp;
 		
-		if( str[first+i] == '\n' || str[first+i] == '\0' || str[second+i] == '\n' || str[second+i] == '\0' ) break;
+		if( str[first+i] == '\n' || str[second+i] == '\n' ) break;
+		
 		i++;
 	}
 	
@@ -281,7 +290,8 @@ void swapLineOfString(char *str, int first, int second)
 		shiftNum = i-second;
 		tmp = 1;//tmp is used as flag here
 		while( tmp != 0 ){
-			if( str[i] == '\n' || str[i] == '\0' ) tmp = 0;
+			if( str[i] == '\n' ) tmp = 0;
+			else if( str[i] == '\0' ) break;
 			leftShiftChar(str,i,shiftNum);
 			i++;
 		}
@@ -290,26 +300,27 @@ void swapLineOfString(char *str, int first, int second)
 		shiftNum = second - first -1;
 		tmp = 1;//tmp is used as flag here
 		while( tmp != 0 ){
-			if( str[i] == '\n' || str[i] == '\0'  ) tmp = 0;
+			if( str[i] == '\n' ) tmp = 0;
+			else if( str[i] == '\0' ) break;
 			rightShiftChar(str,i,shiftNum);
 		}
 	}
 	
 }
 
-int saveEditPergame(char *str)
+int saveEditPergame(char *str, char *path)
 {
 	SceUID fp;
 	int i,tmp;
 	
 	checkMs();
 	
-	fp = sceIoOpen("ms0:/seplugins/pergame.txt", PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
+	fp = sceIoOpen(path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
 	if( fp < 0 ) return -1;
 	
 	i = 0;
 	while(1){
-		tmp = getTrueHeadOfNextLine(str, i);
+		tmp = getOffsetOfTrueNextLine(str, i);
 		if( tmp == i ) break;
 		str[tmp-1] = '\0';
 		sprintf(commonBuf,"%s%s",&str[i],lineFeedCode[config.lineFeedCode]);
@@ -338,7 +349,7 @@ int getOffsetOfSelecteLine(char *str, int selectedLine)
 	i = 0;
 	tmp = 0;
 	while( i != selectedLine ){
-		tmp = getTrueHeadOfNextLine(str, tmp);
+		tmp = getOffsetOfTrueNextLine(str, tmp);
 		i++;
 	}
 	return tmp;
@@ -364,15 +375,22 @@ int editPergameMenu(void)
 	char idBuf[11];
 	char *pnt;
 	u32 beforeButtons;
-	double timesec;
+	clock_t timesec;
+	char pergametxtPath[256];
+	
+	strcpy(pergametxtPath,"ms0:/seplugins/pergame.txt");
 	
 	if( pergameBuf == NULL ){
 		pergameBuf = malloc(PERGAMEBUF_SIZE);
 		if( pergameBuf == NULL ) return -1;
 	}
 	
-	fd = sceIoOpen("ms0:/seplugins/pergame.txt", PSP_O_RDONLY, 0777);
-	if( fd < 0 ) return -2;
+	while(1){
+		fd = sceIoOpen(pergametxtPath, PSP_O_RDONLY, 0777);
+		if( fd >= 0 ) break;
+		if( fileSelecter("ms0:/",&dirTmp, "select pergame.txt", 0, NULL ) != 0 ) return -2;
+		strcpy(pergametxtPath,dirTmp.name);
+	}
 	readSize = sceIoRead(fd, pergameBuf, PERGAMEBUF_SIZE - 1);
 	sceIoClose(fd);
 	if( readSize < 0 ) return -3;
@@ -386,16 +404,18 @@ int editPergameMenu(void)
 	beforeButtons = 0;
 	timesec = 0;
 	i = 0;
-	
+
+
+	PRINT_SCREEN();
+	libmPrint(24, 22,  BG_COLOR, FG_COLOR, PPREFSMSG_EDITPERGAME_TOP);
+	libmPrintf(0, 256,  EX_COLOR , BG_COLOR, PPREFSMSG_EDITPERGAME_HOTOUSE,buttonData[buttonNum[1]].name);
+	libmPrint (0, 264, EX_COLOR , BG_COLOR, PPREFSMSG_EDITPERGAME_HOTOUSE_2);
 	while(1){
 
 
-		PRINT_SCREEN();
-
+		libmFillRect( 0 , TOP_PRINT_Y , 480 , TOP_PRINT_Y + LIBM_CHAR_HEIGHT*MAXDISPLAY_Y , BG_COLOR);
 		printState = printText(pergameBuf, headOffset, headLine, selectedLine,MAXDISPLAY_Y );
-		libmPrint(24, 22,  BG_COLOR, FG_COLOR, PPREFSMSG_EDITPERGAME_TOP);
-		libmPrintf(0, 256,  SILVER , BG_COLOR, PPREFSMSG_EDITPERGAME_HOTOUSE,buttonData[buttonNum[1]].name);
-		libmPrint (0, 264, SILVER , BG_COLOR, PPREFSMSG_EDITPERGAME_HOTOUSE_2);
+
 		
 		
 		if( beforeButtons == 0 ) wait_button_up(&padData);
@@ -403,14 +423,14 @@ int editPergameMenu(void)
 			get_button(&padData);
 			if( padData.Buttons & buttonData[buttonNum[1]].flag ){
 				if( beforeButtons & buttonData[buttonNum[1]].flag ){
-					if( (gettimeofday_sec() - timesec) >= 0.5 ){
-						timesec = gettimeofday_sec();
+					if( (sceKernelLibcClock() - timesec) >= (5 * 100 * 1000) ){
+						timesec = sceKernelLibcClock();
 					}else{
 						continue;
 					}
 				}else{
 					beforeButtons = buttonData[buttonNum[1]].flag;
-					timesec = gettimeofday_sec();
+					timesec = sceKernelLibcClock();
 					continue;
 				}
 
@@ -429,20 +449,20 @@ int editPergameMenu(void)
 				break;
 			}else if( padData.Buttons & PSP_CTRL_UP && selectedLine > 0 ){
 				if( beforeButtons & PSP_CTRL_UP ){
-					if( (gettimeofday_sec() - timesec) >= 0.2 ){
-						timesec = gettimeofday_sec();
+					if( (sceKernelLibcClock() - timesec) >= (2 * 100 * 1000) ){
+						timesec = sceKernelLibcClock();
 					}else{
 						continue;
 					}
 				}else{
 					beforeButtons = PSP_CTRL_UP;
-					timesec = gettimeofday_sec();
+					timesec = sceKernelLibcClock();
 				}
 
 				if( printState & SELECTED_TOP){
-					i = getHeadOfPreviousLine(pergameBuf,headOffset);
+					i = getOffsetOfPreviousLine(pergameBuf,headOffset);
 					//前の行に移動したなら
-					if( pergameBuf[getHeadOfNextLine(pergameBuf,i)-1] == '\n' && i != headOffset ){
+					if( pergameBuf[getOffsetOfNextLine(pergameBuf,i)-1] == '\n' && i != headOffset ){
 						headLine--;
 						if( padData.Buttons & PSP_CTRL_SQUARE ) swapLineOfString(pergameBuf, getOffsetOfSelecteLine(pergameBuf,selectedLine-1),getOffsetOfSelecteLine(pergameBuf,selectedLine));
 						selectedLine--;
@@ -456,18 +476,18 @@ int editPergameMenu(void)
 				break;
 			}else if( padData.Buttons & PSP_CTRL_DOWN ){
 				if( beforeButtons & PSP_CTRL_DOWN ){
-					if( (gettimeofday_sec() - timesec) >= 0.2 ){
-						timesec = gettimeofday_sec();
+					if( (sceKernelLibcClock() - timesec) >= (2 *100 * 1000) ){
+						timesec = sceKernelLibcClock();
 					}else{
 						continue;
 					}
 				}else{
 					beforeButtons = PSP_CTRL_DOWN;
-					timesec = gettimeofday_sec();
+					timesec = sceKernelLibcClock();
 				}
 				
 				if( printState & SELECTED_BOTTOM && (!(printState & TAIL_IS_EOF)) ){
-					i = getHeadOfNextLine(pergameBuf,headOffset);
+					i = getOffsetOfNextLine(pergameBuf,headOffset);
 					//次の行に移動したなら
 					if( i > 0 && pergameBuf[i-1] == '\n' && i != headOffset ) headLine++;
 					if( printState & TAIL_IS_N  ){
@@ -486,7 +506,7 @@ int editPergameMenu(void)
 			}else if( padData.Buttons & PSP_CTRL_TRIANGLE ){
 				beforeButtons = PSP_CTRL_TRIANGLE;
 				//プラグインを選択
-				if( fileSelecter(sepluginsBasePath[config.defaultPath],&dirTmp, PPREFSMSG_EDITPERGAME_SELECTPRX, 0, "ccbcccac" ) == 0 ){
+				if( fileSelecter(config.basePath,&dirTmp, PPREFSMSG_EDITPERGAME_SELECTPRX, 0, "ccbcccac" ) == 0 ){
 					for( i = 0; i+readSize < PERGAMEBUF_SIZE && dirTmp.name[i] != '\0'; i++ ){
 						//too big size
 						if( i+readSize+1 >= PERGAMEBUF_SIZE ){
@@ -524,7 +544,7 @@ int editPergameMenu(void)
 				wait_button_up(&padData);
 				return 0;
 			}else if( padData.Buttons & PSP_CTRL_START ){
-				saveEditPergame(pergameBuf);
+				saveEditPergame(pergameBuf,pergametxtPath);
 				wait_button_up(&padData);
 				return 0;
 			}else if( padData.Buttons & PSP_CTRL_RTRIGGER ){
@@ -534,7 +554,7 @@ int editPergameMenu(void)
 					printState = noPrintText(pergameBuf, headOffset, headLine, selectedLine,MAXDISPLAY_Y );
 				
 					if( printState & SELECTED_BOTTOM && (!(printState & TAIL_IS_EOF)) ){
-						i = getHeadOfNextLine(pergameBuf,headOffset);
+						i = getOffsetOfNextLine(pergameBuf,headOffset);
 						//次の行に移動したなら
 						if( i > 0 && pergameBuf[i-1] == '\n' && i != headOffset ) headLine++;
 						if( printState & TAIL_IS_N  ) selectedLine++;
@@ -544,15 +564,14 @@ int editPergameMenu(void)
 					}else{
 						break;
 					}
-				}
-				/*
+				}			/*
 				tmp = getNumberOfLineOfString(pergameBuf);
 				headOffset = 0;
 				i = 0;
 				headLine = 0;
 				//
 				while( headLine + MAXDISPLAY_Y < tmp ){
-					headOffset = getHeadOfNextLine(pergameBuf,i);
+					headOffset = getOffsetOfNextLine(pergameBuf,i);
 					if( headOffset == i ) break;
 					i = headOffset;
 					headLine++;
@@ -563,7 +582,7 @@ int editPergameMenu(void)
 				/*
 				tmp = strlen(pergameBuf);
 				for( i = 0; i < MAXDISPLAY_Y; i++ ){
-					headOffset = getHeadOfPreviousLine(pergameBuf,tmp);
+					headOffset = getOffsetOfPreviousLine(pergameBuf,tmp);
 					if( headOffset == tmp ) break;
 					tmp = headOffset;
 				}
@@ -572,10 +591,11 @@ int editPergameMenu(void)
 				*/
 				/*
 				tmp = strlen(pergameBuf);
-				headOffset = getHeadOfPreviousLine(pergameBuf,tmp);
+				headOffset = getOffsetOfPreviousLine(pergameBuf,tmp);
 				headLine = getNumberOfLineOfStringFormOffset(pergameBuf,tmp);
 				selectedLine = headLine;
 				*/
+	
 				
 				wait_button_up(&padData);
 				break;
