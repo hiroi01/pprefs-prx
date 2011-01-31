@@ -158,6 +158,15 @@ void pprefsSleep(clock_t sleepTime)
 	
 	while( (sceKernelLibcClock()- time) < sleepTime );
 }
+
+//一瞬で窓を作る
+//この関数マクロで作れる気がする
+void makeWindowQuick(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
+{
+	libmFillRect(sx , sy , ex , ey , bgcolor );
+	libmFrame(sx , sy , ex ,ey , fgcolor );
+}
+
 //にゅーってでる窓を作る
 void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
 {

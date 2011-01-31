@@ -23,7 +23,7 @@
 #define PPREFSMSG_ADD_TOP " <<追記>> : 追記したいプラグインを選択してください "
 #define PPREFSMSG_ADD_HOWTOUSE " %s:選択 HOME:やめる L:フォルダ階層上へ R:フォルダ開く "
 #define PPREFSMSG_ADD_HOWTOUSE_2 " %s:選択 HOME:やめる L:フォルダ階層上へ R:フォルダ開く START:現在位置のフォルダを選択 "
-#define PPREFSMSG_ADD_HOWTOUSE_3 " %s:現在位置のフォルダを指定 HOME:やめる L:フォルダ階層上へ R:フォルダ開く "
+#define PPREFSMSG_ADD_HOWTOUSE_3 " HOME:やめる L:フォルダ階層上へ R/%s:フォルダ開く START:現在位置のフォルダを選択"
 #define PPREFSMSG_SUBMENU_LIST "追記","削除","pergame編集","設定","COPY ME",NULL
 #define PPREFSMSG_SUBMENU_LIST_GO "追記","削除","pergame編集","設定",NULL
 #define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "追記","削除","pergame編集","設定","中断ゲームファイル弄る",NULL

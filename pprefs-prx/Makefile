@@ -23,6 +23,8 @@ OBJS =	\
 	syslibc/qsort.o \
 	syslibc/memory.o \
 
+#	sceModuleManager_driver.o \
+
 
 ifeq ($(PSP_HEN_VERSION),635)
 OBJS		+=	../nidResolve/635/sceCtrl_driver.o
@@ -51,16 +53,20 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm -lz
+LIBS = ../libmenu/libmenuj.a -lpspsystemctrl_kernel -lm -lz 
+
 
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 
+ifeq ($(PSP_HEN_VERSION),635)
+all:
+
+else
 all:
 	psp-packer pprefs.prx
-#clean:
-#	\rm *.o *.elf *.prx
+endif
 
 main.o: main.c main.h libmenu.h memory.h file.h conf.h button.h thread.h color.h
 
