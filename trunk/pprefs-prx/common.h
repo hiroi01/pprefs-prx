@@ -82,7 +82,6 @@ extern int deviceModel;
 extern char *modelName[];
 extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
-extern bool now_state;
 extern INI_Key conf[10];
 
 

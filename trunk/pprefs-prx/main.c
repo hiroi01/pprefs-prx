@@ -67,7 +67,8 @@ struct pprefsButtonDatas buttonData[] = {
 int buttonNum[] = {0,1};
 char ownPath[256];
 
-int deviceModel = 10;
+int deviceModel = 9;
+char modelNameUnknown[6];
 char *modelName[] = {
 	"[01g]", //0
 	"[02g]", //1
@@ -78,12 +79,12 @@ char *modelName[] = {
 	"[07g]", //6
 	"[08g]", //7
 	"[09g]", //8
-	"[???]", //9
+	modelNameUnknown, //9
 };
 
 int now_type = 0;
 
-bool now_state = false; // = true suspending   = false no suspending
+//bool now_state = false; // = true suspending   = false no suspending
 
 
 
@@ -270,8 +271,17 @@ const char *INI_Key_lineFeedCode_list[] = {
 	NULL
 };
 
+/*
+	SceUID modid_;
+	int status_;
+	char args_[1024];
+*/
+
+
 int main_thread( SceSize arglen, void *argp )
 {
+
+	
 	clock_t timesec;
 	char *temp;
 	char iniPath[256];
@@ -292,9 +302,14 @@ int main_thread( SceSize arglen, void *argp )
 		
 		sceKernelDelayThread(1000);
 	}
+
+/*
+	modid_ = sceKernelLoadModule("ms0:/seplugins/ptextviewer.prx", 0, NULL);
+	if(modid_ >= 0) {
+//		modid_ = sceKernelStartModule(modid_, (strlen("ef0:/seplugins/ptextviewer.prx") + 1), (void *) args_, &status_, NULL);
+	}
+	*/
 	
-
-
 	//INI読み込み
 	strcpy(iniPath, argp);
 	temp = strrchr(iniPath, '/');
@@ -343,7 +358,10 @@ int main_thread( SceSize arglen, void *argp )
 	//8 -> 3000 09g t箱?
 	//
 	deviceModel = sceKernelGetModel();
-	if( deviceModel < 0 || deviceModel > 8) deviceModel = 9;
+	if( deviceModel < 0 || deviceModel > 8){
+		sprintf( modelNameUnknown, "[%3d]",deviceModel );
+		deviceModel = 9;
+	}
 	
 	padData.Buttons = 0;
 	
@@ -488,9 +506,9 @@ void main_menu(void)
 {
 	// wait till releasing buttons
 	wait_button_up(&padData);
-	clock_t timesec = sceKernelLibcClock();
+//	clock_t timesec = sceKernelLibcClock();
 	// suspend XMB
-//	Suspend_Resume_Threads(SUSPEND_MODE);
+//	Suspend_resumeThreads(SUSPEND_MODE);
 	
 	//prepare for displaying and display
 	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
@@ -504,7 +522,7 @@ void main_menu(void)
 
 	
 	readSepluginsText(3,true,config.basePath);
-	
+	safelySuspendThreadsInit();
 	wait_button_up(&padData);
 
 	while(1){
@@ -526,11 +544,14 @@ void main_menu(void)
 		if( beforeButtons == 0 ) wait_button_up(&padData);
 		while(1){
 			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
+			safelySuspendThreadsInit(5 * 100 * 1000);
+			/*
 			if( ! now_state ){
 				if( (sceKernelLibcClock() - timesec) >= (5 * 100 * 1000) ){
-					SUSPEND_THREADS();
+					suspendThreads();
 				}
 			}
+			*/
 			
 			get_button(&padData);
 
@@ -629,7 +650,7 @@ void main_menu(void)
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER) ) continue;
 				beforeButtons |= PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER;
 
-				SUSPEND_THREADS();
+				suspendThreads();
 				if( confirm_save() == 0 ){
 					selectBasePath(config.basePath);
 					readSepluginsText(3,false,config.basePath);
@@ -657,7 +678,7 @@ void main_menu(void)
 				if( beforeButtons & PSP_CTRL_TRIANGLE ) continue;
 				beforeButtons = PSP_CTRL_TRIANGLE;
 
-				SUSPEND_THREADS();
+				suspendThreads();
 				if( sub_menu(now_arrow,( now_arrow < 10 )?148:46) != 0 ){
 					
 					now_arrow = 0;
@@ -683,7 +704,7 @@ void main_menu(void)
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"           ");
 							saveEdit();
-							if( now_state ) RESUME_THREADS();
+							resumeThreads();
 							sceKernelExitVSHVSH(NULL);
 							return;
 						}else if( padData.Buttons & (CHEACK_KEY & ~PSP_CTRL_START) ){
@@ -693,7 +714,7 @@ void main_menu(void)
 					}
 				}else{
 					saveEdit();
-					RESUME_THREADS();
+					resumeThreads();
 					sceKernelExitVSHVSH(NULL);
 					return;
 				}
@@ -706,13 +727,13 @@ void main_menu(void)
 				
 				saveEdit();
 				wait_button_up(&padData);
-				if( now_state ) RESUME_THREADS();
+				resumeThreads();
 				return;
 			}else if( padData.Buttons & PSP_CTRL_SELECT ){
 				if( beforeButtons & PSP_CTRL_SELECT ) continue;
 				beforeButtons = PSP_CTRL_SELECT;
 
-				SUSPEND_THREADS();
+				suspendThreads();
 
 				if( pdata[0].edit || pdata[1].edit || pdata[2].edit ){
 					char *menu[] = { PPREFSMSG_YESORNO_LIST };
@@ -749,7 +770,7 @@ void main_menu(void)
 				break;
 			}else if( padData.Buttons & PSP_CTRL_NOTE ){
 				beforeButtons = PSP_CTRL_NOTE;
-				SUSPEND_THREADS();
+				suspendThreads();
 				i = 0;
 				while(1){
 					wait_button_up_ex(&padData,PSP_CTRL_NOTE);
@@ -780,7 +801,9 @@ int module_start( SceSize arglen, void *argp )
 {
 	
 	Get_FirstThreads();
-	
+
+
+
 	SceUID thid;
 	
 	strcpy(ownPath, argp);
@@ -925,7 +948,7 @@ void saveEdit(void)
 
 	for( i = 0; i < 3; i++ ){
 		if ( pdata[i].edit ){
-			if( ! now_state ) SUSPEND_THREADS();
+			suspendThreads();
 			while(1){
 				if( writeSepluginsText(i,config.basePath) < 0 ){
 					makeWindow(24, 28,24 + LIBM_CHAR_WIDTH*26, 28 + LIBM_CHAR_HEIGHT*5, FG_COLOR, BG_COLOR);

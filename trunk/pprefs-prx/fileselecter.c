@@ -89,6 +89,8 @@ void selectStrage(char *path)
 //selectType == 1 ディレクトリも選択できる
 int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectType, char *dir_type_sort)
 {
+	if( selectType < 0 || selectType > 2 ) selectType = 0;
+	
 	int dir_num,offset,i,now_arrow;
 	u32 beforeButtons = 0;
 	clock_t time = 0;
@@ -163,15 +165,7 @@ PRINT_LIST:
 				}
 			}else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) ){
 				beforeButtons = (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER);
-				if( selectType == 2 ){
-					if( padData.Buttons & buttonData[buttonNum[0]].flag ){
-						strcpy( rtn->name , currentPath );
-						rtn->type = TYPE_DIR;
-						rtn->sort_type = dir_type_sort_default[TYPE_DIR];
-						wait_button_up(&padData);
-						return 0;
-					}
-				}
+
 				//空のフォルダーではない
 				if(  dir_num != 0 ){
 					//選択されたものがフォルダー
@@ -181,7 +175,7 @@ PRINT_LIST:
 						wait_button_up(&padData);
 						break;
 					//選択されたものがフォルダーではない && buttonData[buttonNum[0]].flagボタンが押されている
-					}else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && dir_num != 0 ){
+					}else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && dir_num != 0 && selectType != 2 ){
 						*rtn = dirBuf[offset+now_arrow];
 						strcpy( rtn->name , currentPath );
 						strcat( rtn->name , dirBuf[offset+now_arrow].name );
@@ -203,7 +197,7 @@ PRINT_LIST:
 			}else if( padData.Buttons & PSP_CTRL_HOME ){
 				wait_button_up(&padData);
 				return 1;
-			}else if( selectType == 1 && padData.Buttons & PSP_CTRL_START ){
+			}else if( (selectType == 1 || selectType == 2) && padData.Buttons & PSP_CTRL_START ){
 				beforeButtons = PSP_CTRL_START;
 
 				strcpy( rtn->name , currentPath );
