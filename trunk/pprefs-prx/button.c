@@ -60,6 +60,14 @@ void get_button(SceCtrlData *data)
 
 
 
+void wait_button_up_multithread(SceCtrlData *data)
+{
+	while((data->Buttons & CHEACK_KEY_2) != 0)
+	{
+		sceCtrlPeekBufferPositive( data, 1 );
+		sceKernelDelayThread( 50000 );
+	}
+}
 
 
 

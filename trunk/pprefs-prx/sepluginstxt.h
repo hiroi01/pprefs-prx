@@ -18,6 +18,7 @@
 
 #define LEN_PER_LINE 256
 #define MAX_LINE 64
+#define PRINT_PATH_LEN 52
 
 struct pdatas{
 	int num;//number of line
@@ -27,6 +28,8 @@ struct pdatas{
 	struct pdataLine{
 		char path[LEN_PER_LINE];
 		bool toggle;//= ture ON / = false OFF
+		int pathLen;
+		char *print;
 	}line[MAX_LINE];
 } pdata[3];
 

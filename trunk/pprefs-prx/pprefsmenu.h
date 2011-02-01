@@ -17,10 +17,12 @@
 #define EX_COLOR_DEFAULT SILVER
 
 #define PRINT_SCREEN() \
-libmClearBuffers(); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.091-1   by hiroi01"); \
+libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.091-2   by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
+
 extern char pprefsPrintBuf[128];
+
 #define libmPrintf(x,y,fg,bg,format, ... ) libmPrintfXY(x,y,fg,bg,pprefsPrintBuf,COMMON_BUF_LEN,format, ##__VA_ARGS__)
 #define libmPrint libmPrintXY
 #define fillLine(sy,color) libmFillRect( 0 , sy , 480 , sy + LIBM_CHAR_HEIGHT ,color);

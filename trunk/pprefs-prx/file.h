@@ -64,7 +64,7 @@ typedef struct {
 /*---------------------------------------------------------------------------
   指定したディレクトリ情報を読取る
 ---------------------------------------------------------------------------*/
-int read_dir(dir_t dir[], const char *path, int dir_only,char *dir_type_sort);
+int read_dir(dir_t dir[], const char *path, int dir_only,char *dir_type_sort, int maxFileNum );
 //int read_dir_2(dir_t dir[], const char *path, int read_dir_flag);
 
 //int ms_read(void* buf, const char* path, int pos, int size);

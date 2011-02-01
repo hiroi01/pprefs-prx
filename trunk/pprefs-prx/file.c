@@ -7,7 +7,7 @@
 
 
  /*
- * iso toolのソースより
+ * iso toolのソースより // form iso tool source code
  *
  * mod by hiroi01
  */
@@ -126,8 +126,16 @@ int compare_dir_str(const void* c1, const void* c2)
   const char *path : パス
 
   return int       : ファイル数, dir[0].numにも保存される
+  
+  
+  
+  dir : dir_t pointer
+  paht : dir path
+  dir_only : == 0  read all files and dir / != 0 read only dir
+  dir_type_sort : == NULL use default
 ---------------------------------------------------------------------------*/
-int read_dir(dir_t dir[], const char *path, int dir_only,char *dir_type_sort)
+
+int read_dir(dir_t dir[], const char *path, int dir_only,char *dir_type_sort, int maxFileNum )
 {
   SceUID dp;
   SceIoDirent entry;
@@ -150,7 +158,7 @@ int read_dir(dir_t dir[], const char *path, int dir_only,char *dir_type_sort)
   {
     memset(&entry, 0, sizeof(entry));
 
-    while((sceIoDread(dp, &entry) > 0))
+    while((sceIoDread(dp, &entry) > 0) && (file_num < maxFileNum))
     {
       num = strlen(entry.d_name);
 

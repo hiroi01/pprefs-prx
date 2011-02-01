@@ -8,7 +8,6 @@
 
 
 #include "common.h"
-#include "libmenu.h"
 #include "memory.h"
 #include "file.h"
 #include "button.h"
@@ -316,18 +315,23 @@ int main_thread( SceSize arglen, void *argp )
 	if( temp != NULL ) *temp = '\0';
 	strcat(iniPath,INI_NAME);
 	strcpy(config.basePathDefault,"ms0:/seplugins/");
+	//if device is go
+	if( deviceModel == 4 ){
+		config.basePathDefault[0] = 'e';
+		config.basePathDefault[1] = 'f';
+	}
 	
 	INI_Init_Key(conf);
-	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );
-	INI_Add_Bool(conf, "BootMessage", &config.bootMessage, true );
-	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );
-	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );
-	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);
-	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);
-	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);
-	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);
-	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);
-	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);
+	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
+	INI_Add_Bool(conf, "BootMessage", &config.bootMessage, true );//1
+	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//2
+	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//3
+	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//4
+	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//5
+	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//6
+	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//7
+	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//8
+	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//9
 	INI_Read_Conf(iniPath, conf);
 
 	SET_CONFIG();
@@ -349,19 +353,8 @@ int main_thread( SceSize arglen, void *argp )
 	
 	readSepluginsText(3,false,config.basePath);
 
-	//deviceModel 多分
-	//0 -> 1000
-	//1 -> 2000
-	//2 -> 3000 03g?
-	//3 -> 3000 04g?
-	//4 -> go
-	//8 -> 3000 09g t箱?
-	//
-	deviceModel = sceKernelGetModel();
-	if( deviceModel < 0 || deviceModel > 8){
-		sprintf( modelNameUnknown, "[%3d]",deviceModel );
-		deviceModel = 9;
-	}
+
+
 	
 	padData.Buttons = 0;
 	
@@ -380,9 +373,8 @@ int main_thread( SceSize arglen, void *argp )
 		timesec = sceKernelLibcClock();
 		while( stop_flag ){
 			//表示
-			if( libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+			if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
 				libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),commonBuf);
-
 				sceDisplayWaitVblankStart();
 			}
 
@@ -498,61 +490,56 @@ int sub_menu(int currentSelected,int position){
 
 
 
-#define printEditedMark() libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*")
+#define printEditedMark() libmPrint(63 , 24 , BG_COLOR , FG_COLOR,"*")
 
 
 
 void main_menu(void)
 {
-	// wait till releasing buttons
-	wait_button_up(&padData);
-//	clock_t timesec = sceKernelLibcClock();
-	// suspend XMB
-//	Suspend_resumeThreads(SUSPEND_MODE);
-	
-	//prepare for displaying and display
-	libmInitBuffers(false,PSP_DISPLAY_SETBUF_NEXTFRAME);
-	PRINT_SCREEN();
 
-	int i,tmp,headOffset = 0;
+
+	wait_button_up(&padData);
+
+	int i,tmp = 0,headOffset = 0;
 	int now_arrow = 0;//current position of arrow
 	clock_t time = 0;
 	u32 beforeButtons = 0;
-
+	
 
 	
 	readSepluginsText(3,true,config.basePath);
+	
+	/*
+	libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
+	PRINT_SCREEN();
+	*/
+
 	safelySuspendThreadsInit();
-	wait_button_up(&padData);
 
 	while(1){
+//		libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
+
+		libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME);
 		PRINT_SCREEN();
+
 		if( hitobashiraFlag ) libmPrint(424,10,FG_COLOR,BG_COLOR,PPREFSMSG_HITOBASHIRA);
 		else libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
 		
 		libmPrintf(0,254,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE,buttonData[buttonNum[0]].name);
 		libmPrintf(0,264,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE_2);
 
-		libmPrintf(15,28,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",getSepluginsTextName(commonBuf,config.basePath,now_type));
-		if( pdata[now_type].edit ) libmPrint(63 , 28 , BG_COLOR , FG_COLOR,"*");
-//		libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+		libmPrintf(15,24,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",getSepluginsTextName(commonBuf,config.basePath,now_type));
+		if( pdata[now_type].edit ) printEditedMark();
 		for( i = 0; i < MAX_DISPLAY_NUM && i < pdata[now_type].num; i++ ){
 			libmPrintf(15,38 + i*(LIBM_CHAR_HEIGHT+2),(now_arrow == i+headOffset)?SL_COLOR:FG_COLOR,BG_COLOR,
-			"[%s] %s",pdata[now_type].line[i+headOffset].toggle?"O N":"OFF",pdata[now_type].line[i+headOffset].path);
+			"[%s] %s",pdata[now_type].line[i+headOffset].toggle?"O N":"OFF",pdata[now_type].line[i+headOffset].print);
 		}
 
 		if( beforeButtons == 0 ) wait_button_up(&padData);
 		while(1){
 			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
 			safelySuspendThreadsInit(5 * 100 * 1000);
-			/*
-			if( ! now_state ){
-				if( (sceKernelLibcClock() - timesec) >= (5 * 100 * 1000) ){
-					suspendThreads();
-				}
-			}
-			*/
-			
+
 			get_button(&padData);
 
 			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) && pdata[now_type].num > 0 ){
@@ -586,10 +573,12 @@ void main_menu(void)
 					
 					printEditedMark();
 					pdata[now_type].edit = true;
-					//tmp - now_arrow ==  1 one up
-					//tmp - now_arrow == -1 one down
-					//tmp - now_arrow >   1 up top      ( tmp > now_arrow )
-					//tmp - now_arrow <  -1 down bottom ( tmp < now_arrow )
+					/*
+					tmp - now_arrow ==  1 one up
+					tmp - now_arrow == -1 one down
+					tmp - now_arrow >   1 up top      ( tmp > now_arrow )
+					tmp - now_arrow <  -1 down bottom ( tmp < now_arrow )
+					*/
 					if( tmp - now_arrow > 1 ){
 						for( i = tmp; i > now_arrow; i-- ){
 							swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
@@ -626,9 +615,9 @@ void main_menu(void)
 				
 				//画面に表示 / display on screen
 				fillLine(38 + (tmp-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-				libmPrintf(15,38 + (tmp-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].path);
+				libmPrintf(15,38 + (tmp-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
 				fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-				libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].path);
+				libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
 //				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 
 				//□以外のボタンが離されるまでwait / wait till releasing buttons except □
@@ -643,7 +632,7 @@ void main_menu(void)
 				pdata[now_type].line[now_arrow].toggle = !pdata[now_type].line[now_arrow].toggle;
 				libmPrintf(
 				            15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),SL_COLOR,BG_COLOR,
-				            "[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].path
+				            "[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print
 				);
 //				wait_button_up(&padData);
 			}else if( padData.Buttons & PSP_CTRL_RTRIGGER && padData.Buttons & PSP_CTRL_LTRIGGER ){
@@ -702,7 +691,7 @@ void main_menu(void)
 					while(1){
 						if( padData.Buttons & PSP_CTRL_START ){
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
-							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"           ");
+							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 , FG_COLOR,BG_COLOR,"           ");
 							saveEdit();
 							resumeThreads();
 							sceKernelExitVSHVSH(NULL);
@@ -801,8 +790,20 @@ int module_start( SceSize arglen, void *argp )
 {
 	
 	Get_FirstThreads();
+	stop_flag = 1;
 
-
+	//deviceModel 多分
+	//0 -> 1000
+	//1 -> 2000
+	//2 -> 3000 03g?
+	//3 -> 3000 04g?
+	//4 -> go
+	//8 -> 3000 09g t箱?
+	deviceModel = sceKernelGetModel();
+	if( deviceModel < 0 || deviceModel > 8){
+		sprintf( modelNameUnknown, "[%3d]",deviceModel );
+		deviceModel = 9;
+	}
 
 	SceUID thid;
 	
