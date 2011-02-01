@@ -4,8 +4,11 @@
 #include "language.h"
 #include "pprefsmenu.h"
 
+
 //ファイルリスト(ファイルブラウザ)のためのbuffer
-dir_t dirBuf[128];
+static dir_t dirBuf[DIR_BUF_NUM];
+
+//グローバル
 dir_t dirTmp;
 
 extern const char dir_type_sort_default[];
@@ -61,6 +64,7 @@ void selectStrage(char *path)
 			menu = menu_go;
 		}
 		/*
+		6.20TNのパスのエイリアス機能対策(?)
 		goで(vshのときだけ?)ef0:/からプラグインを読み込ませるとms0:/という文字列をef0:/と書き換えるっぽいので、
 		更に上書きしてやる、、、けど文字列リテラルって本当は書き換えたらまずいよね・・・
 		*/
@@ -87,6 +91,7 @@ void selectStrage(char *path)
 #define MAX_DISPLAY_NUM 21
 //selectType == 0 通常
 //selectType == 1 ディレクトリも選択できる
+//selectType == 2 ディレクトリしか選択できない
 int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectType, char *dir_type_sort)
 {
 	if( selectType < 0 || selectType > 2 ) selectType = 0;
@@ -100,7 +105,7 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 	while(1){
 
 		
-		dir_num = read_dir(dirBuf,currentPath, 0,dir_type_sort);
+		dir_num = read_dir(dirBuf,currentPath, 0,dir_type_sort,DIR_BUF_NUM);
 		offset = 0;
 		now_arrow = 0;
 

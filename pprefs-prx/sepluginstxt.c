@@ -224,6 +224,8 @@ int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 						pdata[type].line[i].toggle = false;
 				}
 			}
+			pdata[type].line[i].pathLen = strlen(pdata[type].line[i].path);
+			pdata[type].line[i].print = &pdata[type].line[i].path[(pdata[type].line[i].pathLen < 52)?0:(pdata[type].line[i].pathLen-52)];
 			i++;
 		}
 		sceIoClose(fp);

@@ -34,7 +34,7 @@
 #define PPREFSMSG_MAINMENU_HOTOUSE " %s:選択 △:メニュー □+↑/↓:並び替え L+R:txt読書先変更"
 #define PPREFSMSG_MAINMENU_HOTOUSE_2 " SELECT:編集破棄&リロード HOME:保存&終了 START:保存&VSH再起動"
 #define PPREFSMSG_MAINMENU_REPUSHSTART "もう一度STARTを押すと\nRESTART VSH"
-#define PPREFSMSG_MAINMENU_RELOAD "編集を破棄して、リロードしてもよろしいですか?"
+#define PPREFSMSG_MAINMENU_RELOAD " 編集を破棄して、リロードしてもよろしいですか? "
 #define PPREFSMSG_YESORNO "%s:はい %s:いいえ"
 #define PPREFSMSG_YESORNO_LIST "はい","いいえ",NULL
 #define PPREFSMSG_COPYME_FIRSTCONFIRM "次の操作を実行する前に現在の編集を保存してください"
@@ -56,4 +56,23 @@
 #define PPREFSMSG_HITOBASHIRA "人柱"
 #define PPREFSMSG_SELECTBASEPATH "vsh.txt,game.txt,pops.txtがあるフォルダを指定してください"
 #define PPREFSMSG_PAUSEGAMETEST "弄った後にRESTART VSHして下さい"
+#define PPREFSMSG_DETECTKEY_1 "キー検出 残り 秒"
+#define PPREFSMSG_DETECTKEY_2 "キー検出 残り%d秒"
+#define PPREFSMSG_CONFIGMENU_WHATISTHIS \
+	"pprefsを起動させるボタンの指定(デフォルトはHOME)", \
+	"本体を起動したときに左下に表\示される「pprefs起動準備完了!～」を表\示するか?\ntrue→表\示 false→非表\示\(デフォルトはtrue)", \
+	"×/○ボタンの役割を入れ替える\ntrue→○決定/×キャンセル false→×決定/○キャンセル(デフォルトはfalse)", \
+	"トップメニューにてVSH再起動するのにSTARTを一度押すか二度押すか\ntrue→一度押し false→二度押し(デフォルトはfalse)", \
+	"このプラグインがテキストを書き出すときに使う改行コード(デフォルトはCR+LF)", \
+	"vsh.txt,game.txt,pops.txtがあるフォルダのパス", \
+	"通常の文字色", \
+	"背景の色", \
+	"選択された文字色", \
+	"下に表\示される説明の文字色",
+#define PPREFSMSG_CONFIGMENU_TITLE " 設定 "
+#define PPREFSMSG_CONFIGMENU_MENU_1 "上記の設定で保存する"
+#define PPREFSMSG_CONFIGMENU_MENU_2 "デフォルト値にする"
+#define PPREFSMSG_CONFIGMENU_MENU_3 "やめる"
+#define PPREFSMSG_CONFIGMENU_HOWTOUSE " %s:選択 HOME:やめる "
+
 #endif

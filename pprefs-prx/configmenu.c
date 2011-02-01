@@ -27,7 +27,7 @@ u32 detect_key(void)
 		480 - LIBM_CHAR_WIDTH*3 , 28 + LIBM_CHAR_HEIGHT*5,
 		FG_COLOR,BG_COLOR
 	);
-	libmPrint( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT    , FG_COLOR, BG_COLOR, "キー検出 残り 秒" );
+	libmPrint( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT    , FG_COLOR, BG_COLOR, PPREFSMSG_DETECTKEY_1 );
 	while(1){
 		get_button(&padData);
 		if( padData.Buttons != 0 ) break;
@@ -45,7 +45,7 @@ u32 detect_key(void)
 			libmPrint   ( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT*2+2, FG_COLOR, BG_COLOR, commonBuf);
 			beforeKey = padData.Buttons;
 		}
-		libmPrintf  ( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT    , FG_COLOR, BG_COLOR, "キー検出 残り%d秒", (int)( 3 -  ( (sceKernelLibcClock() - timesec)/1000000) )  );
+		libmPrintf  ( 24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT    , FG_COLOR, BG_COLOR, PPREFSMSG_DETECTKEY_2, (int)( 3 -  ( (sceKernelLibcClock() - timesec)/1000000) )  );
 		if( (sceKernelLibcClock() - timesec) >= (3 * 1000 * 1000) ) break;
 	}
 	
@@ -74,23 +74,14 @@ int config_menu(void)
 	char iniPath[256];
 	int now_arrow = 0,i;
 	char *whatIsThis[] = {
-		"pprefsを起動させるボタンの指定(デフォルトはHOME)",
-		"本体を起動したときに左下に表\示される「pprefs起動準備完了!～」を表\示するか?\ntrue→表\示 false→非表\示\(デフォルトはtrue)",
-		"×/○ボタンの役割を入れ替える\ntrue→○決定/×キャンセル false→×決定/○キャンセル(デフォルトはfalse)",
-		"トップメニューにてVSH再起動するのにSTARTを一度押すか二度押すか\ntrue→一度押し false→二度押し(デフォルトはfalse)",
-		"このプラグインがテキストを書き出すときに使う改行コード(デフォルトはCR+LF)",
-		"vsh.txt,game.txt,pops.txtがあるフォルダのパス",
-		"通常の文字色",
-		"背景の色",
-		"選択された文字色",
-		"下に表\示される説明の文字色",
+		PPREFSMSG_CONFIGMENU_WHATISTHIS
 	};
 
 	
 	while(1){
 		PRINT_SCREEN();
 		
-		libmPrint(15,28,BG_COLOR,FG_COLOR," 設定 ");
+		libmPrint(15,28,BG_COLOR,FG_COLOR,PPREFSMSG_CONFIGMENU_TITLE);
 		for( i = 0; i < conf[0].keyNum; i++ ){
 			if( 
 				strcasecmp( "Color0", conf[i].key ) == 0 ||
@@ -119,13 +110,13 @@ int config_menu(void)
 		}
 
 		
-		libmPrint (15, 46 +(i+1)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, "上記の設定で保存する");
-		libmPrint (15, 46 +(i+2)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, "デフォルト値にする");
-		libmPrint (15, 46 +(i+3)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, "やめる");
+		libmPrint (15, 46 +(i+1)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_1);
+		libmPrint (15, 46 +(i+2)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_2);
+		libmPrint (15, 46 +(i+3)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_3);
 
 
 		libmPrintf(5, 46 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
-		libmPrintf(5,264,EX_COLOR ,BG_COLOR," %s:選択 HOME:やめる ",buttonData[buttonNum[0]].name);
+		libmPrintf(5,264,EX_COLOR ,BG_COLOR,PPREFSMSG_CONFIGMENU_HOWTOUSE,buttonData[buttonNum[0]].name);
 		PRINT_EXPLANATION();
 		wait_button_up(&padData);
 		while(1){
