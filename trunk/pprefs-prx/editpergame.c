@@ -378,7 +378,8 @@ int editPergameMenu(void)
 	clock_t timesec;
 	char pergametxtPath[256];
 	
-	strcpy(pergametxtPath,"ms0:/seplugins/pergame.txt");
+	strcpy(pergametxtPath,rootPath);
+	strcat(pergametxtPath,"seplugins/pergame.txt");
 	
 	if( pergameBuf == NULL ){
 		pergameBuf = malloc(PERGAMEBUF_SIZE);
@@ -388,7 +389,7 @@ int editPergameMenu(void)
 	while(1){
 		fd = sceIoOpen(pergametxtPath, PSP_O_RDONLY, 0777);
 		if( fd >= 0 ) break;
-		if( fileSelecter("ms0:/",&dirTmp, "select pergame.txt", 0, NULL ) != 0 ) return -2;
+		if( fileSelecter(rootPath,&dirTmp, "select pergame.txt", 0, NULL ) != 0 ) return -2;
 		strcpy(pergametxtPath,dirTmp.name);
 	}
 	readSize = sceIoRead(fd, pergameBuf, PERGAMEBUF_SIZE - 1);
@@ -519,7 +520,7 @@ int editPergameMenu(void)
 					pergameBuf[i+readSize+1] = '\0';
 					readSize += i+1;
 					//ゲームを選択
-					if(  fileSelecter("ms0:/",&dirTmp, PPREFSMSG_EDITPERGAME_SELECTGAME, 1, NULL ) == 0  ){
+					if(  fileSelecter(rootPath,&dirTmp, PPREFSMSG_EDITPERGAME_SELECTGAME, 1, NULL ) == 0  ){
 						pnt = dirTmp.name;
 						//ISOやCSOなどゲームIDを持つものなら == 10
 						if( get_umd_id(idBuf, dirTmp.name, dirTmp.type) == 10 ){

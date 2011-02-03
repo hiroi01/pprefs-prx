@@ -73,6 +73,9 @@ int addNewItem(int type,struct pdataLine *lineData)
 
 	strcpy(pdata[type].line[pdata[type].num].path,lineData->path);
 	pdata[type].line[pdata[type].num].toggle = lineData->toggle;
+	pdata[type].line[pdata[type].num].pathLen = strlen(pdata[type].line[pdata[type].num].path);
+	pdata[type].line[pdata[type].num].print = &pdata[type].line[pdata[type].num].path[(pdata[type].line[pdata[type].num].pathLen < PRINT_PATH_LEN)?0:(pdata[type].line[pdata[type].num].pathLen-PRINT_PATH_LEN)];
+
 	pdata[type].num++;
 	
 	return 0;
@@ -169,7 +172,7 @@ int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 		 return -1;
 	}
 	
-	checkMs();
+//	checkMs();
 	
 	for( ; type < loopend; type++){
 		pdata[type].edit = false;
@@ -225,7 +228,7 @@ int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 				}
 			}
 			pdata[type].line[i].pathLen = strlen(pdata[type].line[i].path);
-			pdata[type].line[i].print = &pdata[type].line[i].path[(pdata[type].line[i].pathLen < 52)?0:(pdata[type].line[i].pathLen-52)];
+			pdata[type].line[i].print = &pdata[type].line[i].path[(pdata[type].line[i].pathLen < PRINT_PATH_LEN)?0:(pdata[type].line[i].pathLen-PRINT_PATH_LEN)];
 			i++;
 		}
 		sceIoClose(fp);

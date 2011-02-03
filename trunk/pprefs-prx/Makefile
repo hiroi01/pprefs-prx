@@ -2,9 +2,6 @@ TARGET = pprefs
 PSP_FW_VERSION = 500
 BUILD_PRX = 1
 
-#6.35 Pro用で作る場合は PSP_HEN_VERSION を有効にしてコンパイル (先頭の#を外してコメントアウト）
-#PSP_HEN_VERSION	= 	635
-
 
 OBJS =	\
 	main.o \
@@ -15,6 +12,7 @@ OBJS =	\
 	thread.o \
 	conf.o \
 	configmenu.o \
+	nidresolve.o \
 	sepluginstxt.o \
 	editpergame.o \
 	fileselecter.o \
@@ -23,13 +21,36 @@ OBJS =	\
 	syslibc/qsort.o \
 	syslibc/memory.o \
 
-#	sceModuleManager_driver.o \
+
+OBJS	+=	../libmenu/static.o
+OBJS	+=	../libmenu/import.o
 
 
-ifeq ($(PSP_HEN_VERSION),635)
-OBJS		+=	../nidResolve/635/sceCtrl_driver.o
-OBJS		+=	../nidResolve/635/sceDisplay_driver.o 
-endif
+
+
+#DRAW
+OBJS	+=	../libmenu/Draw/libmConvert8888_XXXX.o
+OBJS	+=	../libmenu/Draw/libmConvertXXXX_8888.o
+OBJS	+=	../libmenu/Draw/libmAlphaBlend.o
+OBJS	+=	../libmenu/Draw/libmDebugScreenSetXY.o
+OBJS	+=	../libmenu/Draw/libmPrintXY.o
+OBJS	+=	../libmenu/Draw/libmPrintfXY.o
+OBJS	+=	../libmenu/Draw/libmPutCharXY.o
+OBJS	+=	../libmenu/Draw/libmPoint.o
+OBJS	+=	../libmenu/Draw/libmPointEx.o
+OBJS	+=	../libmenu/Draw/libmLine.o
+OBJS	+=	../libmenu/Draw/libmFrame.o
+OBJS	+=	../libmenu/Draw/libmFillRect.o
+OBJS	+=	../libmenu/Draw/libmCircle.o
+OBJS	+=	../libmenu/Draw/libmInitBuffers.o
+OBJS	+=	../libmenu/Draw/libmClearBuffers.o
+OBJS	+=	../libmenu/Draw/libmSwapBuffers.o
+OBJS	+=	../libmenu/Draw/libmMakeDrawAddr.o
+OBJS	+=	../libmenu/Draw/libmGetColor.o
+OBJS	+=	../libmenu/Draw/libmGetCurVInfo.o
+OBJS	+=	../libmenu/Draw/libmSetCurVInfo.o
+
+
 
 
 PRX_EXPORTS = exports.exp
@@ -53,34 +74,12 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = ../libmenu/libmenuj.a -lpspsystemctrl_kernel -lm -lz 
+LIBS = -lpspsystemctrl_kernel -lm -lz 
 
 
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 
-ifeq ($(PSP_HEN_VERSION),635)
 all:
-
-else
-all:
-	psp-packer pprefs.prx
-endif
-
-main.o: main.c main.h libmenu.h memory.h file.h conf.h button.h thread.h color.h
-
-file.o: file.c main.h libmenu.h button.h file.h
-
-button.o: button.c button.h
-
-thread.o: thread.c thread.h
-
-conf.o: conf.c conf.h button.h file.h
-
-configmenu.o: configmenu.c common.h libmenu.h button.h main.h language.h
-
-editpergame.o: editpergame.c common.h libmenu.h memory.h button.h fileselecter.h  main.h language.h
-
-fileselecter.o: fileselecter.c fileselecter.h common.h button.h libmenu.h  language.h 
 

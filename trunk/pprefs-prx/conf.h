@@ -71,8 +71,6 @@ typedef struct
 } INI_Key;
 
 
-int Read_Line(SceUID fd, char *buf, int n);
-void Set_Default_Path(char path[3][64], int num);
 
 
 

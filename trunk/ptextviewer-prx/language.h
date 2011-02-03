@@ -21,8 +21,10 @@
 
 #define PTXTMSG_SELECTER_TITLE "Please select text file"
 #define PTXTMSG_VIEW_TOP "TEXT"
-#define PTXTMSG_VIEW_HOTOUSE "L:Top R:Bottom Å®:NextPage Å©:PreviousPage HOME:Exit %s:Back"
+#define PTXTMSG_VIEW_HOTOUSE "L:Top R:Bottom Å®:NextPage Å©:PrevPage HOME:Exit %s:Back holdÅ†:SpeedUp"
 #define PPREFSMSG_ADD_HOWTOUSE " %s:Select HOME:Exit L:UpDir R:OpenDir"
 #define PPREFSMSG_ADD_HOWTOUSE_2 "%s:Select HOME:Exit L:UpDir R:OpenDir START:SelectCurrentDir"
+#define PPREFSMSG_SELECTBOX_HOTOUSE " %s:Select "
+#define PPREFSMSG_SELECTBOX_HOTOUSE_2 " %s:Select HOME:Quit "
 
 #endif

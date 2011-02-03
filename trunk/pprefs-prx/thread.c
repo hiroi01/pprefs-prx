@@ -4,6 +4,7 @@
 #include <pspthreadman.h>
 #include "thread.h"
 #include <stdbool.h>
+#include "nidresolve.h"
 
 // グローバル変数
 static int first_th[MAX_THREAD];

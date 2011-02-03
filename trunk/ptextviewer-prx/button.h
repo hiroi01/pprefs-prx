@@ -79,6 +79,7 @@ void get_button(SceCtrlData *data);
 
 
 //第一引数にbuffer(SceCtrlData)をわたす必要あり
+void wait_button_up_multithread(SceCtrlData *data)
 void wait_button_up(SceCtrlData *data);
 void wait_button_down(SceCtrlData *data,unsigned int key);
 void wait_any_button_down(SceCtrlData *data,unsigned int key);

@@ -92,6 +92,30 @@ void selectStrage(char *path)
 //selectType == 0 通常
 //selectType == 1 ディレクトリも選択できる
 //selectType == 2 ディレクトリしか選択できない
+
+#define ALLORW_WAIT(button,firstWait,wait) \
+if( (beforeButtons & (button) ) == (button) ){ \
+	if( firstFlag ){ \
+		if( (sceKernelLibcClock() - time) >= (firstWait) ){ \
+			time = sceKernelLibcClock(); \
+			firstFlag = false; \
+		}else{ \
+			continue; \
+		} \
+	}else{ \
+		if( (sceKernelLibcClock() - time) >= (wait) ){ \
+			time = sceKernelLibcClock(); \
+		}else{ \
+			continue; \
+		} \
+	} \
+}else{ \
+	firstFlag = true; \
+	beforeButtons = button; \
+	time = sceKernelLibcClock(); \
+} \
+
+
 int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectType, char *dir_type_sort)
 {
 	if( selectType < 0 || selectType > 2 ) selectType = 0;
@@ -100,6 +124,7 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 	u32 beforeButtons = 0;
 	clock_t time = 0;
 	char currentPath[256];
+	bool firstFlag = true;
 	strcpy(currentPath,startPath);
 
 	while(1){
@@ -129,45 +154,43 @@ PRINT_LIST:
 		while(1){
 			get_button(&padData);
 			if( padData.Buttons & PSP_CTRL_DOWN ){
-				if( beforeButtons & PSP_CTRL_DOWN ){
-					if( (sceKernelLibcClock() - time) >= (2 * 100 * 1000) ){
-						time = sceKernelLibcClock();
-					}else{
-						continue;
-					}
-				}else{
-					beforeButtons = PSP_CTRL_DOWN;
-					time = sceKernelLibcClock();
-				}
+				ALLORW_WAIT(PSP_CTRL_DOWN,3 * 100 * 1000,1 * 100 * 1000);
 				
 				if( now_arrow + 1 < MAX_DISPLAY_NUM && now_arrow + 1 < dir_num ){
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
 					now_arrow++;
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 				}else{
-					if( offset+MAX_DISPLAY_NUM < dir_num ) offset++;
-					goto PRINT_LIST;
+					if( offset+MAX_DISPLAY_NUM < dir_num ){
+						offset++;
+						goto PRINT_LIST;
+					}
 				}
 			}else if( padData.Buttons & PSP_CTRL_UP ){
-				if( beforeButtons & PSP_CTRL_UP ){
-					if( (sceKernelLibcClock() - time) >= (2 * 100 * 1000) ){
-						time = sceKernelLibcClock();
-					}else{
-						continue;
-					}
-				}else{
-					beforeButtons = PSP_CTRL_UP;
-					time = sceKernelLibcClock();
-				}
+				ALLORW_WAIT(PSP_CTRL_UP,3 * 100 * 1000,1 * 100 * 1000);
 				
 				if( now_arrow - 1 >= 0 ){
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
 					now_arrow--;
 					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 				}else{
-					if( offset > 0 ) offset--;
-					goto PRINT_LIST;
+					if( offset > 0 ){
+						offset--;
+						goto PRINT_LIST;
+					}
 				}
+			}else if( padData.Buttons & PSP_CTRL_RIGHT ){
+				ALLORW_WAIT(PSP_CTRL_RIGHT,2 * 100 * 1000,1 * 100 * 1000);
+				if( offset+MAX_DISPLAY_NUM < dir_num ){
+					offset += MAX_DISPLAY_NUM;
+					now_arrow=0;
+					goto PRINT_LIST;
+				}else{
+					offset = dir_num - MAX_DISPLAY_NUM;
+				}
+			}else if( padData.Buttons & PSP_CTRL_LEFT ){
+				ALLORW_WAIT(PSP_CTRL_LEFT,2 * 100 * 1000,1 * 100 * 1000);
+				
 			}else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) ){
 				beforeButtons = (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER);
 
