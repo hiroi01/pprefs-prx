@@ -37,10 +37,6 @@ PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 ------------------------------------------------------*/
 
 char commonBuf[COMMON_BUF_LEN];
-const char *sepluginsBasePath[] = {
-	"ms0:/seplugins/",
-	"ms0:/plugins/"
-};
 Conf_Key config;
 
 //改行コード
@@ -65,9 +61,9 @@ struct pprefsButtonDatas buttonData[] = {
 };
 int buttonNum[] = {0,1};
 char ownPath[256];
-
+char rootPath[16];
 int deviceModel = 9;
-char modelNameUnknown[6];
+char modelNameUnknown[16];
 char *modelName[] = {
 	"[01g]", //0
 	"[02g]", //1
@@ -314,12 +310,7 @@ int main_thread( SceSize arglen, void *argp )
 	temp = strrchr(iniPath, '/');
 	if( temp != NULL ) *temp = '\0';
 	strcat(iniPath,INI_NAME);
-	strcpy(config.basePathDefault,"ms0:/seplugins/");
-	//if device is go
-	if( deviceModel == 4 ){
-		config.basePathDefault[0] = 'e';
-		config.basePathDefault[1] = 'f';
-	}
+	
 	
 	INI_Init_Key(conf);
 	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
@@ -493,6 +484,78 @@ int sub_menu(int currentSelected,int position){
 #define printEditedMark() libmPrint(63 , 24 , BG_COLOR , FG_COLOR,"*")
 
 
+int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
+{
+	int i,tmp;
+	
+	tmp = *now_arrow; //現在の矢印の位置を覚えておく
+	//矢印の位置を変更 / change position of arrow
+	if( buttons & PSP_CTRL_DOWN ){
+		if(  *now_arrow + 1 < pdata[now_type].num )
+			(*now_arrow)++;
+		else
+			*now_arrow = 0;
+	}else if( buttons & PSP_CTRL_UP ){
+		if( *now_arrow - 1 >= 0 )
+			(*now_arrow)--;
+		else
+			*now_arrow = pdata[now_type].num - 1;
+	}
+
+	//□が押されてるなら、並び替え(そして編集フラグ立てる) / if □ is pushed , sort ( and flag edit )
+	if( buttons & PSP_CTRL_SQUARE ){
+		
+		printEditedMark();
+		pdata[now_type].edit = true;
+		/*
+		tmp - *now_arrow ==  1 one up
+		tmp - *now_arrow == -1 one down
+		tmp - *now_arrow >   1 up top      ( tmp > *now_arrow )
+		tmp - *now_arrow <  -1 down bottom ( tmp < *now_arrow )
+		*/
+		if( tmp - *now_arrow > 1 ){
+			for( i = tmp; i > *now_arrow; i-- ){
+				swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
+			}
+			return 1;
+		}else if( tmp - *now_arrow < -1 ){
+			for( i = tmp; i < *now_arrow; i++ ){
+				swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i+1]);
+			}
+			return 1;
+		}else{
+			swap_pdataLine(pdata[now_type].line[*now_arrow],pdata[now_type].line[tmp]);
+		}
+	}
+	
+	//one up
+	if( tmp - *now_arrow == 1 && *headOffset == tmp ){
+		(*headOffset)--;
+		return 1;
+	//one down
+	}else if( tmp - *now_arrow == -1 && *headOffset+MAX_DISPLAY_NUM-1 == tmp ){
+		(*headOffset)++;
+		return 1;					
+	}else if( pdata[now_type].num  > MAX_DISPLAY_NUM ){
+		//up top
+		if( tmp - *now_arrow > 1 ){
+			*headOffset = 0;
+		//donw bottom
+		}else if( tmp - *now_arrow <  -1 ){
+			*headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
+		}
+		return 1;
+	}
+	
+	//画面に表示 / display on screen
+	fillLine(38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+	libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
+	fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+	libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
+	return 0;
+
+}
+
 
 void main_menu(void)
 {
@@ -554,81 +617,15 @@ void main_menu(void)
 					time = sceKernelLibcClock();
 				}
 				
-				tmp = now_arrow; //現在の矢印の位置を覚えておく
-				//矢印の位置を変更 / change position of arrow
-				if( padData.Buttons & PSP_CTRL_DOWN ){
-					if(  now_arrow + 1 < pdata[now_type].num )
-						now_arrow++;
-					else
-						now_arrow = 0;
-				}else if( padData.Buttons & PSP_CTRL_UP ){
-					if( now_arrow - 1 >= 0 )
-						now_arrow--;
-					else
-						now_arrow = pdata[now_type].num - 1;
-				}
+				if( move_arrow(padData.Buttons,&now_arrow,&headOffset) != 0 ) break;
 
-				//□が押されてるなら、並び替え(そして編集フラグ立てる) / if □ is pushed , sort ( and flag edit )
-				if( padData.Buttons & PSP_CTRL_SQUARE ){
-					
-					printEditedMark();
-					pdata[now_type].edit = true;
-					/*
-					tmp - now_arrow ==  1 one up
-					tmp - now_arrow == -1 one down
-					tmp - now_arrow >   1 up top      ( tmp > now_arrow )
-					tmp - now_arrow <  -1 down bottom ( tmp < now_arrow )
-					*/
-					if( tmp - now_arrow > 1 ){
-						for( i = tmp; i > now_arrow; i-- ){
-							swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
-						}
-						break;
-					}else if( tmp - now_arrow < -1 ){
-						for( i = tmp; i < now_arrow; i++ ){
-							swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i+1]);
-						}
-						break;
-					}else{
-						swap_pdataLine(pdata[now_type].line[now_arrow],pdata[now_type].line[tmp]);
-					}
-				}
-				
-				//one up
-				if( tmp - now_arrow == 1 && headOffset == tmp ){
-					headOffset--;
-					break;
-				//one down
-				}else if( tmp - now_arrow == -1 && headOffset+MAX_DISPLAY_NUM-1 == tmp ){
-					headOffset++;
-					break;					
-				}else if( pdata[now_type].num  > MAX_DISPLAY_NUM ){
-					//up top
-					if( tmp - now_arrow > 1 ){
-						headOffset = 0;
-					//donw bottom
-					}else if( tmp - now_arrow <  -1 ){
-						headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
-					}
-					break;
-				}
-				
-				//画面に表示 / display on screen
-				fillLine(38 + (tmp-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-				libmPrintf(15,38 + (tmp-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
-				fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-				libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
-//				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
-
-				//□以外のボタンが離されるまでwait / wait till releasing buttons except □
-//				wait_button_up_ex(&padData,PSP_CTRL_SQUARE);
 				
 			}else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 ){
 				if( beforeButtons & buttonData[buttonNum[0]].flag ) continue;
 				beforeButtons = buttonData[buttonNum[0]].flag;
 				
 				pdata[now_type].edit = true;
-				 printEditedMark();
+				printEditedMark();
 				pdata[now_type].line[now_arrow].toggle = !pdata[now_type].line[now_arrow].toggle;
 				libmPrintf(
 				            15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),SL_COLOR,BG_COLOR,
@@ -653,6 +650,7 @@ void main_menu(void)
 				else if( now_type == 1 ) now_type = 2;
 				else if( now_type == 2 ) now_type = 0;
 				now_arrow = 0;
+				headOffset = 0;
 				break;
 			}else if( padData.Buttons & PSP_CTRL_LTRIGGER ){
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == PSP_CTRL_LTRIGGER ) continue;
@@ -662,15 +660,18 @@ void main_menu(void)
 				else if( now_type == 1 ) now_type = 0;
 				else if( now_type == 2 ) now_type = 1;
 				now_arrow = 0;
+				headOffset = 0;
 				break;
 			}else if( padData.Buttons &  PSP_CTRL_TRIANGLE ){
 				if( beforeButtons & PSP_CTRL_TRIANGLE ) continue;
 				beforeButtons = PSP_CTRL_TRIANGLE;
 
 				suspendThreads();
-				if( sub_menu(now_arrow,( now_arrow < 10 )?148:46) != 0 ){
-					
+				tmp = sub_menu(now_arrow,( now_arrow < 10 )?148:46);
+				if( tmp == 1 ){
+				}else if(  tmp != 0 ){
 					now_arrow = 0;
+					headOffset = 0;
 				}
 //				wait_button_up(&padData);
 				break;
@@ -785,12 +786,27 @@ void main_menu(void)
 
 }
 
+void getRootPath(char *rtn,char *str)
+{
+	int i;
+	for( i = 0; str[i] != '\0'; i++ ){
+		rtn[i] = str[i];
+		if( str[i] == '/' ){
+			rtn[i+1] = '\0';
+			return;
+		}
+	}
+	return;
+}
 
 int module_start( SceSize arglen, void *argp )
 {
-	
+	nidResolve();
 	Get_FirstThreads();
 	stop_flag = 1;
+
+	strcpy(ownPath, argp);
+	getRootPath(rootPath, argp);
 
 	//deviceModel 多分
 	//0 -> 1000
@@ -801,13 +817,21 @@ int module_start( SceSize arglen, void *argp )
 	//8 -> 3000 09g t箱?
 	deviceModel = sceKernelGetModel();
 	if( deviceModel < 0 || deviceModel > 8){
-		sprintf( modelNameUnknown, "[%3d]",deviceModel );
-		deviceModel = 9;
+		if( rootPath[0] == 'e' && rootPath[1] == 'f' ){
+			deviceModel = 4;
+		}else{
+			sprintf( modelNameUnknown, "[%3d]",deviceModel );
+			deviceModel = 9;
+		}
+		strcpy(config.basePathDefault,rootPath);
+		strcat(config.basePathDefault,"plugins/");
+	}else{
+		strcpy(config.basePathDefault,rootPath);
+		strcat(config.basePathDefault,"seplugins/");
 	}
 
 	SceUID thid;
 	
-	strcpy(ownPath, argp);
 
 	//umd dumpとは逆で flag == 0 の時にストップする仕様
 	stop_flag = 1;

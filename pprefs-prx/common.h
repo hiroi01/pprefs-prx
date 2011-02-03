@@ -18,6 +18,7 @@
 
 #include "conf.h"
 #include "thread.h"
+#include "nidresolve.h"
 
 #define compareScePspDateTime(a,b) ( \
 a.second == b.second && \
@@ -83,6 +84,7 @@ extern char *modelName[];
 extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
 extern INI_Key conf[10];
+extern char rootPath[16];
 
 
 extern bool hitobashiraFlag;

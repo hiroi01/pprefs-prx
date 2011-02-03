@@ -2,6 +2,9 @@ TARGET = ptextviewer
 PSP_FW_VERSION = 500
 BUILD_PRX = 1
 
+#6.35 Pro用で作る場合は PSP_HEN_VERSION を有効にしてコンパイル (先頭の#を外してコメントアウト）
+#PSP_HEN_VERSION	= 	635
+
 OBJS =	\
 	main.o \
 	file.o \
@@ -14,6 +17,11 @@ OBJS =	\
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \
 	syslibc/memory.o \
+
+ifeq ($(PSP_HEN_VERSION),635)
+OBJS		+=	../nidResolve/635/sceCtrl_driver.o
+OBJS		+=	../nidResolve/635/sceDisplay_driver.o 
+endif
 
 PRX_EXPORTS = exports.exp
 USE_KERNEL_LIBC	= 1
@@ -36,13 +44,16 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm -lz
+LIBS = ../libmenu/libmenuj.a -lpspreg -lpspumd -lpsprtc -lpspsystemctrl_kernel -lpspkubridge -lm -lz
 
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 
+ifeq ($(PSP_HEN_VERSION),635)
 all:
-	psp-packer *.prx
-clean:
-	\rm *.o *.elf *.prx
+
+else
+all:
+	psp-packer $(TARGET).prx
+endif

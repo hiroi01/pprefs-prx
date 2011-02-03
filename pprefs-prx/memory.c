@@ -1,6 +1,7 @@
 // from libmenu
 
 #include "memory.h"
+#include "nidresolve.h"
 
 void *memoryAlloc( SceSize size )
 {

@@ -434,19 +434,6 @@ void INI_Init_Key(INI_Key *key)
 
 
 
-void Set_Default_Path(char path[3][64], int num)
-{
-	if( num == 1 ){
-		strcpy(path[0],"ms0:/plugins/vsh.txt");
-		strcpy(path[1],"ms0:/plugins/game.txt");
-		strcpy(path[2],"ms0:/plugins/pops.txt");
-	}else{
-		strcpy(path[0],"ms0:/seplugins/vsh.txt");
-		strcpy(path[1],"ms0:/seplugins/game.txt");
-		strcpy(path[2],"ms0:/seplugins/pops.txt");
-	}
-}
-
 
 
 int INI_Write_Conf(const char *ms_path, INI_Key *key, const char *lineFeedCode)

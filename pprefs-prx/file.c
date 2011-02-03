@@ -724,7 +724,7 @@ int get_ms_free()
 int checkMs(void)
 {
 	int ret = 0;
-	SceUID dp = sceIoDopen("ms0:/");
+		SceUID dp = sceIoDopen(rootPath);
 	if(dp < 0){
 		ret = check_ms();
 	}else{

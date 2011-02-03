@@ -1,5 +1,6 @@
 
 #include "button.h"
+#include "nidresolve.h"
 
 static SceCtrlData data;
 
@@ -132,8 +133,8 @@ int Count_Buttons(u32 buttons, int count)
 		sceKernelDelayThread(50000);
 
 		// パッド情報を取得する
-		sceCtrlReadBufferPositive(&pad, 1);
-
+//		sceCtrlReadBufferPositive(&pad, 1);
+		sceCtrlPeekBufferPositive(&pad, 1);
 		// 現在の時間が指定した時間を過ぎたら
 		if(sceKernelLibcClock() > time)
 			return 1;
