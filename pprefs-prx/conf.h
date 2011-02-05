@@ -24,6 +24,7 @@ typedef struct
 	u32 color1;
 	u32 color2;
 	u32 color3;
+	u32 sortType;
 } Conf_Key;
 
 

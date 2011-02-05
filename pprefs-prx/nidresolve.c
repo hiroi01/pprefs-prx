@@ -4,6 +4,7 @@
 #include <systemctrl.h>
 #include <pspctrl.h>
 #include <pspdisplay.h>
+#include <pspsysmem_kernel.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -51,7 +52,43 @@ u32 Get_GetModelNid()
 
 void nidResolve(void)
 {
+	sceKernelDevkitVersion_Real = (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x3FC9AE6A);
+	
+	//resolve only 6.35
+	if( sceKernelDevkitVersion_Real() >= PSP_FIRMWARE(0x635) ){
+		sceKernelAllocPartitionMemory_Real	= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x237DBD4F);
+		sceKernelGetBlockHeadAddr_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x9D9A5BA1);
+		sceKernelFreePartitionMemory_Real	= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0xB6D61D02);
+//		sceKernelTotalFreeMemSize_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0xF919F628);
+		sceKernelGetModel_Real				= (void *)FindProc("sceSystemMemoryManager", "SysMemForKernel", Get_GetModelNid());
+		sceKernelLibcTime_Real				= (void *)FindProc("sceSystemMemoryManager", "UtilsForUser", 0x27CC57F0);
 
+		sceCtrlPeekBufferPositive_Real	= (void *)FindProc("sceController_Service", "sceCtrl_driver", 0x18654FC0);
+		sceCtrlSetSamplingCycle_Real	= (void *)FindProc("sceController_Service", "sceCtrl_driver", 0x855C255D);
+		sceCtrlSetSamplingMode_Real		= (void *)FindProc("sceController_Service", "sceCtrl_driver", 0x6CB49301);
+
+		sceDisplayGetFrameBuf_Real		= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0x08A10838);
+		sceDisplaySetFrameBuf_Real		= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0x37533141);
+		sceDisplayWaitVblankStart_Real	= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0xC30D327D);
+	}else{
+
+		sceKernelAllocPartitionMemory_Real	= sceKernelAllocPartitionMemory;
+		sceKernelGetBlockHeadAddr_Real		= sceKernelGetBlockHeadAddr;
+		sceKernelFreePartitionMemory_Real	= sceKernelFreePartitionMemory;
+//		sceKernelTotalFreeMemSize_Real		= sceKernelTotalFreeMemSize;
+		sceKernelGetModel_Real				= sceKernelGetModel;
+		sceKernelLibcTime_Real				= sceKernelLibcTime;
+
+		sceCtrlPeekBufferPositive_Real	= sceCtrlPeekBufferPositive;
+		sceCtrlSetSamplingCycle_Real	= sceCtrlSetSamplingCycle;
+		sceCtrlSetSamplingMode_Real		= sceCtrlSetSamplingMode;
+
+		sceDisplayGetFrameBuf_Real		= sceDisplayGetFrameBuf;
+		sceDisplaySetFrameBuf_Real		= sceDisplaySetFrameBuf;
+		sceDisplayWaitVblankStart_Real	= sceDisplayWaitVblankStart;
+	}
+
+/*
 	sceKernelAllocPartitionMemory_Real	= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x237DBD4F);
 	sceKernelGetBlockHeadAddr_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x9D9A5BA1);
 	sceKernelFreePartitionMemory_Real	= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0xB6D61D02);
@@ -78,15 +115,16 @@ void nidResolve(void)
 		sceDisplaySetFrameBuf_Real		= sceDisplaySetFrameBuf;
 		sceDisplayWaitVblankStart_Real	= sceDisplayWaitVblankStart;
 
-		/*
-		sceCtrlPeekBufferPositive_Real	= (void *)FindProc("sceController_Service", "sceCtrl", 0x3A622550);
-		sceCtrlSetSamplingCycle_Real	= (void *)FindProc("sceController_Service", "sceCtrl", 0x6A2774F3);
-		sceCtrlSetSamplingMode_Real		= (void *)FindProc("sceController_Service", "sceCtrl", 0x1F4011E6);
 		
-		sceDisplayGetFrameBuf_Real		= (void *)FindProc("sceDisplay_Service", "sceDisplay", 0xEEDA2E54);
-		sceDisplaySetFrameBuf_Real		= (void *)FindProc("sceDisplay_Service", "sceDisplay", 0x289D82FE);
-		sceDisplayWaitVblankStart_Real	= (void *)FindProc("sceDisplay_Service", "sceDisplay", 0x984C27E7);
-		*/
+//		sceCtrlPeekBufferPositive_Real	= (void *)FindProc("sceController_Service", "sceCtrl", 0x3A622550);
+//		sceCtrlSetSamplingCycle_Real	= (void *)FindProc("sceController_Service", "sceCtrl", 0x6A2774F3);
+//		sceCtrlSetSamplingMode_Real		= (void *)FindProc("sceController_Service", "sceCtrl", 0x1F4011E6);
+		
+//		sceDisplayGetFrameBuf_Real		= (void *)FindProc("sceDisplay_Service", "sceDisplay", 0xEEDA2E54);
+//		sceDisplaySetFrameBuf_Real		= (void *)FindProc("sceDisplay_Service", "sceDisplay", 0x289D82FE);
+//		sceDisplayWaitVblankStart_Real	= (void *)FindProc("sceDisplay_Service", "sceDisplay", 0x984C27E7);
+		
 	}
+*/
 
 }

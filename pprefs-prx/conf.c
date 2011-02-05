@@ -8,6 +8,7 @@
 #include "conf.h"
 #include "button.h"
 #include "file.h"
+#include "nidresolve.h"
 
 // プロトタイプ宣言
 int Check_EOF(SceUID fd);

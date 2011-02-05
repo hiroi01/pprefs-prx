@@ -36,11 +36,12 @@ typedef enum {
 } file_type;
 
 typedef struct {
-  char padding[3];
+//  char padding[3];
   char sort_type;
   char name[MAX_PATH_LEN];
   file_type type;
   int num;
+  SceIoStat stat;
 } dir_t;
 
 typedef struct {
