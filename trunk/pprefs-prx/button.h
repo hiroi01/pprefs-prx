@@ -29,17 +29,17 @@
 #define GET_KEY_NAME(key,str) \
 if( key& PSP_CTRL_SELECT ) strcat(str,"SELECT + "); \
 if( key& PSP_CTRL_START ) strcat(str,"START + "); \
-if( key& PSP_CTRL_UP ) strcat(str,"↑ + "); \
-if( key& PSP_CTRL_RIGHT ) strcat(str,"→ + "); \
-if( key& PSP_CTRL_DOWN ) strcat(str,"↓ + "); \
-if( key& PSP_CTRL_LEFT ) strcat(str,"← + "); \
+if( key& PSP_CTRL_UP ) strcat(str,PB_SYM_PSP_UP" + "); \
+if( key& PSP_CTRL_RIGHT ) strcat(str,PB_SYM_PSP_RIGHT" + "); \
+if( key& PSP_CTRL_DOWN ) strcat(str,PB_SYM_PSP_DOWN" + "); \
+if( key& PSP_CTRL_LEFT ) strcat(str,PB_SYM_PSP_LEFT" + "); \
 if( key& PSP_CTRL_LTRIGGER ) strcat(str,"[L] + "); \
 if( key& PSP_CTRL_RTRIGGER ) strcat(str,"[R] + "); \
-if( key& PSP_CTRL_TRIANGLE ) strcat(str,"△ + "); \
-if( key& PSP_CTRL_CIRCLE ) strcat(str,"○ + "); \
-if( key& PSP_CTRL_CROSS ) strcat(str,"× + "); \
-if( key& PSP_CTRL_SQUARE ) strcat(str,"□ + "); \
-if( key& PSP_CTRL_NOTE ) strcat(str,"♪ + "); \
+if( key& PSP_CTRL_TRIANGLE ) strcat(str,PB_SYM_PSP_TRIANGLE" + "); \
+if( key& PSP_CTRL_CIRCLE ) strcat(str,PB_SYM_PSP_CIRCLE" + "); \
+if( key& PSP_CTRL_CROSS ) strcat(str,PB_SYM_PSP_CROSS" + "); \
+if( key& PSP_CTRL_SQUARE ) strcat(str,PB_SYM_PSP_SQUARE" + "); \
+if( key& PSP_CTRL_NOTE ) strcat(str,PB_SYM_PSP_NOTE" + "); \
 if( key& PSP_CTRL_HOME ) strcat(str,"HOME(PS) + "); \
 if( key& PSP_CTRL_HOLD ) strcat(str,"HOLD + "); \
 if( key& PSP_CTRL_SCREEN ) strcat(str,"SCREEN + "); \

@@ -6,7 +6,7 @@
 
 
 //ファイルリスト(ファイルブラウザ)のためのbuffer
-static dir_t dirBuf[DIR_BUF_NUM];
+dir_t dirBuf[DIR_BUF_NUM];
 
 //グローバル
 dir_t dirTmp;
