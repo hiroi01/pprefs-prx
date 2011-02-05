@@ -1,7 +1,7 @@
 //from mp3play
 
 
-// L[RtBO
+// 
 
 
 #ifndef __CONF_H__

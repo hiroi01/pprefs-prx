@@ -313,10 +313,9 @@ int saveEditPergame(char *str, char *path)
 	SceUID fp;
 	int i,tmp;
 	
-	checkMs();
 	
 	fp = sceIoOpen(path, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
-	if( fp < 0 ) return -1;
+	if( fp < 0 ) return fp;
 	
 	i = 0;
 	while(1){
@@ -522,7 +521,7 @@ int editPergameMenu(void)
 					//ゲームを選択
 					if(  fileSelecter(rootPath,&dirTmp, PPREFSMSG_EDITPERGAME_SELECTGAME, 1, NULL ) == 0  ){
 						pnt = dirTmp.name;
-						//ISOやCSOなどゲームIDを持つものなら == 10
+						//ISOやCSOなどゲームIDがgetできたら == 10
 						if( get_umd_id(idBuf, dirTmp.name, dirTmp.type) == 10 ){
 							if( is_idOrPath() == 0 ) pnt = idBuf;
 						}
@@ -543,10 +542,12 @@ int editPergameMenu(void)
 				break;
 			}else if( padData.Buttons & PSP_CTRL_HOME ){
 				wait_button_up(&padData);
+				if(pergameBuf != NULL ) free(pergameBuf);
 				return 0;
 			}else if( padData.Buttons & PSP_CTRL_START ){
 				saveEditPergame(pergameBuf,pergametxtPath);
 				wait_button_up(&padData);
+				if(pergameBuf != NULL ) free(pergameBuf);
 				return 0;
 			}else if( padData.Buttons & PSP_CTRL_RTRIGGER ){
 				beforeButtons = PSP_CTRL_RTRIGGER;
@@ -614,6 +615,8 @@ int editPergameMenu(void)
 			}
 		}
 	}
+
+	if(pergameBuf != NULL ) free(pergameBuf);
 	
 	return 0;
 }

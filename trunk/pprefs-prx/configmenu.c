@@ -137,7 +137,14 @@ int config_menu(void)
 			}else if( padData.Buttons & buttonData[buttonNum[0]].flag ){
 				if( now_arrow < conf[0].keyNum ){
 					if( strcasecmp( "BasePath", conf[now_arrow].key ) == 0 ){
-						selectBasePath(conf[now_arrow].value.s);
+						char *list[] = {PPREFSMSG_CONFIG_BASEPATH_LIST};
+						int selectNum = pprefsMakeSelectBox(32,  32, PPREFSMSG_CONFIG_BASEPATH_TITLE,list, buttonData[buttonNum[0]].flag, 1 );
+						
+						if( selectNum == 0 ){
+							selectBasePath(conf[now_arrow].value.s);
+						}else if( selectNum == 1){
+							conf[now_arrow].value.s[0] = '\0';
+						}
 					}else if( strcasecmp( "Color2", conf[now_arrow].key ) == 0 ){
 						if( *conf[now_arrow].value.u == RED ){
 							*conf[now_arrow].value.u = GREEN;
