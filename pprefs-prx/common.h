@@ -21,15 +21,7 @@
 #include "nidresolve.h"
 
 
-enum
-{
-	SORT_TYPE_ORIGINAL = 1,	//
-	SORT_TYPE_CATEGORIZES = 2,	//
-	SORT_TYPE_CATEGORIZES_LIGHT = 4,	//
-	SORT_TYPE_ISO = 8,	//
-	SORT_TYPE_GAME = 16,	//
-	SORT_TYPE_GAME150 = 32, //
-};
+
 
 // Thanks to Davee
 #define PSP_FIRMWARE(f) ((((f >> 8) & 0xF) << 24) | (((f >> 4) & 0xF) << 16) | ((f & 0xF) << 8) | 0x10)

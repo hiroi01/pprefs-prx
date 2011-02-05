@@ -9,6 +9,16 @@
 
 #include <stdbool.h>
 
+//for sortType
+enum
+{
+	SORT_TYPE_ORIGINAL = 1,	//
+	SORT_TYPE_CATEGORIZES = 2,	//
+	SORT_TYPE_CATEGORIZES_LIGHT = 4,	//
+	SORT_TYPE_ISO = 8,	//
+	SORT_TYPE_GAME = 16,	//
+	SORT_TYPE_GAME150 = 32, //
+};
 
 typedef struct
 {
