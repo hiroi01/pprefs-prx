@@ -1,11 +1,11 @@
 /*
 	
 	ありがとう、
-	maxemさん、plumさん、takkaさん(アルファベット順)
+	maxemさん、neur0nさん、plumさん、takkaさん(アルファベット順)、他全ての開発者の方々
 
 */
-
-
+#include <pspkernel.h>
+#include <pspmscm.h>
 
 #include "common.h"
 #include "memory.h"
@@ -44,7 +44,7 @@ const char *lineFeedCode[] = { "\r\n", "\n", "\r"};
 
 SceCtrlData padData;
 
-bool hitobashiraFlag = false;
+int hitobashiraFlag = 0;
 
 
 //buttonNum buttonDataは,ボタン入れ替えに使う
@@ -63,7 +63,7 @@ int buttonNum[] = {0,1};
 char ownPath[256];
 char rootPath[16];
 int deviceModel = 9;
-char modelNameUnknown[16];
+
 char *modelName[] = {
 	"[01g]", //0
 	"[02g]", //1
@@ -74,7 +74,7 @@ char *modelName[] = {
 	"[07g]", //6
 	"[08g]", //7
 	"[09g]", //8
-	modelNameUnknown, //9
+	"[???]", //9
 };
 
 int now_type = 0;
@@ -88,11 +88,6 @@ int now_type = 0;
 
 
 #define MAX_DISPLAY_NUM 21
-
-extern char *pergameBuf;
-
-
-
 
 
 
@@ -273,6 +268,7 @@ const char *INI_Key_lineFeedCode_list[] = {
 */
 
 
+
 int main_thread( SceSize arglen, void *argp )
 {
 
@@ -311,6 +307,13 @@ int main_thread( SceSize arglen, void *argp )
 	if( temp != NULL ) *temp = '\0';
 	strcat(iniPath,INI_NAME);
 	
+	strcpy(config.basePathDefault,rootPath);
+	if( sceKernelDevkitVersion() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 ){
+		//it may be 6.35PRO この判定は正しいのか分からない
+		strcat( config.basePathDefault,"plugins/" );
+	}else{
+		strcat( config.basePathDefault, "seplugins/" );
+	}
 	
 	INI_Init_Key(conf);
 	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
@@ -327,7 +330,6 @@ int main_thread( SceSize arglen, void *argp )
 
 	SET_CONFIG();
 
-	
 	
 
 
@@ -351,8 +353,8 @@ int main_thread( SceSize arglen, void *argp )
 	
 	//BOOT MESSAGE
 	if( config.bootMessage ){
-		
 		strcpy(commonBuf,PPREFSMSG_BOOTMESSAGE);
+		
 		GET_KEY_NAME(config.bootKey, commonBuf);
 		temp = strrchr(commonBuf, '+');
 		if( temp != NULL ){
@@ -372,7 +374,7 @@ int main_thread( SceSize arglen, void *argp )
 			sceCtrlPeekBufferPositive( &padData, 1 );
 			if( ( padData.Buttons & CHEACK_KEY_2 ) != 0 ) break;
 			if( (sceKernelLibcClock() - timesec) >= (8 * 1000 * 1000) ) break;
-			
+
 			sceKernelDelayThread( 10000 );
 		}
 	}
@@ -396,11 +398,12 @@ int main_thread( SceSize arglen, void *argp )
 /*
 
 
-return: どのメニューが実行されたか
-(0 < : エラー)
- 0 = : 何も実行されなかった
- 1 = : メニューNo.1が実行された
- 2 = : メニューNo.2が実行された
+@return:
+どのメニューが実行されたか
+ 0 < : 何も実行されなかった
+ 0 = : メニューNo.1が実行された
+ 1 = : メニューNo.2が実行された
+ 2 = : メニューNo.3が実行された
 ・
 ・
 ・
@@ -467,7 +470,7 @@ int sub_menu(int currentSelected,int position){
 
 	wait_button_up(&padData);
 	
-	return (now_arrow < 0)?0:(now_arrow + 1);
+	return now_arrow;
 	
 }
 
@@ -528,23 +531,25 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
 		}
 	}
 	
-	//one up
-	if( tmp - *now_arrow == 1 && *headOffset == tmp ){
+	//one up && arrow is out of screen of top
+	if( tmp - *now_arrow == 1 && *headOffset > *now_arrow ){
 		(*headOffset)--;
-		return 1;
-	//one down
-	}else if( tmp - *now_arrow == -1 && *headOffset+MAX_DISPLAY_NUM-1 == tmp ){
+		return 2;
+	//one down && arrow is out of screen of bottom
+	}else if( tmp - *now_arrow == -1 && *headOffset+MAX_DISPLAY_NUM <= *now_arrow ){
 		(*headOffset)++;
-		return 1;					
+		return 3;					
 	}else if( pdata[now_type].num  > MAX_DISPLAY_NUM ){
 		//up top
 		if( tmp - *now_arrow > 1 ){
 			*headOffset = 0;
+			return 4;
 		//donw bottom
 		}else if( tmp - *now_arrow <  -1 ){
 			*headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
+			return 5;
 		}
-		return 1;
+
 	}
 	
 	//画面に表示 / display on screen
@@ -552,6 +557,7 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
 	libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
 	fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
 	libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
+	
 	return 0;
 
 }
@@ -567,25 +573,24 @@ void main_menu(void)
 	int now_arrow = 0;//current position of arrow
 	clock_t time = 0;
 	u32 beforeButtons = 0;
-	
 
 	
 	readSepluginsText(3,true,config.basePath);
 	
-	/*
-	libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
-	PRINT_SCREEN();
-	*/
 
+
+	while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+		sceDisplayWaitVblankStart();
+		sceKernelDelayThread( 10000 );
+	}
+	
 	safelySuspendThreadsInit();
-
 	while(1){
 //		libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
 
-		libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME);
 		PRINT_SCREEN();
 
-		if( hitobashiraFlag ) libmPrint(424,10,FG_COLOR,BG_COLOR,PPREFSMSG_HITOBASHIRA);
+		if( hitobashiraFlag ) libmPrint(416,10,FG_COLOR,BG_COLOR,(hitobashiraFlag == 1)?PPREFSMSG_HITOBASHIRA:PPREFSMSG_HITOBASHIRA_2);
 		else libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
 		
 		libmPrintf(0,254,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE,buttonData[buttonNum[0]].name);
@@ -668,12 +673,19 @@ void main_menu(void)
 
 				suspendThreads();
 				tmp = sub_menu(now_arrow,( now_arrow < 10 )?148:46);
-				if( tmp == 1 ){
-				}else if(  tmp != 0 ){
+				if( tmp == 0 ){
+					now_arrow = pdata[now_type].num - 1;
+					headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
+					if( headOffset < 0 ) headOffset = 0;
+				}else if( tmp == 1 ){
+					if( now_arrow != 0 ){
+						move_arrow(PSP_CTRL_UP,&now_arrow,&headOffset);
+					}
+				}else if( tmp >= 0 ){
 					now_arrow = 0;
 					headOffset = 0;
 				}
-//				wait_button_up(&padData);
+				
 				break;
 			}else if( padData.Buttons &  PSP_CTRL_START ){
 				if( beforeButtons & PSP_CTRL_START ) continue;
@@ -732,6 +744,8 @@ void main_menu(void)
 					
 					if ( i == 0 ){
 						readSepluginsText(3,false,config.basePath);
+						now_arrow = 0;
+						headOffset = 0;
 					}
 					wait_button_up(&padData);
 					break;
@@ -766,16 +780,46 @@ void main_menu(void)
 					wait_button_up_ex(&padData,PSP_CTRL_NOTE);
 					get_button(&padData);
 					if( !( padData.Buttons & PSP_CTRL_NOTE ) ) break;
-
+					
+					/*
 					if( padData.Buttons & PSP_CTRL_RIGHT ){
-						if( i == 0 ) i = 1;
-						else if( i == 1 ) i = 2;
+						if( i == 0 ){
+							i = 1;
+						}else if( i == 1 ){
+							 i = 2;
+						}else if( i == 4 ){
+							if( sceIoUnassign("flash0:") >= 0 && sceIoAssign("flash0:", "lflash0:0,0", "flashfat0:", IOASSIGN_RDWR, NULL, 0) >= 0 )
+								hitobashiraFlag = 2;
+							break;
+						}
 					}else if( padData.Buttons & PSP_CTRL_LEFT ){
 						if( i == 2 ){
-							hitobashiraFlag = !hitobashiraFlag;
+							hitobashiraFlag = 1;
+							break;
+						}else if( i == 0 ){
+							i = 3;
+						}else if( i == 3 ){
+							i = 4;
+						}
+					}
+					*/
+					if( padData.Buttons & PSP_CTRL_RIGHT ){
+						if( i == 0 ){
+							i = 1;
+						}else if( i == 1 ){
+							i = 2;
+						}
+					}else if( padData.Buttons & PSP_CTRL_LEFT ){
+						if( i == 2 ){
+							hitobashiraFlag = 1;
 							break;
 						}
 					}
+
+					
+					
+					
+					
 				}
 				break;
 			}else{
@@ -816,19 +860,7 @@ int module_start( SceSize arglen, void *argp )
 	//4 -> go
 	//8 -> 3000 09g t箱?
 	deviceModel = sceKernelGetModel();
-	if( deviceModel < 0 || deviceModel > 8){
-		if( rootPath[0] == 'e' && rootPath[1] == 'f' ){
-			deviceModel = 4;
-		}else{
-			sprintf( modelNameUnknown, "[%3d]",deviceModel );
-			deviceModel = 9;
-		}
-		strcpy(config.basePathDefault,rootPath);
-		strcat(config.basePathDefault,"plugins/");
-	}else{
-		strcpy(config.basePathDefault,rootPath);
-		strcat(config.basePathDefault,"seplugins/");
-	}
+	if( deviceModel < 0 || deviceModel > 8) deviceModel = 9;
 
 	SceUID thid;
 	
@@ -844,7 +876,6 @@ int module_start( SceSize arglen, void *argp )
 int module_stop( void )
 {
 	stop_flag = 0;
-	if( pergameBuf != NULL ) free(pergameBuf);
 	return 0;
 }
 
@@ -869,6 +900,45 @@ int confirm_save(void)
 	}
 
 	return 0;
+}
+
+int check_ms()
+{
+  SceUID ms;
+  int ret = 0;
+
+  ms = MScmIsMediumInserted();
+  if(ms <= 0)
+  {
+ 	makeWindow(LIBM_CHAR_WIDTH*9 ,LIBM_CHAR_HEIGHT*9 ,LIBM_CHAR_WIDTH*30 ,LIBM_CHAR_WIDTH*14, FG_COLOR,BG_COLOR );
+	libmPrint( LIBM_CHAR_WIDTH*10 ,LIBM_CHAR_HEIGHT*10 , FG_COLOR,BG_COLOR,"Please insert MS");
+
+    ms = -1;
+    while(ms <= 0)
+    {
+      if( isButtonDown(PSP_CTRL_HOME) ) return -2;
+      sceKernelDelayThread(1000);
+      ms = MScmIsMediumInserted();
+    }
+	libmPrint( LIBM_CHAR_WIDTH*10 ,LIBM_CHAR_HEIGHT*11 + 2 , FG_COLOR,BG_COLOR,"Mounting...");
+	sceKernelDelayThread(1000000);
+    ret = -1;
+  }
+  return ret;
+}
+
+int checkMs(void)
+{
+	int ret = 0;
+	
+	SceUID dp = sceIoDopen(rootPath);
+	if(dp < 0){
+		ret = check_ms();
+	}else{
+		sceIoDclose(dp);
+	}
+	
+	return ret;
 }
 
 int copyMeProcess(void){
@@ -921,7 +991,7 @@ int copyMeProcess(void){
 			}
 		}
 		wait_button_up(&padData);
-		if( !(checkMs() < 0) ) break;
+		if( checkMs() == 0 ) break;
 	}
 	
 	sceIoMkdir("ms0:/seplugins",0777);
@@ -934,11 +1004,7 @@ int copyMeProcess(void){
 	
 	writeSize = sceIoWrite(fd,buf,readSize);
 	sceIoClose(fd);
-/*	if( readSize  != writeSize ){
-		free(buf);
-		return -5;
-	}
-*/	
+
 
 	makeWindow(
 		24 , 28 ,

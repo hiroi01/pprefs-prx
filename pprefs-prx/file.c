@@ -27,7 +27,6 @@
 
 #include "button.h"
 #include "file.h"
-#include "pprefsmenu.h"
 #include "common.h"
 
 #define FIO_CST_SIZE    0x0004
@@ -142,7 +141,6 @@ int read_dir(dir_t dir[], const char *path, int dir_only,char *dir_type_sort, in
   int num;
   int file_num = 0;
   if( dir_type_sort == NULL ) dir_type_sort = (char *)dir_type_sort_default;
-  checkMs();
 //  int ret  = check_ms();
 /*
   if(dir_only == 0)
@@ -721,48 +719,8 @@ int get_ms_free()
 
 */
 
-int checkMs(void)
-{
-	int ret = 0;
-		SceUID dp = sceIoDopen(rootPath);
-	if(dp < 0){
-		ret = check_ms();
-	}else{
-		sceIoDclose(dp);
-	}
-	
-	return ret;
-}
 
-int check_ms()
-{
-  SceUID ms;
-  int ret = DONE;
 
-  ms = MScmIsMediumInserted();
-  if(ms <= 0)
-  {
- //   msg_win("", 0, MSG_CLEAR, 0);
- //   msg_win("Memory Stickを入れて下さい", 1, MSG_WAIT, 0);
- 	makeWindow(LIBM_CHAR_WIDTH*9 ,LIBM_CHAR_HEIGHT*9 ,LIBM_CHAR_WIDTH*30 ,LIBM_CHAR_WIDTH*14, FG_COLOR,BG_COLOR );
-	libmPrint( LIBM_CHAR_WIDTH*10 ,LIBM_CHAR_HEIGHT*10 , FG_COLOR,BG_COLOR,"Memory Stickを入れて下さい");
-	libmPrint( LIBM_CHAR_WIDTH*10 ,LIBM_CHAR_HEIGHT*12 + 4 , FG_COLOR,BG_COLOR,"HOME:エスケープ");
-
-    ms = -1;
-    while(ms <= 0)
-    {
-      if( isButtonDown(PSP_CTRL_HOME) ) return -2;
-      sceKernelDelayThread(1000);
-      ms = MScmIsMediumInserted();
-    }
- //   msg_win("", 0, MSG_CLEAR, 0);
-//    msg_win("マウント中です", 1, MSG_WAIT, 0);
-	libmPrint( LIBM_CHAR_WIDTH*10 ,LIBM_CHAR_HEIGHT*11 + 2 , FG_COLOR,BG_COLOR,"マウント中です");
-	sceKernelDelayThread(1000000);
-    ret = CANCEL;
-  }
-  return ret;
-}
 
 int check_file(const char* path)
 {

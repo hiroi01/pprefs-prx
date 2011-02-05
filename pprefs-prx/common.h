@@ -20,6 +20,10 @@
 #include "thread.h"
 #include "nidresolve.h"
 
+// Thanks to Davee
+#define PSP_FIRMWARE(f) ((((f >> 8) & 0xF) << 24) | (((f >> 4) & 0xF) << 16) | ((f & 0xF) << 8) | 0x10)
+
+
 #define compareScePspDateTime(a,b) ( \
 a.second == b.second && \
 a.minute == b.minute && \
@@ -62,11 +66,15 @@ if( now_state ){ \
 		buttonNum[1] = 1; \
 	} \
 	i = strlen(config.basePathOri) - 1; \
-	if( config.basePathOri[i] != '/' ){ \
-		config.basePathOri[i+1] = '/'; \
-		config.basePathOri[i+2] = '\0'; \
+	if( config.basePathOri[0] == '\0' ){ \
+		strcpy(config.basePath,config.basePathDefault); \
+	}else{ \
+		if( config.basePathOri[i] != '/' ){ \
+			config.basePathOri[i+1] = '/'; \
+			config.basePathOri[i+2] = '\0'; \
+		} \
+		strcpy(config.basePath,config.basePathOri); \
 	} \
-	strcpy(config.basePath,config.basePathOri); \
 }
 
 
@@ -87,6 +95,6 @@ extern INI_Key conf[10];
 extern char rootPath[16];
 
 
-extern bool hitobashiraFlag;
+extern int hitobashiraFlag;
 
 #endif

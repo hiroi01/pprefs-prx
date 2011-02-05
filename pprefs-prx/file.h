@@ -7,7 +7,8 @@
 
  /*
  * iso toolのソースより
- *
+ * thanks takka
+ * 
  * mod by hiroi01
  */
  
@@ -102,17 +103,17 @@ int get_umd_id(char* id, const char* path, file_type type);
 int read_line(char* str,  SceUID fp, int num);
 
 //int get_ms_free();
-int check_ms();
+//int check_ms();
 int check_file(const char* path);
 
 
 
 /*----------------------------------------------------------------*/
-//mod by hiroi01
+
+//int checkMs(void);
+int read_line_file(SceUID fp, char* line, int num);
 
 //nつまり(末尾の)\n(改行) を削除せず、ファイルからそのままの1行を読み込む
-int checkMs(void);
-int read_line_file(SceUID fp, char* line, int num);
 int read_line_file_keepn(SceUID fp, char* line, int num);
 
 /*----------------------------------------------------------------*/

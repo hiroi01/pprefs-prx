@@ -38,7 +38,8 @@ char *getSepluginsTextName(char *str,char *basePath, int type)
 
 int removeAnItem(int type,int num){
 	if( !(0 <= type &&  type <= 2) ) return -1;
-
+	if(  ! (pdata[type].num > 0) ) return 1;
+	
 	if( num == pdata[type].num -1  ){//last item
 		if( pdata[type].num > 0) pdata[type].num--;
 	}else{
@@ -108,7 +109,7 @@ int writeSepluginsText(int ptype, char *basePath)
 	SceUID fp;
 	char path[128];
 	
-	checkMs();
+//	checkMs();
 
 	strcpy(path, basePath);
 	strcat(path, textFileName[type]);
