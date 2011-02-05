@@ -54,8 +54,8 @@ void nidResolve(void)
 {
 	sceKernelDevkitVersion_Real = (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x3FC9AE6A);
 	
-	//resolve only 6.35
-	if( sceKernelDevkitVersion_Real() >= PSP_FIRMWARE(0x635) ){
+	//resolve only 6.35PRO
+	if( sceKernelDevkitVersion_Real() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001  ){
 		sceKernelAllocPartitionMemory_Real	= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x237DBD4F);
 		sceKernelGetBlockHeadAddr_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x9D9A5BA1);
 		sceKernelFreePartitionMemory_Real	= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0xB6D61D02);
