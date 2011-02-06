@@ -4,6 +4,7 @@
 
 #include <pspctrl.h>
 
+
 //ñ≥óùÇ‚ÇËÉ]ÉãÉo
 
 extern int (*sceKernelAllocPartitionMemory_Real)(SceUID id, const char *name, int type, SceSize size, void *addr);
@@ -38,6 +39,7 @@ extern int (*sceDisplayWaitVblankStart_Real)(void);
 #define sceDisplayGetFrameBuf sceDisplayGetFrameBuf_Real
 #define sceDisplaySetFrameBuf sceDisplaySetFrameBuf_Real
 #define sceDisplayWaitVblankStart sceDisplayWaitVblankStart_Real
+
 
 
 

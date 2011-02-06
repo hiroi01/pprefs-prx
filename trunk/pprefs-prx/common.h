@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include <pspkernel.h>
+#include <pspmscm.h>
 #include <pspsdk.h>
 #include <pspctrl.h>
 #include <pspdisplay.h>
@@ -17,10 +19,12 @@
 #include <pspsysmem_kernel.h>
 
 #include "conf.h"
+#include "memory.h"
+#include "button.h"
 #include "thread.h"
+#include "file.h"
+#include "language.h"
 #include "nidresolve.h"
-
-
 
 
 // Thanks to Davee
@@ -36,27 +40,15 @@ a.month  == b.month  && \
 a.year   == b.year      \
 )
 
-#define COMMON_BUF_LEN 256
-
-
-struct pprefsButtonDatas{
-	unsigned int flag;
-	char *name;
-};
 
 
 
-#define SUSPEND_THREADS() \
-if( ! now_state ){ \
-	Suspend_Resume_Threads(SUSPEND_MODE); \
-	now_state = true; \
-}
 
-#define RESUME_THREADS() \
-if( now_state ){ \
-	Suspend_Resume_Threads(RESUME_MODE); \
-	now_state = false; \
-}
+
+/*------------------------------------------
+for ini
+------------------------------------------*/
+
 
 #define SET_CONFIG() \
 { \
@@ -83,21 +75,27 @@ if( now_state ){ \
 
 #define INI_NAME "/pprefs.ini"
 
-//extern char sepluginsTextPath[3][64];
-extern const char *sepluginsBasePath[];
+/*-----------------------------------------------------------*/
+
+
+#define COMMON_BUF_LEN 256
+struct pprefsButtonDatas{
+	unsigned int flag;
+	char *name;
+};
+
+extern dir_t dirTmp;
 extern char commonBuf[COMMON_BUF_LEN];
 extern const char *lineFeedCode[];
 extern Conf_Key config;
 extern SceCtrlData padData;
 extern char ownPath[256];
+extern char rootPath[16];
 extern int deviceModel;
 extern char *modelName[];
 extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
-extern INI_Key conf[10];
-extern char rootPath[16];
-
-
+extern INI_Key conf[13];
 extern int hitobashiraFlag;
 
 #endif

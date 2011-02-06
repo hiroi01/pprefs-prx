@@ -9,9 +9,6 @@ static const char *textFileName[] = {
 	"pops.txt"
 };
 
-extern char commonBuf[COMMON_BUF_LEN];
-extern const char *lineFeedCode[3];
-extern Conf_Key config;
 /*	remove an item from pdata
 
 	@param : type

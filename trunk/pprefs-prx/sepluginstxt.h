@@ -16,8 +16,8 @@
 #include <pspctrl_kernel.h>
 
 
-#define LEN_PER_LINE 256
-#define MAX_LINE 64
+#define LEN_PER_LINE 128
+#define MAX_LINE 32
 #define PRINT_PATH_LEN 52
 
 struct pdatas{

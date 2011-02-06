@@ -3,14 +3,14 @@
 #include "button.h"
 #include "language.h"
 #include "pprefsmenu.h"
+#include "memory.h"
 
 
-//ファイルリスト(ファイルブラウザ)のためのbuffer
-dir_t dirBuf[DIR_BUF_NUM];
+#define DIR_BUF_NUM 256
 
-//グローバル
-dir_t dirTmp;
 
+
+//int file.c
 extern const char dir_type_sort_default[];
 
 
@@ -119,6 +119,9 @@ if( (beforeButtons & (button) ) == (button) ){ \
 int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectType, char *dir_type_sort)
 {
 	if( selectType < 0 || selectType > 2 ) selectType = 0;
+
+	dir_t *dirBuf = malloc(sizeof(dir_t)*DIR_BUF_NUM);
+	if( dirBuf == NULL ) return -1;
 	
 	int dir_num,offset,i,now_arrow;
 	u32 beforeButtons = 0;
@@ -208,6 +211,7 @@ PRINT_LIST:
 						strcpy( rtn->name , currentPath );
 						strcat( rtn->name , dirBuf[offset+now_arrow].name );
 						wait_button_up(&padData);
+						free(dirBuf);
 						return 0;
 					}
 				}
@@ -224,6 +228,7 @@ PRINT_LIST:
 				}
 			}else if( padData.Buttons & PSP_CTRL_HOME ){
 				wait_button_up(&padData);
+				free(dirBuf);
 				return 1;
 			}else if( (selectType == 1 || selectType == 2) && padData.Buttons & PSP_CTRL_START ){
 				beforeButtons = PSP_CTRL_START;
@@ -233,6 +238,7 @@ PRINT_LIST:
 				rtn->sort_type = dir_type_sort_default[TYPE_DIR];
 
 				wait_button_up(&padData);
+				free(dirBuf);
 				return 0;
 				
 

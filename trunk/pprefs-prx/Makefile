@@ -11,11 +11,13 @@ OBJS =	\
 	exports.o \
 	thread.o \
 	conf.o \
+	common.o \
 	configmenu.o \
 	nidresolve.o \
 	sepluginstxt.o \
 	editpergame.o \
 	fileselecter.o \
+	usb.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \
@@ -74,7 +76,7 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = -lpspsystemctrl_kernel -lm -lz 
+LIBS = -lpspsystemctrl_kernel -lm -lz -lpspusb -lpspkubridge -lpspusbstor
 
 
 
