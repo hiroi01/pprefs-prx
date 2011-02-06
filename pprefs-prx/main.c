@@ -4,83 +4,34 @@
 	maxemさん、neur0nさん、plumさん、takkaさん(アルファベット順)、他全ての開発者の方々
 
 */
-#include <pspkernel.h>
-#include <pspmscm.h>
 
-#include "common.h"
-#include "memory.h"
-#include "file.h"
-#include "button.h"
-#include "thread.h"
+
+
 #include "sepluginstxt.h"
 #include "configmenu.h"
 #include "pprefsmenu.h"
 #include "fileselecter.h"
 #include "editpergame.h"
-#include "language.h"
+#include "usb.h"
+#include "common.h"
 
 
 // モジュールの定義
 PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 
 
-//iniReadLineで使用するBufサイズ
-#define	BUF_READLINE 256
 
 
 
 
 
 
-/*------------------------------------------------------
- COMMON
-------------------------------------------------------*/
-
-char commonBuf[COMMON_BUF_LEN];
-Conf_Key config;
-
-//改行コード
-const char *lineFeedCode[] = { "\r\n", "\n", "\r"};
-
-SceCtrlData padData;
-
-int hitobashiraFlag = 0;
+/*------------------------------------------------------*/
 
 
-//buttonNum buttonDataは,ボタン入れ替えに使う
-//buttonNumの数字を入れ替えれば役割も入れ替わる
-//
-//e.g. 1)
-// if( pad.Buttons & buttonData.flag[butttonNum[0]] )  {  }
-//e.g. 2)
-//printf( "select:%s", buttonData.name[butttonNum[0]] );
-
-struct pprefsButtonDatas buttonData[] = {
-	{PSP_CTRL_CROSS,PB_SYM_PSP_CROSS},
-	{PSP_CTRL_CIRCLE,PB_SYM_PSP_CIRCLE}
-};
-int buttonNum[] = {0,1};
-char ownPath[256];
-char rootPath[16];
-int deviceModel = 9;
-
-char *modelName[] = {
-	"[01g]", //0
-	"[02g]", //1
-	"[03g]", //2
-	"[04g]", //3
-	"[g o]", //4
-	"[06g]", //5
-	"[07g]", //6
-	"[08g]", //7
-	"[09g]", //8
-	"[???]", //9
-};
-
-int now_type = 0;
-
-//bool now_state = false; // = true suspending   = false no suspending
-
+static int now_type = 0;
+static struct pdataLine tmp_pdataLine;
+static int stop_flag;
 
 
 
@@ -92,11 +43,9 @@ int now_type = 0;
 
 
 
-struct pdataLine tmp_pdataLine;
 
 
-int stop_flag;
-
+#define is5xx(x) ( ( (x) >= PSP_FIRMWARE(500) ) &&  ( (x) <  PSP_FIRMWARE(600) ) )
 
 
 
@@ -253,7 +202,7 @@ int pauseGameTest()
 
 
 
-INI_Key conf[10];
+
 int INI_Key_defaultPath_max = 1;
 const char *INI_Key_lineFeedCode_list[] = {
 	"CR+LF",
@@ -276,6 +225,8 @@ int main_thread( SceSize arglen, void *argp )
 	clock_t timesec;
 	char *temp;
 	char iniPath[256];
+	int usbState = 0;
+	int ver = sceKernelDevkitVersion();
 	
 	while( 1 )
 	{
@@ -293,22 +244,26 @@ int main_thread( SceSize arglen, void *argp )
 		
 		sceKernelDelayThread(1000);
 	}
+	
+	sceCtrlPeekBufferPositive( &padData, 1 );
+	if( padData.Buttons & PSP_CTRL_LTRIGGER ) usbState = 2;
+
 
 /*
 	modid_ = sceKernelLoadModule("ms0:/seplugins/ptextviewer.prx", 0, NULL);
 	if(modid_ >= 0) {
 //		modid_ = sceKernelStartModule(modid_, (strlen("ef0:/seplugins/ptextviewer.prx") + 1), (void *) args_, &status_, NULL);
 	}
-	*/
+*/
 	
-	//INI読み込み
+	//read INI and set config
 	strcpy(iniPath, argp);
 	temp = strrchr(iniPath, '/');
 	if( temp != NULL ) *temp = '\0';
 	strcat(iniPath,INI_NAME);
 	
 	strcpy(config.basePathDefault,rootPath);
-	if( sceKernelDevkitVersion() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 ){
+	if( ver == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 ){
 		//it may be 6.35PRO この判定は正しいのか分からない
 		strcat( config.basePathDefault,"plugins/" );
 	}else{
@@ -326,6 +281,9 @@ int main_thread( SceSize arglen, void *argp )
 	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//7
 	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//8
 	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//9
+	INI_Add_Bool(conf, "UsbConnect", &config.usbConnect, false );//10
+	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//11
+	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//12
 	INI_Read_Conf(iniPath, conf);
 
 	SET_CONFIG();
@@ -345,13 +303,14 @@ int main_thread( SceSize arglen, void *argp )
 	pdata[2].exist = false;
 	
 	readSepluginsText(3,false,config.basePath);
-
-
-
 	
-	padData.Buttons = 0;
+	
+	if( config.usbConnect && usbState == 0 ) USBinit();
+	
+	
 	
 	//BOOT MESSAGE
+	padData.Buttons = 0;
 	if( config.bootMessage ){
 		strcpy(commonBuf,PPREFSMSG_BOOTMESSAGE);
 		
@@ -380,14 +339,31 @@ int main_thread( SceSize arglen, void *argp )
 	}
 
 	
-	
-	while( stop_flag ){
-		if((padData.Buttons & config.bootKey) == config.bootKey){
-			main_menu();
+	if( config.usbConnect && usbState == 0 ){
+		while( stop_flag ){
+			if((padData.Buttons & config.bootKey) == config.bootKey){
+				main_menu();
+			}else if( usbState == 0 &&  (padData.Buttons & config.usbConnectKey) == config.usbConnectKey ){
+				USBActivate();
+				usbState = 1;
+				wait_button_up_multithread(&padData);
+			}else if( usbState != 0  && (padData.Buttons & config.usbDisconnectKey) == config.usbDisconnectKey ){
+				USBDeactivate();
+				usbState = 0;
+				wait_button_up_multithread(&padData);
+			}
+			//    padData.Buttons ^= XOR_KEY;
+			sceCtrlPeekBufferPositive( &padData, 1 );
+			sceKernelDelayThread( 50000 );
 		}
-		//    padData.Buttons ^= XOR_KEY;
-		sceCtrlPeekBufferPositive( &padData, 1 );
-		sceKernelDelayThread( 50000 );
+	}else{
+		while( stop_flag ){
+			if((padData.Buttons & config.bootKey) == config.bootKey){
+				main_menu();
+			}
+			sceCtrlPeekBufferPositive( &padData, 1 );
+			sceKernelDelayThread( 50000 );
+		}
 	}
 
   return 0;
@@ -581,7 +557,6 @@ void main_menu(void)
 
 	while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
 		sceDisplayWaitVblankStart();
-		sceKernelDelayThread( 10000 );
 	}
 	
 	safelySuspendThreadsInit();

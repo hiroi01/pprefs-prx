@@ -68,7 +68,12 @@
 	"通常の文字色", \
 	"背景の色", \
 	"選択された文字色", \
-	"下に表\示される説明の文字色",
+	"下に表\示される説明の文字色", \
+	"USB接続機能\βを true→有効 false→無効\n※この機能\は5.XXでしか動作しません またテスト実装なのでいくつか問題があります", \
+	"USB接続ボタン(USB切断ボタンと同じでもOK)", \
+	"USB切断ボタン(USB接続ボタンと同じでもOK)",
+
+
 #define PPREFSMSG_CONFIGMENU_TITLE " 設定 "
 #define PPREFSMSG_CONFIGMENU_MENU_1 "上記の設定で保存する"
 #define PPREFSMSG_CONFIGMENU_MENU_2 "デフォルト値にする"

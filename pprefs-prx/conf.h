@@ -35,6 +35,9 @@ typedef struct
 	u32 color2;
 	u32 color3;
 	u32 sortType;
+	bool usbConnect;
+	u32 usbConnectKey;
+	u32 usbDisconnectKey;
 } Conf_Key;
 
 

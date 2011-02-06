@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "nidresolve.h"
 
+/*
 void *memoryAlloc( SceSize size )
 {
 	return memoryAllocEx( "ms_malloc", MEMORY_USER, 0, size, PSP_SMEM_Low, NULL );
@@ -19,7 +20,7 @@ void memoryFree( void *memblock )
 	sceKernelFreePartitionMemory( header->blockId );
 }
 
-
+*/
 
 void *memoryAllocEx( const char *name, MemoryPartition partition, unsigned int align, SceSize size, int type, void *addr )
 {
