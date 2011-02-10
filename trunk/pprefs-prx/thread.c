@@ -26,15 +26,18 @@ void safelySuspendThreadsInit()
 	safelySuspendTime = sceKernelLibcClock();
 }
 
-void safelySuspendThreads( clock_t waitTime )
+int safelySuspendThreads( clock_t waitTime )
 {
 	if( ! threadsState ){
 		if( (sceKernelLibcClock() - safelySuspendTime) >= waitTime ){
-			Suspend_Resume_Threads(SUSPEND_MODE);
-//			suspendThreads()
+//			Suspend_Resume_Threads(SUSPEND_MODE);
+			suspendThreads();
+			return 1;
 		}
+		return -1;
 	}
 	
+	return 0;
 }
 
 void suspendThreads()

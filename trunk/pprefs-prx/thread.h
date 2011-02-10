@@ -11,7 +11,14 @@
 #define			RESUME_MODE			1
 
 void safelySuspendThreadsInit();
-void safelySuspendThreads( clock_t waitTime );
+/*
+@return : 
+          == 0 already suspended
+          <  0 until suspended
+          >  0 now just suspend
+*/
+
+int safelySuspendThreads( clock_t waitTime );
 
 
 void suspendThreads();

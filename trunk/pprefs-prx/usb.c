@@ -52,14 +52,42 @@ int StopUnloadModule(SceUID modID){
 int USBinit(){
 	u32 retVal;
 
+
     //start necessary drivers
-    modules[0] = LoadStartModule("flash0:/kd/chkreg.prx");
-    modules[1] = LoadStartModule("flash0:/kd/npdrm.prx");
-    modules[2] = LoadStartModule("flash0:/kd/semawm.prx");
-    modules[3] = LoadStartModule("flash0:/kd/usbstor.prx");
-    modules[4] = LoadStartModule("flash0:/kd/usbstormgr.prx");
-    modules[5] = LoadStartModule("flash0:/kd/usbstorms.prx");
-    modules[6] = LoadStartModule("flash0:/kd/usbstorboot.prx");
+	if( ! sceKernelFindModuleByName("sceChkreg") )
+		modules[0] = LoadStartModule("flash0:/kd/chkreg.prx");
+	else
+		modules[0] = 0;
+
+	if( ! sceKernelFindModuleByName("scePspNpDrm_Driver") )
+		modules[1] = LoadStartModule("flash0:/kd/npdrm.prx");
+	else
+		modules[1] = 0;
+
+	if( ! sceKernelFindModuleByName("sceSemawm") )
+		modules[2] = LoadStartModule("flash0:/kd/semawm.prx");
+	else
+		modules[2] = 0;
+
+	if( ! sceKernelFindModuleByName("sceUSB_Stor_Driver") )
+		modules[3] = LoadStartModule("flash0:/kd/usbstor.prx");
+	else
+		modules[3] = 0;
+
+	if( ! sceKernelFindModuleByName("sceUSB_Stor_Mgr_Driver") )
+		modules[4] = LoadStartModule("flash0:/kd/usbstormgr.prx");
+	else
+		modules[4] = 0;
+
+	if( ! sceKernelFindModuleByName("sceUSB_Stor_Ms_Driver") )
+		modules[5] = LoadStartModule("flash0:/kd/usbstorms.prx");
+	else
+		modules[5] = 0;
+
+	if( ! sceKernelFindModuleByName("sceUSB_Stor_Boot_Driver") )//sceUsbstorBootSetCapacity
+		modules[6] = LoadStartModule("flash0:/kd/usbstorboot.prx");
+	else
+		modules[6] = 0;
 
     //setup USB drivers
     retVal = sceUsbStart(PSP_USBBUS_DRIVERNAME, 0, 0);
@@ -95,7 +123,7 @@ int USBEnd(){
     sceUsbStop(PSP_USBSTOR_DRIVERNAME, 0, 0);
     sceUsbStop(PSP_USBBUS_DRIVERNAME, 0, 0);
     for (i=0; i<7; i++){
-        StopUnloadModule(modules[i]);
+		if( modules[i] != 0 ) StopUnloadModule(modules[i]);
     }
     return 0;
 }

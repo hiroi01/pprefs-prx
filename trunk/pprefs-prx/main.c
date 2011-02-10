@@ -1,7 +1,7 @@
 /*
 	
 	ありがとう、
-	maxemさん、neur0nさん、plumさん、takkaさん(アルファベット順)、他全ての開発者の方々
+	masciiさん、maxemさん、neur0nさん、plumさん、STEARさん、takkaさん(アルファベット順)、他全ての開発者の方々
 
 */
 
@@ -218,6 +218,17 @@ const char *INI_Key_lineFeedCode_list[] = {
 
 
 
+#define initClearPdata(pdata) \
+	pdata[0].num = 0; \
+	pdata[1].num = 0; \
+	pdata[2].num = 0; \
+	pdata[0].edit = false; \
+	pdata[1].edit = false; \
+	pdata[2].edit = false; \
+	pdata[0].exist = false; \
+	pdata[1].exist = false; \
+	pdata[2].exist = false; \
+
 int main_thread( SceSize arglen, void *argp )
 {
 
@@ -226,7 +237,7 @@ int main_thread( SceSize arglen, void *argp )
 	char *temp;
 	char iniPath[256];
 	int usbState = 0;
-	int ver = sceKernelDevkitVersion();
+//	int ver = sceKernelDevkitVersion();
 	
 	while( 1 )
 	{
@@ -263,12 +274,17 @@ int main_thread( SceSize arglen, void *argp )
 	strcat(iniPath,INI_NAME);
 	
 	strcpy(config.basePathDefault,rootPath);
+	/*
+	6.35PRO or PRO-Aの判別できないからあきらめた!
 	if( ver == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 ){
-		//it may be 6.35PRO この判定は正しいのか分からない
+		//it may be 6.35PRO or PRO-A この判定は正しいのか分からない
 		strcat( config.basePathDefault,"plugins/" );
 	}else{
 		strcat( config.basePathDefault, "seplugins/" );
 	}
+	*/
+
+	strcat( config.basePathDefault, "seplugins/" );
 	
 	INI_Init_Key(conf);
 	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
@@ -288,19 +304,7 @@ int main_thread( SceSize arglen, void *argp )
 
 	SET_CONFIG();
 
-	
-
-
-
-	pdata[0].num = 0;
-	pdata[1].num = 0;
-	pdata[2].num = 0;
-	pdata[0].edit = false;
-	pdata[1].edit = false;
-	pdata[2].edit = false;
-	pdata[0].exist = false;
-	pdata[1].exist = false;
-	pdata[2].exist = false;
+	initClearPdata(pdata);
 	
 	readSepluginsText(3,false,config.basePath);
 	
@@ -343,6 +347,7 @@ int main_thread( SceSize arglen, void *argp )
 		while( stop_flag ){
 			if((padData.Buttons & config.bootKey) == config.bootKey){
 				main_menu();
+				resumeThreads();
 			}else if( usbState == 0 &&  (padData.Buttons & config.usbConnectKey) == config.usbConnectKey ){
 				USBActivate();
 				usbState = 1;
@@ -360,6 +365,7 @@ int main_thread( SceSize arglen, void *argp )
 		while( stop_flag ){
 			if((padData.Buttons & config.bootKey) == config.bootKey){
 				main_menu();
+				resumeThreads();
 			}
 			sceCtrlPeekBufferPositive( &padData, 1 );
 			sceKernelDelayThread( 50000 );
@@ -514,7 +520,7 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
 	//one down && arrow is out of screen of bottom
 	}else if( tmp - *now_arrow == -1 && *headOffset+MAX_DISPLAY_NUM <= *now_arrow ){
 		(*headOffset)++;
-		return 3;					
+		return 3;
 	}else if( pdata[now_type].num  > MAX_DISPLAY_NUM ){
 		//up top
 		if( tmp - *now_arrow > 1 ){
@@ -549,7 +555,6 @@ void main_menu(void)
 	int now_arrow = 0;//current position of arrow
 	clock_t time = 0;
 	u32 beforeButtons = 0;
-
 	
 	readSepluginsText(3,true,config.basePath);
 	
@@ -562,7 +567,6 @@ void main_menu(void)
 	safelySuspendThreadsInit();
 	while(1){
 //		libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
-
 		PRINT_SCREEN();
 
 		if( hitobashiraFlag ) libmPrint(416,10,FG_COLOR,BG_COLOR,(hitobashiraFlag == 1)?PPREFSMSG_HITOBASHIRA:PPREFSMSG_HITOBASHIRA_2);
@@ -581,11 +585,20 @@ void main_menu(void)
 		if( beforeButtons == 0 ) wait_button_up(&padData);
 		while(1){
 			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
-			safelySuspendThreadsInit(5 * 100 * 1000);
-
+			if( safelySuspendThreads(5 * 100 * 1000) == 1 ){
+				//描画に失敗しているかチェック
+				libmPoint(libmMakeDrawAddr(0,0),CHECKCOLOR);
+				while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+					sceDisplayWaitVblankStart();
+				}
+				if( libmGetColor(libmMakeDrawAddr(0,0)) != CHECKCOLOR ) break;//失敗してたら再描画
+			}
+			
+			
 			get_button(&padData);
 
-			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) && pdata[now_type].num > 0 ){
+			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) && pdata[now_type].num > 0 )
+			{
 				if( beforeButtons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){
 					if( (sceKernelLibcClock() - time) >= (2 * 100 * 1000) ){
 						time = sceKernelLibcClock();
@@ -600,7 +613,9 @@ void main_menu(void)
 				if( move_arrow(padData.Buttons,&now_arrow,&headOffset) != 0 ) break;
 
 				
-			}else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 ){
+			}
+			else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 )
+			{
 				if( beforeButtons & buttonData[buttonNum[0]].flag ) continue;
 				beforeButtons = buttonData[buttonNum[0]].flag;
 				
@@ -612,7 +627,9 @@ void main_menu(void)
 				            "[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print
 				);
 //				wait_button_up(&padData);
-			}else if( padData.Buttons & PSP_CTRL_RTRIGGER && padData.Buttons & PSP_CTRL_LTRIGGER ){
+			}
+			else if( padData.Buttons & PSP_CTRL_RTRIGGER && padData.Buttons & PSP_CTRL_LTRIGGER )
+			{
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER) ) continue;
 				beforeButtons |= PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER;
 
@@ -622,7 +639,9 @@ void main_menu(void)
 					readSepluginsText(3,false,config.basePath);
 				}
 				break;
-			}else if( padData.Buttons & PSP_CTRL_RTRIGGER ){
+			}
+			else if( padData.Buttons & PSP_CTRL_RTRIGGER )
+			{
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == PSP_CTRL_RTRIGGER ) continue;
 				beforeButtons = PSP_CTRL_RTRIGGER;
 
@@ -632,7 +651,9 @@ void main_menu(void)
 				now_arrow = 0;
 				headOffset = 0;
 				break;
-			}else if( padData.Buttons & PSP_CTRL_LTRIGGER ){
+			}
+			else if( padData.Buttons & PSP_CTRL_LTRIGGER )
+			{
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == PSP_CTRL_LTRIGGER ) continue;
 				beforeButtons = PSP_CTRL_LTRIGGER;
 
@@ -642,7 +663,9 @@ void main_menu(void)
 				now_arrow = 0;
 				headOffset = 0;
 				break;
-			}else if( padData.Buttons &  PSP_CTRL_TRIANGLE ){
+			}
+			else if( padData.Buttons &  PSP_CTRL_TRIANGLE )
+			{
 				if( beforeButtons & PSP_CTRL_TRIANGLE ) continue;
 				beforeButtons = PSP_CTRL_TRIANGLE;
 
@@ -662,11 +685,15 @@ void main_menu(void)
 				}
 				
 				break;
-			}else if( padData.Buttons &  PSP_CTRL_START ){
+			}
+			else if( padData.Buttons &  PSP_CTRL_START )
+			{
 				if( beforeButtons & PSP_CTRL_START ) continue;
 				beforeButtons = PSP_CTRL_START;
 
 				wait_button_up(&padData);
+				
+				tmp = 0;//this is flag
 				
 				if( ! config.onePushRestart ){
 					makeWindowWithGettingButton(
@@ -680,16 +707,20 @@ void main_menu(void)
 						if( padData.Buttons & PSP_CTRL_START ){
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
 							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 , FG_COLOR,BG_COLOR,"           ");
-							saveEdit();
-							resumeThreads();
-							sceKernelExitVSHVSH(NULL);
-							return;
+							tmp = 1;
+							break;
 						}else if( padData.Buttons & (CHEACK_KEY & ~PSP_CTRL_START) ){
 							break;
 						}
 						get_button(&padData);
 					}
 				}else{
+					tmp = 1;
+				}
+				
+				if( tmp ){
+					
+					wait_button_up(&padData);
 					saveEdit();
 					resumeThreads();
 					sceKernelExitVSHVSH(NULL);
@@ -698,7 +729,9 @@ void main_menu(void)
 				
 				wait_button_up(&padData);
 				break;
-			}else if( padData.Buttons & PSP_CTRL_HOME ){
+			}
+			else if( padData.Buttons & PSP_CTRL_HOME )
+			{
 				if( beforeButtons & PSP_CTRL_HOME ) continue;
 				beforeButtons = PSP_CTRL_HOME;
 				
@@ -706,7 +739,9 @@ void main_menu(void)
 				wait_button_up(&padData);
 				resumeThreads();
 				return;
-			}else if( padData.Buttons & PSP_CTRL_SELECT ){
+			}
+			else if( padData.Buttons & PSP_CTRL_SELECT )
+			{
 				if( beforeButtons & PSP_CTRL_SELECT ) continue;
 				beforeButtons = PSP_CTRL_SELECT;
 
@@ -747,7 +782,9 @@ void main_menu(void)
 				}
 				
 				break;
-			}else if( padData.Buttons & PSP_CTRL_NOTE ){
+			}
+			else if( padData.Buttons & PSP_CTRL_NOTE )
+			{
 				beforeButtons = PSP_CTRL_NOTE;
 				suspendThreads();
 				i = 0;
@@ -797,9 +834,12 @@ void main_menu(void)
 					
 				}
 				break;
-			}else{
+			}
+			else
+			{
 				beforeButtons = 0;
 			}
+			
 		}
 	}
 
@@ -821,6 +861,7 @@ void getRootPath(char *rtn,char *str)
 int module_start( SceSize arglen, void *argp )
 {
 	nidResolve();
+
 	Get_FirstThreads();
 	stop_flag = 1;
 

@@ -1,9 +1,8 @@
 #ifndef __NID_RESOLVE_H_
 #define __NID_RESOLVE_H_
 
-
 #include <pspctrl.h>
-
+#include <systemctrl.h>
 
 //ñ≥óùÇ‚ÇËÉ]ÉãÉo
 
@@ -23,6 +22,8 @@ extern int (*sceDisplayGetFrameBuf_Real)(void **topaddr, int *bufferwidth, int *
 extern int (*sceDisplaySetFrameBuf_Real)(void *topaddr, int bufferwidth, int pixelformat, int sync);
 extern int (*sceDisplayWaitVblankStart_Real)(void);
 
+extern int (*sceKernelExitVSHVSH_Real)(struct SceKernelLoadExecVSHParam *param);
+
 
 #define sceKernelAllocPartitionMemory sceKernelAllocPartitionMemory_Real
 #define sceKernelGetBlockHeadAddr sceKernelGetBlockHeadAddr_Real
@@ -40,9 +41,8 @@ extern int (*sceDisplayWaitVblankStart_Real)(void);
 #define sceDisplaySetFrameBuf sceDisplaySetFrameBuf_Real
 #define sceDisplayWaitVblankStart sceDisplayWaitVblankStart_Real
 
-
+#define sceKernelExitVSHVSH sceKernelExitVSHVSH_Real
 
 
 void nidResolve(void);
-
 #endif

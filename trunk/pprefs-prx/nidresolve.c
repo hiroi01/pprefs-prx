@@ -27,6 +27,8 @@ int (*sceDisplayGetFrameBuf_Real)(void **topaddr, int *bufferwidth, int *pixelfo
 int (*sceDisplaySetFrameBuf_Real)(void *topaddr, int bufferwidth, int pixelformat, int sync);
 int (*sceDisplayWaitVblankStart_Real)(void);
 
+int (*sceKernelExitVSHVSH_Real)(struct SceKernelLoadExecVSHParam *param);
+
 // Thanks to Davee
 #define PSP_FIRMWARE(f) ((((f >> 8) & 0xF) << 24) | (((f >> 4) & 0xF) << 16) | ((f & 0xF) << 8) | 0x10)
 
@@ -71,12 +73,14 @@ void nidResolve(void)
 		sceDisplayGetFrameBuf_Real				= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0x08A10838);
 		sceDisplaySetFrameBuf_Real				= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0x37533141);
 		sceDisplayWaitVblankStart_Real			= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0xC30D327D);
+
+		sceKernelExitVSHVSH_Real				= (void *)FindProc("sceLoadExec", "LoadExecForKernel", 0x5AA1A6D2);
 	}else{
 
 		sceKernelAllocPartitionMemory_Real		= sceKernelAllocPartitionMemory;
 		sceKernelGetBlockHeadAddr_Real			= sceKernelGetBlockHeadAddr;
 		sceKernelFreePartitionMemory_Real		= sceKernelFreePartitionMemory;
-//		sceKernelTotalFreeMemSize_Real		= sceKernelTotalFreeMemSize;
+//		sceKernelTotalFreeMemSize_Real			= sceKernelTotalFreeMemSize;
 		sceKernelGetModel_Real					= sceKernelGetModel;
 		sceKernelLibcTime_Real					= sceKernelLibcTime;
 
@@ -87,6 +91,8 @@ void nidResolve(void)
 		sceDisplayGetFrameBuf_Real				= sceDisplayGetFrameBuf;
 		sceDisplaySetFrameBuf_Real				= sceDisplaySetFrameBuf;
 		sceDisplayWaitVblankStart_Real			= sceDisplayWaitVblankStart;
+
+		sceKernelExitVSHVSH_Real				= sceKernelExitVSHVSH;
 	}
 
 }
