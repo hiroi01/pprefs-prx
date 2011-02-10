@@ -4,14 +4,15 @@
 #include "language.h"
 #include "pprefsmenu.h"
 #include "memory.h"
-
+#include "charConv.h"
 
 #define DIR_BUF_NUM 256
 
 
 
-//int file.c
+//in file.c
 extern const char dir_type_sort_default[];
+
 
 
 
@@ -93,6 +94,11 @@ void selectStrage(char *path)
 //selectType == 1 ディレクトリも選択できる
 //selectType == 2 ディレクトリしか選択できない
 
+
+/*
+ 矢印(カーソル)を↑↓長押しでもうまくスクロールするようにというマクロ
+ なんとなく関数でなくマクロで実装してしまった
+ */
 #define ALLORW_WAIT(button,firstWait,wait) \
 if( (beforeButtons & (button) ) == (button) ){ \
 	if( firstFlag ){ \
@@ -116,8 +122,28 @@ if( (beforeButtons & (button) ) == (button) ){ \
 } \
 
 
+/*
+ @param : startPath 
+		  ファイルセレクタが最初に閲覧するフォルダのパス
+ @param : rtn 
+		   選択されたら返す情報
+ @param : titleLabel 
+ 		      ファイルセレクタの上部に表示されるタイトル
+ @param : selectType 
+ 		      == 0 ファイルだけを選択できる / ==1 フォルダもファイルも選択できる / == 2 フォルダだけ選択できる
+ @param : dir_type_sort 
+ 		  		  ファイルをソートするための情報 NULL にすればデフォルトのソート順になる / 詳しくはfile.cに
+ 
+ @retrun : 
+           == 0 no problem
+           == 1 なにも選ばれなかった(quit by user)
+           
+*/
+
+
 int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectType, char *dir_type_sort)
 {
+	
 	if( selectType < 0 || selectType > 2 ) selectType = 0;
 
 	dir_t *dirBuf = malloc(sizeof(dir_t)*DIR_BUF_NUM);
@@ -139,24 +165,26 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 
 		PRINT_SCREEN();
 		libmPrintf(15,28,BG_COLOR,FG_COLOR, titleLabel);
-		libmPrintf(15,36,BG_COLOR,FG_COLOR," [%s] [%d] ",currentPath,dir_num);
+		libmPrintf(15,36,BG_COLOR,FG_COLOR,"[%d] [%s]",dir_num,currentPath);
 		libmPrintf(5,264,FG_COLOR,BG_COLOR, (selectType == 0)?PPREFSMSG_ADD_HOWTOUSE:(selectType == 1)?PPREFSMSG_ADD_HOWTOUSE_2:PPREFSMSG_ADD_HOWTOUSE_3, buttonData[buttonNum[0]].name);
 
 PRINT_LIST:
 		libmFillRect( 0 , 46 , 480 , 46 + MAX_DISPLAY_NUM*(LIBM_CHAR_HEIGHT+2),BG_COLOR );
 		if( dir_num != 0 ){
 			for( i = 0; i < dir_num && i < MAX_DISPLAY_NUM; i++ ){
+				psp2chUTF82Sjis(commonBuf,dirBuf[i+offset].name);
 				if( dirBuf[i+offset].type == TYPE_DIR )
-					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",dirBuf[i+offset].name);
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",commonBuf);
 				else
-					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dirBuf[i+offset].name);
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",commonBuf);
 			}
 			libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 		}
 		
 		while(1){
 			get_button(&padData);
-			if( padData.Buttons & PSP_CTRL_DOWN ){
+			if( padData.Buttons & PSP_CTRL_DOWN )
+			{
 				ALLORW_WAIT(PSP_CTRL_DOWN,3 * 100 * 1000,1 * 100 * 1000);
 				
 				if( now_arrow + 1 < MAX_DISPLAY_NUM && now_arrow + 1 < dir_num ){
@@ -169,7 +197,9 @@ PRINT_LIST:
 						goto PRINT_LIST;
 					}
 				}
-			}else if( padData.Buttons & PSP_CTRL_UP ){
+			}
+			else if( padData.Buttons & PSP_CTRL_UP )
+			{
 				ALLORW_WAIT(PSP_CTRL_UP,3 * 100 * 1000,1 * 100 * 1000);
 				
 				if( now_arrow - 1 >= 0 ){
@@ -182,19 +212,37 @@ PRINT_LIST:
 						goto PRINT_LIST;
 					}
 				}
-			}else if( padData.Buttons & PSP_CTRL_RIGHT ){
+			}
+			else if( padData.Buttons & PSP_CTRL_RIGHT )
+			{
 				ALLORW_WAIT(PSP_CTRL_RIGHT,2 * 100 * 1000,1 * 100 * 1000);
-				if( offset+MAX_DISPLAY_NUM < dir_num ){
+				
+				i = (dir_num >= MAX_DISPLAY_NUM)?dir_num - MAX_DISPLAY_NUM:0;//tmp value
+				if( i == offset ){
+					now_arrow = (i == 0)?dir_num-1:MAX_DISPLAY_NUM-1;
+				}else{
 					offset += MAX_DISPLAY_NUM;
 					now_arrow=0;
-					goto PRINT_LIST;
-				}else{
-					offset = dir_num - MAX_DISPLAY_NUM;
+					if( offset+MAX_DISPLAY_NUM >= dir_num ) offset = i;
 				}
-			}else if( padData.Buttons & PSP_CTRL_LEFT ){
-				ALLORW_WAIT(PSP_CTRL_LEFT,2 * 100 * 1000,1 * 100 * 1000);
+				goto PRINT_LIST;
 				
-			}else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) ){
+				
+			}
+			else if( padData.Buttons & PSP_CTRL_LEFT )
+			{
+				ALLORW_WAIT(PSP_CTRL_LEFT,2 * 100 * 1000,1 * 100 * 1000);
+				if( offset == 0 ){
+					now_arrow = 0;
+				}else{
+					offset -= MAX_DISPLAY_NUM;
+					if( offset < 0 ) offset = 0;
+					now_arrow = 0;
+				}
+				goto PRINT_LIST;
+			}
+			else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) )
+			{
 				beforeButtons = (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER);
 
 				//空のフォルダーではない
@@ -216,7 +264,9 @@ PRINT_LIST:
 					}
 				}
 				wait_button_up(&padData);
-			}else if( padData.Buttons & PSP_CTRL_LTRIGGER ){
+			}
+			else if( padData.Buttons & PSP_CTRL_LTRIGGER )
+			{
 				beforeButtons = PSP_CTRL_LTRIGGER;
 				
 				wait_button_up(&padData);
@@ -226,11 +276,15 @@ PRINT_LIST:
 				}else if( up_dir(currentPath) >= 0 ){
 					break;
 				}
-			}else if( padData.Buttons & PSP_CTRL_HOME ){
+			}
+			else if( padData.Buttons & PSP_CTRL_HOME )
+			{
 				wait_button_up(&padData);
 				free(dirBuf);
 				return 1;
-			}else if( (selectType == 1 || selectType == 2) && padData.Buttons & PSP_CTRL_START ){
+			}
+			else if( (selectType == 1 || selectType == 2) && padData.Buttons & PSP_CTRL_START )
+			{
 				beforeButtons = PSP_CTRL_START;
 
 				strcpy( rtn->name , currentPath );
@@ -242,7 +296,9 @@ PRINT_LIST:
 				return 0;
 				
 
-			}else{
+			}
+			else
+			{
 				beforeButtons = 0;
 			}
 //			wait_button_up(&padData);

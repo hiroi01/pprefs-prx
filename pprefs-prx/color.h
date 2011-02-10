@@ -28,6 +28,7 @@
 #define	SILVER			0xffC0C0C0          //  ã‚êF
 #define	GOLD			0xff20C0E6          //  ã‡êF
 
+#define	CHECKCOLOR		0xff123456          //  
 
 #define	Invalid			PB_TRANSPARENT
 

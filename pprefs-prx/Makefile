@@ -18,6 +18,7 @@ OBJS =	\
 	editpergame.o \
 	fileselecter.o \
 	usb.o \
+	charConv.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \
@@ -76,7 +77,7 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = -lpspsystemctrl_kernel -lm -lz -lpspusb -lpspkubridge -lpspusbstor
+LIBS = -lpspsystemctrl_kernel -lm -lz -lpspusb -lpspkubridge -lpspusbstor 
 
 
 
