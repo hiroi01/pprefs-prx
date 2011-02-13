@@ -468,7 +468,9 @@ int sub_menu(int currentSelected,int position){
 
 #define printEditedMark() libmPrint(63 , 24 , BG_COLOR , FG_COLOR,"*")
 
-
+//beta実装
+//flag == 0 描画しない
+//flag == 1 描画する
 int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
 {
 	int i,tmp;
@@ -534,16 +536,44 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
 
 	}
 	
-	//画面に表示 / display on screen
-	fillLine(38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-	libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
-	fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-	libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
+//	if( flag ){
+		//画面に表示 / display on screen
+//		fillLine(38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+//		libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
+//		fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+//		libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
+		
+//	}
 	
 	return 0;
 
 }
 
+/*
+ 矢印(カーソル)を↑↓長押しでもうまくスクロールするようにというマクロ
+ なんとなく関数でなくマクロで実装してしまった
+ */
+#define ALLORW_WAIT(button,firstWait,wait) \
+if( (beforeButtons & (button) ) == (button) ){ \
+	if( firstFlag ){ \
+		if( (sceKernelLibcClock() - time) >= (firstWait) ){ \
+			time = sceKernelLibcClock(); \
+			firstFlag = false; \
+		}else{ \
+			continue; \
+		} \
+	}else{ \
+		if( (sceKernelLibcClock() - time) >= (wait) ){ \
+			time = sceKernelLibcClock(); \
+		}else{ \
+			continue; \
+		} \
+	} \
+}else{ \
+	firstFlag = true; \
+	beforeButtons = button; \
+	time = sceKernelLibcClock(); \
+} \
 
 void main_menu(void)
 {
@@ -555,7 +585,8 @@ void main_menu(void)
 	int now_arrow = 0;//current position of arrow
 	clock_t time = 0;
 	u32 beforeButtons = 0;
-	
+	bool firstFlag = true;
+
 	readSepluginsText(3,true,config.basePath);
 	
 
@@ -585,7 +616,7 @@ void main_menu(void)
 		if( beforeButtons == 0 ) wait_button_up(&padData);
 		while(1){
 			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
-			if( safelySuspendThreads(5 * 100 * 1000) == 1 ){
+			if( safelySuspendThreads(5 * 100 * 1000) == 1 ){//まさにいまsuspendしたら
 				//描画に失敗しているかチェック
 				libmPoint(libmMakeDrawAddr(0,0),CHECKCOLOR);
 				while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
@@ -597,22 +628,34 @@ void main_menu(void)
 			
 			get_button(&padData);
 
-			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) && pdata[now_type].num > 0 )
+			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP|PSP_CTRL_RIGHT|PSP_CTRL_LEFT) && pdata[now_type].num > 0 )
 			{
-				if( beforeButtons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){
-					if( (sceKernelLibcClock() - time) >= (2 * 100 * 1000) ){
-						time = sceKernelLibcClock();
-					}else{
-						continue;
-					}
-				}else{
-					beforeButtons = (PSP_CTRL_DOWN|PSP_CTRL_UP);
-					time = sceKernelLibcClock();
-				}
-				
-				if( move_arrow(padData.Buttons,&now_arrow,&headOffset) != 0 ) break;
+				ALLORW_WAIT((PSP_CTRL_DOWN|PSP_CTRL_UP|PSP_CTRL_RIGHT|PSP_CTRL_LEFT),3 * 100 * 1000,1 * 100 * 1000);
 
-				
+				fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+				libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
+
+				if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){//↓ / ↑
+					if( move_arrow(padData.Buttons,&now_arrow,&headOffset) != 0 ) break;
+				}else{// ← / → 
+					tmp = 0;
+					if( padData.Buttons & PSP_CTRL_LEFT ){
+						for ( i = 0; i < 5; i++ ){
+							if( now_arrow == 0 ) break;
+							tmp |= move_arrow( PSP_CTRL_UP,&now_arrow,&headOffset);
+						}
+					}else{
+						for ( i = 0; i < 5; i++ ){
+							if( now_arrow == pdata[now_type].num - 1 ) break;
+							tmp |= move_arrow( PSP_CTRL_DOWN,&now_arrow,&headOffset);
+						}
+					}
+					if( tmp != 0 ) break;
+				}
+
+				fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+				libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
+
 			}
 			else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 )
 			{
@@ -626,7 +669,6 @@ void main_menu(void)
 				            15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),SL_COLOR,BG_COLOR,
 				            "[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print
 				);
-//				wait_button_up(&padData);
 			}
 			else if( padData.Buttons & PSP_CTRL_RTRIGGER && padData.Buttons & PSP_CTRL_LTRIGGER )
 			{
