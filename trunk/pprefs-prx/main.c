@@ -13,6 +13,7 @@
 #include "fileselecter.h"
 #include "editpergame.h"
 #include "usb.h"
+#include "sortgame.h"
 #include "common.h"
 
 
@@ -300,6 +301,7 @@ int main_thread( SceSize arglen, void *argp )
 	INI_Add_Bool(conf, "UsbConnect", &config.usbConnect, false );//10
 	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//11
 	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//12
+	INI_Add_Hex(conf, "SortType", &config.sortType, 0, NULL);//13
 	INI_Read_Conf(iniPath, conf);
 
 	SET_CONFIG();
@@ -394,13 +396,25 @@ int main_thread( SceSize arglen, void *argp )
 
 int sub_menu(int currentSelected,int position){
 	int now_arrow;
+/*
 	char *menu_fat[] = { PPREFSMSG_SUBMENU_LIST };
 	char *menu_go[] = { PPREFSMSG_SUBMENU_LIST_GO };
 	char *menu_go_hitobashira[] = { PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA };
 	char **menu = (deviceModel == 4)?(hitobashiraFlag)?menu_go_hitobashira:menu_go:menu_fat;
-	
+*/	
+	if( deviceModel == 4 ){//if device is 'go'
+		if( hitobashiraFlag ){
+			char *menu[] = {PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA};
+			now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+		}else{
+			char *menu[] = {PPREFSMSG_SUBMENU_LIST_GO};
+			now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+		}
+	}else{
+		char *menu[] = {PPREFSMSG_SUBMENU_LIST};
+		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+	}
 
-	now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
 
 	wait_button_up(&padData);
 
@@ -416,16 +430,20 @@ int sub_menu(int currentSelected,int position){
 	}else if( now_arrow == 1 ){
 		removeAnItem(now_type,currentSelected);
 		pdata[now_type].edit = true;
-	//設定
+	//pergame編集
 	}else if( now_arrow == 2 ){
 		editPergameMenu();
+	//SORT GAME
 	}else if( now_arrow == 3 ){
+		sortgame_menu();
+	//設定
+	}else if( now_arrow == 4 ){
 		if( confirm_save() == 0 ){
 			config_menu();
-			readSepluginsText(3,false,config.basePath);
+			readSepluginsText(3,false,config.basePath);//re-read vsh.txt game.txt pops.txt
 		}
 	//COPY ME or omake
-	}else if( now_arrow == 4 ){
+	}else if( now_arrow == 5 ){
 		if(deviceModel == 4 ){
 			if(  hitobashiraFlag ){
 				pauseGameTest();
@@ -468,10 +486,9 @@ int sub_menu(int currentSelected,int position){
 
 #define printEditedMark() libmPrint(63 , 24 , BG_COLOR , FG_COLOR,"*")
 
-//beta実装
 //flag == 0 描画しない
 //flag == 1 描画する
-int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
+int move_arrow(u32 buttons, int *now_arrow, int *headOffset, int flag)
 {
 	int i,tmp;
 	
@@ -504,12 +521,12 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
 			for( i = tmp; i > *now_arrow; i-- ){
 				swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
 			}
-			return 1;
+			return 2;
 		}else if( tmp - *now_arrow < -1 ){
 			for( i = tmp; i < *now_arrow; i++ ){
 				swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i+1]);
 			}
-			return 1;
+			return 2;
 		}else{
 			swap_pdataLine(pdata[now_type].line[*now_arrow],pdata[now_type].line[tmp]);
 		}
@@ -518,32 +535,32 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset)
 	//one up && arrow is out of screen of top
 	if( tmp - *now_arrow == 1 && *headOffset > *now_arrow ){
 		(*headOffset)--;
-		return 2;
+		return 4;
 	//one down && arrow is out of screen of bottom
 	}else if( tmp - *now_arrow == -1 && *headOffset+MAX_DISPLAY_NUM <= *now_arrow ){
 		(*headOffset)++;
-		return 3;
+		return 8;
 	}else if( pdata[now_type].num  > MAX_DISPLAY_NUM ){
 		//up top
 		if( tmp - *now_arrow > 1 ){
 			*headOffset = 0;
-			return 4;
+			return 16;
 		//donw bottom
 		}else if( tmp - *now_arrow <  -1 ){
 			*headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
-			return 5;
+			return 32;
 		}
 
 	}
 	
-//	if( flag ){
+	if( flag ){
 		//画面に表示 / display on screen
-//		fillLine(38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-//		libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
-//		fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-//		libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
+		fillLine(38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+		libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
+		fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+		libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
 		
-//	}
+	}
 	
 	return 0;
 
@@ -616,7 +633,7 @@ void main_menu(void)
 		if( beforeButtons == 0 ) wait_button_up(&padData);
 		while(1){
 			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
-			if( safelySuspendThreads(5 * 100 * 1000) == 1 ){//まさにいまsuspendしたら
+			if( safelySuspendThreads(5 * 100 * 1000) == 1 ){//まさにいまsuspendした
 				//描画に失敗しているかチェック
 				libmPoint(libmMakeDrawAddr(0,0),CHECKCOLOR);
 				while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
@@ -632,29 +649,35 @@ void main_menu(void)
 			{
 				ALLORW_WAIT((PSP_CTRL_DOWN|PSP_CTRL_UP|PSP_CTRL_RIGHT|PSP_CTRL_LEFT),3 * 100 * 1000,1 * 100 * 1000);
 
-				fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-				libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
-
+				//ここの描画処理が適当すぎるのでいつかなおそう
+				tmp = 0;
 				if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){//↓ / ↑
-					if( move_arrow(padData.Buttons,&now_arrow,&headOffset) != 0 ) break;
-				}else{// ← / → 
-					tmp = 0;
+					tmp = move_arrow(padData.Buttons, &now_arrow, &headOffset, 1);
+				}else if( !( padData.Buttons & PSP_CTRL_SQUARE ) ){// ← / → 
+					fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+					libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,
+					"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
+					
 					if( padData.Buttons & PSP_CTRL_LEFT ){
 						for ( i = 0; i < 5; i++ ){
 							if( now_arrow == 0 ) break;
-							tmp |= move_arrow( PSP_CTRL_UP,&now_arrow,&headOffset);
+							tmp |= move_arrow( PSP_CTRL_UP,&now_arrow,&headOffset,0);
 						}
 					}else{
 						for ( i = 0; i < 5; i++ ){
 							if( now_arrow == pdata[now_type].num - 1 ) break;
-							tmp |= move_arrow( PSP_CTRL_DOWN,&now_arrow,&headOffset);
+							tmp |= move_arrow( PSP_CTRL_DOWN,&now_arrow,&headOffset,0);
 						}
 					}
-					if( tmp != 0 ) break;
-				}
 
-				fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-				libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
+					fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+					libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,
+					"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
+
+				}
+				
+				if( tmp > 0 ) break;
+
 
 			}
 			else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 )
@@ -719,7 +742,7 @@ void main_menu(void)
 					if( headOffset < 0 ) headOffset = 0;
 				}else if( tmp == 1 ){
 					if( now_arrow != 0 ){
-						move_arrow(PSP_CTRL_UP,&now_arrow,&headOffset);
+						move_arrow(PSP_CTRL_UP,&now_arrow,&headOffset,0);
 					}
 				}else if( tmp >= 0 ){
 					now_arrow = 0;

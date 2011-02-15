@@ -9,15 +9,20 @@
 
 #include <stdbool.h>
 
-//for sortType
+//use in sortgame.o
 enum
 {
-	SORT_TYPE_ORIGINAL = 1,	//
-	SORT_TYPE_CATEGORIZES = 2,	//
-	SORT_TYPE_CATEGORIZES_LIGHT = 4,	//
-	SORT_TYPE_ISO = 8,	//
-	SORT_TYPE_GAME = 16,	//
-	SORT_TYPE_GAME150 = 32, //
+	SORT_TYPE_NORMAL_LIST = 1,	//
+	SORT_TYPE_CATEGORY_LIST = 2,	//not need?
+	SORT_TYPE_ISOCSO_LIST = 4,	//not needd?
+
+	SORT_TYPE_CATEGORIZES = 8,	//
+	SORT_TYPE_CATEGORIZES_LIGHT = 16,	//
+
+	SORT_TYPE_ISOCSO = 32,	//
+	SORT_TYPE_GAME = 64,	//
+	SORT_TYPE_GAME150 = 128, //
+	SORT_TYPE_GAME500 = 256, //
 };
 
 typedef struct
@@ -34,10 +39,10 @@ typedef struct
 	u32 color1;
 	u32 color2;
 	u32 color3;
-	u32 sortType;
 	bool usbConnect;
 	u32 usbConnectKey;
 	u32 usbDisconnectKey;
+	u32 sortType;
 } Conf_Key;
 
 

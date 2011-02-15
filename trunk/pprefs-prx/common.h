@@ -43,7 +43,7 @@ a.year   == b.year      \
 
 
 
-
+#define PPREFS_CONF_NUM 14
 
 /*------------------------------------------
 for ini
@@ -95,7 +95,7 @@ extern int deviceModel;
 extern char *modelName[];
 extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
-extern INI_Key conf[13];
+extern INI_Key conf[PPREFS_CONF_NUM];
 extern int hitobashiraFlag;
 
 #endif

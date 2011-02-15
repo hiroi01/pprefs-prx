@@ -24,9 +24,9 @@
 #define PPREFSMSG_ADD_HOWTOUSE " %s:選択 HOME:やめる L:フォルダ階層上へ R:フォルダ開く "
 #define PPREFSMSG_ADD_HOWTOUSE_2 " %s:選択 HOME:やめる L:フォルダ階層上へ R:フォルダ開く START:現在位置のフォルダを選択 "
 #define PPREFSMSG_ADD_HOWTOUSE_3 " HOME:やめる L:フォルダ階層上へ R/%s:フォルダ開く START:現在位置のフォルダを選択"
-#define PPREFSMSG_SUBMENU_LIST "追記","削除","pergame編集","設定","COPY ME",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO "追記","削除","pergame編集","設定",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "追記","削除","pergame編集","設定","中断ゲームファイル弄る",NULL
+#define PPREFSMSG_SUBMENU_LIST "追記","削除","pergame編集","SORT GAMEβ","設定","COPY ME",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO "追記","削除","pergame編集","SORT GAMEβ","設定",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "追記","削除","pergame編集","SORT GAMEβ","設定","中断ゲームファイル弄る",NULL
 #define PPREFSMSG_SUBMENU_HOTOUSE " %s:選択 %s:戻る "
 #define PPREFSMSG_SUBMENU_TITLE "メニュー"
 #define PPREFSMSG_COPYME_ERROR "エラーが発生しました"
@@ -34,7 +34,7 @@
 #define PPREFSMSG_MAINMENU_HOTOUSE " %s:選択 △:メニュー □+↑/↓:並び替え L+R:txt読書先変更"
 #define PPREFSMSG_MAINMENU_HOTOUSE_2 " SELECT:編集破棄&リロード HOME:保存&終了 START:保存&VSH再起動"
 #define PPREFSMSG_MAINMENU_REPUSHSTART "もう一度STARTを押すと\nRESTART VSH"
-#define PPREFSMSG_MAINMENU_RELOAD " 編集を破棄して、リロードしてもよろしいですか? "
+#define PPREFSMSG_MAINMENU_RELOAD " 編集を破棄してリロード? "
 #define PPREFSMSG_YESORNO "%s:はい %s:いいえ"
 #define PPREFSMSG_YESORNO_LIST "はい","いいえ",NULL
 #define PPREFSMSG_COPYME_FIRSTCONFIRM "次の操作を実行する前に現在の編集を保存してください"
@@ -71,7 +71,8 @@
 	"下に表\示される説明の文字色", \
 	"USB接続機能\βを true→有効 false→無効 ※この機能\は5.XX専用\nテスト実装なのでいくつか問題がある 有効無効を切り替えたら本体(VSH)を再起動が必要", \
 	"USB接続ボタン(USB切断ボタンと同じでもOK)", \
-	"USB切断ボタン(USB接続ボタンと同じでもOK)",
+	"USB切断ボタン(USB接続ボタンと同じでもOK)", \
+	"SORT GAMEに関する設定", \
 
 
 #define PPREFSMSG_CONFIGMENU_TITLE " 設定 "
@@ -82,4 +83,14 @@
 #define PPREFSMSG_HITOBASHIRA_2 "人柱2"
 #define PPREFSMSG_CONFIG_BASEPATH_LIST "指定する","指定しない",NULL
 #define PPREFSMSG_CONFIG_BASEPATH_TITLE "BasePath"
+#define PPREFSMSG_SORTGAME_SAVE " 保存しますか? "
+#define PPREFSMSG_SORTGAME_HOWTOUSE "□+↑/↓:並び替え HOME:終了 START:保存 SELECT:編集破棄&リロード %s/R:開く L:戻る"
+#define PPREFSMSG_SORTGAME_TITLE "SORT GAMEβ 並び替えたらRESTART VSHするなどしてキャッシュをクリアしてね"
+#define PPREFSMSG_CONFIG_SORTTYPE_ISOCSO "*.iso/*.csoファイルを含める?"
+#define PPREFSMSG_CONFIG_SORTTYPE_GAME150 "GAME150フォルダを含める?"
+#define PPREFSMSG_CONFIG_SORTTYPE_GAME500 "GAME500フォルダを含める?"
+#define PPREFSMSG_CONFIG_SORTTYPE_TYPE "どのpluginを使っていますか?"
+#define PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST "使ってない","gamecategories","gamecategories lite",NULL
+#define PPREFSMSG_SORTGAME_PLEASECONFIG "\"設定\"でSortTypeの設定を行ってください"
+
 #endif

@@ -19,6 +19,7 @@ OBJS =	\
 	fileselecter.o \
 	usb.o \
 	charConv.o \
+	sortgame.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \

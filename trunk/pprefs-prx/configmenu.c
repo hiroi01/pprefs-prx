@@ -4,7 +4,37 @@
 #include "language.h"
 #include "fileselecter.h"
 
+u32 selectSorttypeByuser()
+{
+	u32 rtn = SORT_TYPE_GAME;
+	int tmp;
+	
+	char *yesnoList[] = { PPREFSMSG_YESORNO_LIST };
+	char *typeList[] = { PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST };
 
+	tmp = pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_TYPE ,typeList, buttonData[buttonNum[0]].flag, 0 );
+	
+	if( tmp == 0 ){
+		rtn |= SORT_TYPE_NORMAL_LIST;
+	}else if( tmp == 1 ){
+		rtn |= SORT_TYPE_CATEGORIZES;
+	}else{
+		rtn |= SORT_TYPE_CATEGORIZES_LIGHT;
+	}
+
+
+	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_ISOCSO ,yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
+		rtn |= SORT_TYPE_ISOCSO;
+	}
+	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_GAME150 ,yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
+		rtn |= SORT_TYPE_GAME150;
+	}
+	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_GAME500 ,yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
+		rtn |= SORT_TYPE_GAME500;
+	}
+
+	return rtn;
+}
 
 void selectBasePath(char *path)
 {
@@ -145,6 +175,8 @@ int config_menu(void)
 						}else if( selectNum == 1){
 							conf[now_arrow].value.s[0] = '\0';
 						}
+					}else if( strcasecmp( "SortType", conf[now_arrow].key ) == 0  ){
+						*conf[now_arrow].value.u = selectSorttypeByuser();
 					}else if( strcasecmp( "Color2", conf[now_arrow].key ) == 0 ){
 						if( *conf[now_arrow].value.u == RED ){
 							*conf[now_arrow].value.u = GREEN;
