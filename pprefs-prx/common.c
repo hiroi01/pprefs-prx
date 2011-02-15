@@ -34,7 +34,7 @@ struct pprefsButtonDatas buttonData[] = {
 	{PSP_CTRL_CIRCLE,PB_SYM_PSP_CIRCLE}
 };
 int buttonNum[] = {0,1};
-INI_Key conf[13];
+INI_Key conf[PPREFS_CONF_NUM];
 int hitobashiraFlag = 0;
 
 

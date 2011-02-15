@@ -18,7 +18,7 @@
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.096beta2   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.10   by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 extern char pprefsPrintBuf[128];
