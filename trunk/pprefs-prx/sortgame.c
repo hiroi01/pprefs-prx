@@ -168,6 +168,18 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 			case FIO_S_IFDIR://ディレクトリなら
 				if( (strcmp(&entry.d_name[0], ".") != 0) && (strcmp(&entry.d_name[0], "..") != 0) )
 				{
+					if( type & SORTGAME_FLAG_EBOOTDIR )
+					{
+						if( type & SORTGAME_FLAG_CATDIR && strncasecmp(entry.d_name, "CAT_", 4) == 0 ) continue;
+						
+						if( exist_ebootpbp(dir[file_num].name) == 0 ){
+							dir[file_num].time = dir[file_num].stat.st_mtime;
+							dir[file_num].sort_type = 0;
+							file_num++;
+							continue;
+						}
+					}
+
 					if( type & SORTGAME_FLAG_CATDIR )
 					{
 						if( strncasecmp(entry.d_name, "CAT_", 4) == 0 ){
@@ -187,20 +199,6 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 							continue;
 						}
 					}
-					
-					if( type & SORTGAME_FLAG_EBOOTDIR )
-					{
-						if( type & SORTGAME_FLAG_CATDIR && strncasecmp(entry.d_name, "CAT_", 4) == 0 ) continue;
-						
-						if( exist_ebootpbp(dir[file_num].name) == 0 ){
-							dir[file_num].time = dir[file_num].stat.st_mtime;
-							dir[file_num].sort_type = 0;
-							file_num++;
-							continue;
-						}
-					}
-
-					
 				}
 			break;
 		}
@@ -313,17 +311,19 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 
 	int file_num = 0,i,len;
 	char path[256];
+	u32 flag = 0;
 	
+	if( type & SORT_TYPE_CATEGORIZES ) flag |= SORTGAME_FLAG_CATDIR;
 	
 	if( exPath[0] == '\0' ){//Uncategorized
 		if( type & SORT_TYPE_GAME )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR);
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag );
 		if( type & SORT_TYPE_ISOCSO )
 			file_num = sortgame_read_dir(getFullpath(path,rootPath,"ISO/"), dirBuf, file_num, dirBufNum, (SORTGAME_FLAG_ISO|SORTGAME_FLAG_CSO) );
 		if( type & SORT_TYPE_GAME150 )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME150/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR);
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME150/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag );
 		if( type & SORT_TYPE_GAME500 )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME500/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR);
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME500/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag);
 	}else{
 		strcpy(path,exPath);
 		len = strlen(path);
@@ -500,7 +500,7 @@ LIST_UP:
 			else if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 0 && padData.Buttons & (buttonData[buttonNum[0]].flag|PSP_CTRL_RTRIGGER) )
 			{
 
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, DIR_BUF_NUM, mode);
+				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
 
 				//if select [Uncategorize]
 				if( now_arrow+offset == 0 ) dirPath[0] = '\0';
@@ -512,7 +512,7 @@ LIST_UP:
 			}
 			else if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 1 && padData.Buttons & PSP_CTRL_LTRIGGER )
 			{
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, DIR_BUF_NUM, mode);
+				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
 
 				mode = 0;
 				wait_button_up(&padData);
@@ -523,7 +523,7 @@ LIST_UP:
 				if( beforeButtons & PSP_CTRL_START ) continue;
 				beforeButtons = PSP_CTRL_START;
 				
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, DIR_BUF_NUM, mode);
+				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir,file_num, mode);
 				goto LIST_UP;
 			}
 			else if( padData.Buttons & PSP_CTRL_SELECT )
@@ -544,6 +544,7 @@ LIST_UP:
 				if( beforeButtons & PSP_CTRL_HOME ) continue;
 				beforeButtons = PSP_CTRL_HOME;
 				
+				/*
 				tmp = 0;
 				if( editFlag ){
 					char *menu[] = { PPREFSMSG_YESORNO_LIST };
@@ -551,7 +552,10 @@ LIST_UP:
 						tmp = 1;
 					}
 				}
-				if( tmp ) sortgame_run_sort(dir, DIR_BUF_NUM, mode);
+				if( tmp ) sortgame_run_sort(dir, file_num, mode);
+				*/
+				
+				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir,file_num, mode);
 
 				free(dir);
 				wait_button_up(&padData);
