@@ -1,4 +1,4 @@
-TARGET = pprefs
+TARGET = pprefs_lite
 PSP_FW_VERSION = 500
 BUILD_PRX = 1
 
@@ -15,12 +15,7 @@ OBJS =	\
 	configmenu.o \
 	nidresolve.o \
 	sepluginstxt.o \
-	editpergame.o \
 	fileselecter.o \
-	usb.o \
-	ciso.o \
-	charConv.o \
-	sortgame.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \
@@ -69,17 +64,13 @@ CLASSG_LIBS = libs
 
 
 INCDIR = $(CLASSG_LIBS)
-CFLAGS = -Os -G0 -Wall -fno-strict-aliasing -fno-builtin-printf -DLNGJPN
+CFLAGS = -Os -G0 -Wall -fno-strict-aliasing -fno-builtin-printf -DPPREFS_LITE
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
-#INCDIR			=	$(DIR_CLASSG)
-#CFLAGS		=	-Os -G 0 -Wall -fno-strict-aliasing -DLNGJPN
-##CFLAGS 	= -O3 -G0 -Wall -DLNGJPN
-#ASFLAGS		=	$(CFLAGS)
 
 LIBDIR			= 
 LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = -lpspsystemctrl_kernel -lm -lz -lpspusb -lpspkubridge -lpspusbstor 
+LIBS = -lpspsystemctrl_kernel -lm -lpspkubridge -lpspusbstor 
 
 
 

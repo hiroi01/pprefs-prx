@@ -73,11 +73,14 @@ void saveEdit(void);
 
 /*----------------------------------------------------------------------------*/
 
+
+
+#ifndef PPREFS_LITE
+
 SceUID (* pspIoOpen)(char *file, int flags, SceMode mode) = NULL;
 int (* pspIoRead)(SceUID fd, void *data, u32 len) = NULL;
 int (* pspIoWrite)(SceUID fd, void *data, u32 len) = NULL;
 int (* pspIoClose)(SceUID fd) = NULL;
-
 
 
 
@@ -202,20 +205,15 @@ int pauseGameTest()
 }
 
 
+#endif
 
 
-int INI_Key_defaultPath_max = 1;
 const char *INI_Key_lineFeedCode_list[] = {
 	"CR+LF",
 	"LF",
 	NULL
 };
 
-/*
-	SceUID modid_;
-	int status_;
-	char args_[1024];
-*/
 
 
 
@@ -233,11 +231,9 @@ const char *INI_Key_lineFeedCode_list[] = {
 int main_thread( SceSize arglen, void *argp )
 {
 
-	
-	clock_t timesec;
+	int usbState = 0;
 	char *temp;
 	char iniPath[256];
-	int usbState = 0;
 //	int ver = sceKernelDevkitVersion();
 	
 	while( 1 )
@@ -286,8 +282,23 @@ int main_thread( SceSize arglen, void *argp )
 	*/
 
 	strcat( config.basePathDefault, "seplugins/" );
+
+
 	
 	INI_Init_Key(conf);
+	
+	
+#ifdef PPREFS_LITE
+	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
+	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//1
+	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//2
+	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//3
+	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//4
+	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//5
+	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//6
+	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//7
+	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//8
+#else
 	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
 	INI_Add_Bool(conf, "BootMessage", &config.bootMessage, true );//1
 	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//2
@@ -302,22 +313,29 @@ int main_thread( SceSize arglen, void *argp )
 	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//11
 	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//12
 	INI_Add_Hex(conf, "SortType", &config.sortType, 0, NULL);//13
-	INI_Read_Conf(iniPath, conf);
+#endif
 
+	INI_Read_Conf(iniPath, conf);
 	SET_CONFIG();
 
 	initClearPdata(pdata);
 	
 	readSepluginsText(3,false,config.basePath);
 	
-	
+#ifndef PPREFS_LITE
 	if( config.usbConnect && usbState == 0 ) USBinit();
+#endif
+
 	
-	
-	
-	//BOOT MESSAGE
+
 	padData.Buttons = 0;
+
+#ifndef PPREFS_LITE
+
+	//BOOT MESSAGE
 	if( config.bootMessage ){
+		clock_t timesec;
+
 		strcpy(commonBuf,PPREFSMSG_BOOTMESSAGE);
 		
 		GET_KEY_NAME(config.bootKey, commonBuf);
@@ -343,7 +361,9 @@ int main_thread( SceSize arglen, void *argp )
 			sceKernelDelayThread( 10000 );
 		}
 	}
+#endif
 
+#ifndef PPREFS_LITE
 	
 	if( config.usbConnect && usbState == 0 ){
 		while( stop_flag ){
@@ -364,6 +384,7 @@ int main_thread( SceSize arglen, void *argp )
 			sceKernelDelayThread( 50000 );
 		}
 	}else{
+#endif
 		while( stop_flag ){
 			if((padData.Buttons & config.bootKey) == config.bootKey){
 				main_menu();
@@ -372,8 +393,10 @@ int main_thread( SceSize arglen, void *argp )
 			sceCtrlPeekBufferPositive( &padData, 1 );
 			sceKernelDelayThread( 50000 );
 		}
-	}
 
+#ifndef PPREFS_LITE
+	}
+#endif
   return 0;
 }
 
@@ -393,6 +416,67 @@ int main_thread( SceSize arglen, void *argp )
 ・
 */
 
+#ifdef PPREFS_LITE
+
+int sub_menu(int currentSelected,int position){
+	int now_arrow;
+
+	if( deviceModel == 4 ){//if device is 'go'
+		char *menu[] = {"add","remove","config",NULL};
+		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+	}else{
+		char *menu[] = {"add","remove","config","COPY ME",NULL};
+		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+	}
+
+	wait_button_up(&padData);
+
+	//追記
+	if( now_arrow == 0 ){
+		if( fileSelecter(config.basePath, &dirTmp, PPREFSMSG_ADD_TOP, 0, "ccbcccac") == 0 ){
+			strcpy(tmp_pdataLine.path, dirTmp.name);
+			tmp_pdataLine.toggle = false;
+			addNewItem(now_type,&tmp_pdataLine);
+			pdata[now_type].edit = true;
+		}
+	//削除
+	}else if( now_arrow == 1 ){
+		removeAnItem(now_type,currentSelected);
+		pdata[now_type].edit = true;
+	//設定
+	}else if( now_arrow == 2 ){
+		if( confirm_save() == 0 ){
+			config_menu();
+			readSepluginsText(3,false,config.basePath);//re-read vsh.txt game.txt pops.txt
+		}
+	//COPY ME
+	}else if( now_arrow == 3 ){
+		int tmp = copyMeProcess();
+		if( tmp < 0 ){
+			makeWindow(
+					   24 , 28 ,
+					   24 + LIBM_CHAR_WIDTH*23 , 28 + LIBM_CHAR_HEIGHT*5,
+					   FG_COLOR,BG_COLOR
+					   );
+			libmPrint(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_ERROR);
+			if( tmp == -1 )
+				libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_INSERTERROR);
+			else
+				libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"ErrorNo.:%d",tmp);
+			libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:OK ",buttonData[buttonNum[0]].name);
+			wait_button_down(&padData,buttonData[buttonNum[0]].flag);
+		}
+		if( tmp !=  1 ) readSepluginsText(3,true,config.basePath);
+	}
+
+	wait_button_up(&padData);
+	
+	return now_arrow;
+	
+}
+
+
+#else
 
 int sub_menu(int currentSelected,int position){
 	int now_arrow;
@@ -473,6 +557,8 @@ int sub_menu(int currentSelected,int position){
 	return now_arrow;
 	
 }
+
+#endif
 
 #define swap_pdataLine(first,second) \
         strcpy( tmp_pdataLine.path , first.path ); \
@@ -763,15 +849,15 @@ void main_menu(void)
 				if( ! config.onePushRestart ){
 					makeWindowWithGettingButton(
 						100 , 36 ,
-						 100 + LIBM_CHAR_WIDTH*16 , 44 + LIBM_CHAR_HEIGHT*5,
+						 100 + LIBM_CHAR_WIDTH*20 , 44 + LIBM_CHAR_HEIGHT*5,
 						 FG_COLOR,BG_COLOR,
 						 &padData
 					);
 					libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,PPREFSMSG_MAINMENU_REPUSHSTART);
 					while(1){
 						if( padData.Buttons & PSP_CTRL_START ){
-							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...");
-							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 , FG_COLOR,BG_COLOR,"           ");
+							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...       ");
+							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 , FG_COLOR,BG_COLOR,"                    ");
 							tmp = 1;
 							break;
 						}else if( padData.Buttons & (CHEACK_KEY & ~PSP_CTRL_START) ){
@@ -1077,12 +1163,19 @@ int copyMeProcess(void){
 	
 	sceIoMkdir("ms0:/seplugins",0777);
 	
+	
+#ifdef PPREFS_LITE
+	if( (fd = sceIoOpen("ms0:/seplugins/pprefs_lite.prx",PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC,0777)) < 0 ){
+		free(buf);
+		return -4;
+	}
 
+#else
 	if( (fd = sceIoOpen("ms0:/seplugins/pprefs.prx",PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC,0777)) < 0 ){
 		free(buf);
 		return -4;
 	}
-	
+#endif	
 	writeSize = sceIoWrite(fd,buf,readSize);
 	sceIoClose(fd);
 

@@ -43,7 +43,6 @@ a.year   == b.year      \
 
 
 
-#define PPREFS_CONF_NUM 14
 
 /*------------------------------------------
 for ini
@@ -73,16 +72,32 @@ for ini
 }
 
 
-#define INI_NAME "/pprefs.ini"
 
 /*-----------------------------------------------------------*/
 
 
 #define COMMON_BUF_LEN 256
+
 struct pprefsButtonDatas{
 	unsigned int flag;
 	char *name;
 };
+
+
+#ifdef PPREFS_LITE
+
+#define INI_NAME "/pprefs_lite.ini"
+#define PPREFS_CONF_NUM 9
+
+
+#else
+
+#define INI_NAME "/pprefs.ini"
+#define PPREFS_CONF_NUM 14
+
+
+#endif
+
 
 extern dir_t dirTmp;
 extern char commonBuf[COMMON_BUF_LEN];
@@ -97,5 +112,7 @@ extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
 extern INI_Key conf[PPREFS_CONF_NUM];
 extern int hitobashiraFlag;
+
+
 
 #endif

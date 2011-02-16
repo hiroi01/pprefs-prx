@@ -3,6 +3,7 @@
 #include "button.h"
 #include "fileselecter.h"
 #include "pprefsmenu.h"
+#include "ciso.h"
 #include "language.h"
 
 /*-----------------------------------------------------------------*/

@@ -16,10 +16,22 @@
 #define SL_COLOR_DEFAULT RED
 #define EX_COLOR_DEFAULT SILVER
 
+
+#ifdef PPREFS_LITE
+
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.100   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs lite Ver. 1.000   by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
+
+#else
+
+#define PRINT_SCREEN() \
+libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.101   by hiroi01"); \
+libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
+
+#endif
 
 extern char pprefsPrintBuf[128];
 
