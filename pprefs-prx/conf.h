@@ -25,6 +25,24 @@ enum
 	SORT_TYPE_GAME500 = 256, //
 };
 
+
+#ifdef PPREFS_LITE
+typedef struct
+{
+	u32 bootKey;
+	bool swapButton;
+	bool onePushRestart;
+	int lineFeedCode;// = 0:CR+LF  =1:CR  =2:LF
+	char basePath[64];
+	char basePathOri[64];
+	char basePathDefault[64];
+	u32 color0;
+	u32 color1;
+	u32 color2;
+	u32 color3;
+} Conf_Key;
+
+#else
 typedef struct
 {
 	u32 bootKey;
@@ -44,6 +62,7 @@ typedef struct
 	u32 usbDisconnectKey;
 	u32 sortType;
 } Conf_Key;
+#endif
 
 
 //Ží—Þ(ƒtƒ‰ƒO) for INI_Key foo.type

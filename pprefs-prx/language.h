@@ -1,4 +1,4 @@
-#ifdef LNGENG
+#ifdef PPREFS_LITE
 #define PB_SYM_PSP_UP			"\x80"
 #define PB_SYM_PSP_RIGHT		"\x81"
 #define PB_SYM_PSP_DOWN			"\x82"
@@ -8,7 +8,64 @@
 #define PB_SYM_PSP_CROSS		"\x86"
 #define PB_SYM_PSP_SQUARE		"\x87"
 #define PB_SYM_PSP_NOTE			"\x88"
-#else
+
+
+
+#define PPREFSMSG_SUBMENU_TITLE " MENU "
+#define PPREFSMSG_ADD_TOP " select plugin you want to add "
+#define PPREFSMSG_COPYME_ERROR "error!"
+#define PPREFSMSG_COPYME_INSERTERROR "insert MS that has 'pprefs_lite'"
+#define PPREFSMSG_HITOBASHIRA_2 "β2"
+#define PPREFSMSG_HITOBASHIRA "β"
+#define PPREFSMSG_MAINMENU_HOTOUSE " %s:Sel. \x84:Menu \x87+\x80/\x82:Move L+R:ChangeDir"
+#define PPREFSMSG_MAINMENU_HOTOUSE_2 "SELECT:re-read(notSaving) HOME:Save&Quit START:Save&RESTART VSH"
+#define PPREFSMSG_MAINMENU_REPUSHSTART "re-press START\n,and RESTART VSH"
+#define PPREFSMSG_MAINMENU_RELOAD " re-read(not saving)  Really? "
+#define PPREFSMSG_YESORNO "%s:YES %s:NO"
+#define PPREFSMSG_YESORNO_LIST "YES","NO",NULL
+
+
+#define PPREFSMSG_COPYME_FIRSTCONFIRM "Save your edit?"
+#define PPREFSMSG_COPYME_FIRSTCONFIRMHOTOUSE "START:Save & Go to next SELECT:Not Save & Go to next\nHOME:Quit"
+#define PPREFSMSG_COPYME_SELECTLIST "Save & Go to next","Not Save & Go to next","Quit",NULL
+#define PPREFSMSG_COPYME_INSERT2NDMS "Insert another MS"
+#define PPREFSMSG_COPYME_INSERT2NDMSHOWTOUSE "%s:Ok,Done HOME:Quit"
+#define PPREFSMSG_COPYME_DONETOCOPY "Done!"
+#define PPREFSMSG_COPYME_FAILTOCOPY "Fail to copy"
+#define PPREFSMSG_FAILTOWRITE "Fail to write %s"
+#define PPREFSMSG_FAILTOWRITEHOWTOUSE "%s:Retry %s:Skip "
+#define PPREFSMSG_SELECTBOX_HOTOUSE " %s:Sel. "
+#define PPREFSMSG_SELECTBOX_HOTOUSE_2 " %s:Sel. HOME:Quit "
+#define PPREFSMSG_CONFIGMENU_WHATISTHIS \
+	"Hot key to start this plugin", \
+	"Swap X and O", \
+	"to RESTART VSH on start menu ... true -> one press START false -> two press START", \
+	"Line Feed Code", \
+	"Folder that has vsh.txt , game.txt , pops.txt", \
+	"Foreground color", \
+	"Background color", \
+	"Selected color", \
+	"Color of explanation on bottom of screen", \
+
+#define PPREFSMSG_SELECTBASEPATH "Where is the folder that has vsh.txt,game.txt,pops.txt?"
+
+#define PPREFSMSG_DETECTKEY_1 "Detect Key   "
+#define PPREFSMSG_DETECTKEY_2 "Detect Key %d"
+#define PPREFSMSG_CONFIGMENU_TITLE " Config "
+#define PPREFSMSG_CONFIGMENU_MENU_1 "Save this config"
+#define PPREFSMSG_CONFIGMENU_MENU_2 "Set default"
+#define PPREFSMSG_CONFIGMENU_MENU_3 "Quit"
+#define PPREFSMSG_CONFIGMENU_HOWTOUSE " %s:Sel. HOME:Quit "
+#define PPREFSMSG_CONFIG_BASEPATH_TITLE "BasePath"
+#define PPREFSMSG_CONFIG_BASEPATH_LIST "Set","not Set",NULL
+
+#define PPREFSMSG_ADD_HOWTOUSE " %s:Sel. HOME:Quit L:UpDir R:OpenDir "
+#define PPREFSMSG_ADD_HOWTOUSE_2 " %s:Sel. HOME:Quit L:UpDir R:OpenDir START:Select current dir "
+#define PPREFSMSG_ADD_HOWTOUSE_3 " HOME:Quit L:UpDir R/%s:OpenDir START:Select current dir"
+
+#else ///////////////////////////////////////////////////////////////////////////////////
+
+
 #define PB_SYM_PSP_UP			"↑"
 #define PB_SYM_PSP_RIGHT		"→"
 #define PB_SYM_PSP_DOWN			"↓"
@@ -18,6 +75,8 @@
 #define PB_SYM_PSP_CROSS		"×"
 #define PB_SYM_PSP_SQUARE		"□"
 #define PB_SYM_PSP_NOTE			"♪"
+
+
 
 #define PPREFSMSG_BOOTMESSAGE " pprefs 起動準備完了! / 起動ボタン:"
 #define PPREFSMSG_ADD_TOP " <<追記>> : 追記したいプラグインを選択してください "
@@ -90,7 +149,11 @@
 #define PPREFSMSG_CONFIG_SORTTYPE_GAME150 "GAME150フォルダを含める?"
 #define PPREFSMSG_CONFIG_SORTTYPE_GAME500 "GAME500フォルダを含める?"
 #define PPREFSMSG_CONFIG_SORTTYPE_TYPE "どのpluginを使っていますか?"
-#define PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST "使ってない","gamecategories","gamecategories lite",NULL
+#define PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST "使ってない","gamecategories","gamecategories light",NULL
 #define PPREFSMSG_SORTGAME_PLEASECONFIG "\"設定\"でSortTypeの設定を行ってください"
 
+
 #endif
+
+
+

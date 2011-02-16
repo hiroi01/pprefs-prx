@@ -4,6 +4,7 @@
 #include "language.h"
 #include "fileselecter.h"
 
+#ifndef PPREFS_LITE
 u32 selectSorttypeByuser()
 {
 	u32 rtn = SORT_TYPE_GAME;
@@ -35,6 +36,12 @@ u32 selectSorttypeByuser()
 
 	return rtn;
 }
+#else
+u32 selectSorttypeByuser(){
+	return 0;
+}
+#endif
+
 
 void selectBasePath(char *path)
 {

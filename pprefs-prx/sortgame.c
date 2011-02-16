@@ -215,6 +215,7 @@ void sortgame_run_sort( sortgame_dir_t *dir, int dirNum ,int mode)
 	int i = (mode == 0)?1:0;
 	ScePspDateTime time = dir[i].time;
 
+
 	for( i++; i < dirNum; i++ )
 	{
 
@@ -537,7 +538,9 @@ LIST_UP:
 					wait_button_up(&padData);
 					goto LIST_UP;
 				}
-				
+
+				wait_button_up(&padData);
+				break;
 			}
 			else if( padData.Buttons & PSP_CTRL_HOME )
 			{

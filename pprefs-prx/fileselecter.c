@@ -166,17 +166,24 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 		PRINT_SCREEN();
 		libmPrintf(15,28,BG_COLOR,FG_COLOR, titleLabel);
 		libmPrintf(15,36,BG_COLOR,FG_COLOR,"[%d] [%s]",dir_num,currentPath);
-		libmPrintf(5,264,FG_COLOR,BG_COLOR, (selectType == 0)?PPREFSMSG_ADD_HOWTOUSE:(selectType == 1)?PPREFSMSG_ADD_HOWTOUSE_2:PPREFSMSG_ADD_HOWTOUSE_3, buttonData[buttonNum[0]].name);
+		libmPrintf(5,264,EX_COLOR,BG_COLOR, (selectType == 0)?PPREFSMSG_ADD_HOWTOUSE:(selectType == 1)?PPREFSMSG_ADD_HOWTOUSE_2:PPREFSMSG_ADD_HOWTOUSE_3, buttonData[buttonNum[0]].name);
 
 PRINT_LIST:
 		libmFillRect( 0 , 46 , 480 , 46 + MAX_DISPLAY_NUM*(LIBM_CHAR_HEIGHT+2),BG_COLOR );
 		if( dir_num != 0 ){
 			for( i = 0; i < dir_num && i < MAX_DISPLAY_NUM; i++ ){
+#ifdef PPREFS_LITE
+				if( dirBuf[i+offset].type == TYPE_DIR )
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",dirBuf[i+offset].name);
+				else
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dirBuf[i+offset].name);
+#else
 				psp2chUTF82Sjis(commonBuf,dirBuf[i+offset].name);
 				if( dirBuf[i+offset].type == TYPE_DIR )
 					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",commonBuf);
 				else
 					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",commonBuf);
+#endif
 			}
 			libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 		}
