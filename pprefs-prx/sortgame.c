@@ -43,7 +43,31 @@ typedef struct {
 #define DIR_BUF_NUM 150
 
 
-
+void sortgame_selectStrage(char *path)
+{
+	
+	int num = 0;
+	char menuStr[6] = "ms0:/";
+	char *menu[] = { 
+		menuStr,
+		"ef0:/",
+		NULL
+	};
+	
+	/*
+	6.20TNのパスのエイリアス機能対策(?)
+	goで(vshのときだけ?)ef0:/からプラグインを読み込ませるとms0:/という文字列をef0:/と書き換えるっぽいので、
+	更に上書きしてやる
+	*/
+	menuStr[0] = 'm';
+	menuStr[1] = 's';
+	
+	num = pprefsMakeSelectBox(20, 50, "SELECT STORAGE",menu, buttonData[buttonNum[0]].flag, 1 );
+	
+	if( num >= 0 ){
+		strcpy(path,menu[num]);
+	}
+}
 
 bool sortgame_confirm_save(bool editFlag)
 {
@@ -511,11 +535,21 @@ LIST_UP:
 				wait_button_up(&padData);
 				goto LIST_UP;
 			}
-			else if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 1 && padData.Buttons & PSP_CTRL_LTRIGGER )
+			else if( padData.Buttons & PSP_CTRL_LTRIGGER )
 			{
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
+				if( beforeButtons & PSP_CTRL_LTRIGGER ) continue;
+				beforeButtons = PSP_CTRL_LTRIGGER;
 
-				mode = 0;
+				if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 1 ){
+					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
+					mode = 0;
+				}else if( deviceModel == 4 ){//if device is 'go'
+					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
+					sortgame_selectStrage(rootName);
+				}else{
+					continue;
+				}
+
 				wait_button_up(&padData);
 				goto LIST_UP;
 			}
