@@ -1,10 +1,9 @@
 /*
 	
 	ありがとう、
-	masciiさん、maxemさん、neur0nさん、plumさん、STEARさん、takkaさん(アルファベット順)、他全ての開発者の方々
+	masciiさん、maxemさん、neur0nさん、plumさん、STEARさん、takkaさん、yreeenさん(アルファベット順)、他全ての開発者の方々
 
 */
-
 
 
 #include "sepluginstxt.h"
@@ -22,18 +21,11 @@ PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 
 
 
-
-
-
-
-
 /*------------------------------------------------------*/
 
-
-static int now_type = 0;
+static int now_type = 0;//It means ... 0 : vsh.txt / 1 : game.txt / 2:pops.txt
 static struct pdataLine tmp_pdataLine;
 static int stop_flag;
-
 
 
 /*------------------------------------------------------*/
@@ -44,13 +36,7 @@ static int stop_flag;
 
 
 
-
-
 #define is5xx(x) ( ( (x) >= PSP_FIRMWARE(500) ) &&  ( (x) <  PSP_FIRMWARE(600) ) )
-
-
-
-
 
 
 
@@ -217,6 +203,8 @@ const char *INI_Key_lineFeedCode_list[] = {
 
 
 
+
+
 #define initClearPdata(pdata) \
 	pdata[0].num = 0; \
 	pdata[1].num = 0; \
@@ -228,14 +216,17 @@ const char *INI_Key_lineFeedCode_list[] = {
 	pdata[1].exist = false; \
 	pdata[2].exist = false; \
 
+
+
+
 int main_thread( SceSize arglen, void *argp )
 {
 
 	int usbState = 0;
 	char *temp;
 	char iniPath[256];
-//	int ver = sceKernelDevkitVersion();
-	
+	int i;
+	//wait
 	while( 1 )
 	{
 		if(
@@ -253,16 +244,13 @@ int main_thread( SceSize arglen, void *argp )
 		sceKernelDelayThread(1000);
 	}
 	
+
+	
+	
+	//起動時にLが押されていたら
 	sceCtrlPeekBufferPositive( &padData, 1 );
 	if( padData.Buttons & PSP_CTRL_LTRIGGER ) usbState = 2;
 
-
-/*
-	modid_ = sceKernelLoadModule("ms0:/seplugins/ptextviewer.prx", 0, NULL);
-	if(modid_ >= 0) {
-//		modid_ = sceKernelStartModule(modid_, (strlen("ef0:/seplugins/ptextviewer.prx") + 1), (void *) args_, &status_, NULL);
-	}
-*/
 	
 	//read INI and set config
 	strcpy(iniPath, argp);
@@ -271,17 +259,14 @@ int main_thread( SceSize arglen, void *argp )
 	strcat(iniPath,INI_NAME);
 	
 	strcpy(config.basePathDefault,rootPath);
-	/*
-	6.35PRO or PRO-Aの判別できないからあきらめた!
-	if( ver == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 ){
-		//it may be 6.35PRO or PRO-A この判定は正しいのか分からない
+	
+	//6.35PRO or PRO-A以降かの判別(?)
+	if( sceKernelDevkitVersion() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 && sceKernelFindModuleByName("VshCtrl") == NULL ){
+		//it may be 6.35PRO この判定は正しいのか分からない
 		strcat( config.basePathDefault,"plugins/" );
 	}else{
 		strcat( config.basePathDefault, "seplugins/" );
 	}
-	*/
-
-	strcat( config.basePathDefault, "seplugins/" );
 
 
 	
@@ -317,8 +302,13 @@ int main_thread( SceSize arglen, void *argp )
 
 	INI_Read_Conf(iniPath, conf);
 	SET_CONFIG();
-
-	initClearPdata(pdata);
+	
+	//init
+	for( i = 0; i < 3; i++ ){
+		pdata[i].num = 0;
+		pdata[i].edit = false;
+		pdata[i].exist = false;
+	}
 	
 	readSepluginsText(3,false,config.basePath);
 	
@@ -390,6 +380,7 @@ int main_thread( SceSize arglen, void *argp )
 				main_menu();
 				resumeThreads();
 			}
+			
 			sceCtrlPeekBufferPositive( &padData, 1 );
 			sceKernelDelayThread( 50000 );
 		}
@@ -403,7 +394,6 @@ int main_thread( SceSize arglen, void *argp )
 
 
 /*
-
 
 @return:
 どのメニューが実行されたか
@@ -422,10 +412,10 @@ int sub_menu(int currentSelected,int position){
 	int now_arrow;
 
 	if( deviceModel == 4 ){//if device is 'go'
-		char *menu[] = {"add","remove","config",NULL};
+		char *menu[] = {PPREFSMSG_SUBMENU_LIST_GO};
 		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
 	}else{
-		char *menu[] = {"add","remove","config","COPY ME",NULL};
+		char *menu[] = {PPREFSMSG_SUBMENU_LIST};
 		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
 	}
 
@@ -486,6 +476,8 @@ int sub_menu(int currentSelected,int position){
 	char *menu_go_hitobashira[] = { PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA };
 	char **menu = (deviceModel == 4)?(hitobashiraFlag)?menu_go_hitobashira:menu_go:menu_fat;
 */	
+
+
 	if( deviceModel == 4 ){//if device is 'go'
 		if( hitobashiraFlag ){
 			char *menu[] = {PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA};
@@ -627,11 +619,11 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset, int flag)
 		(*headOffset)++;
 		return 8;
 	}else if( pdata[now_type].num  > MAX_DISPLAY_NUM ){
-		//up top
+		//up to top
 		if( tmp - *now_arrow > 1 ){
 			*headOffset = 0;
 			return 16;
-		//donw bottom
+		//down to bottom
 		}else if( tmp - *now_arrow <  -1 ){
 			*headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
 			return 32;
@@ -645,7 +637,6 @@ int move_arrow(u32 buttons, int *now_arrow, int *headOffset, int flag)
 		libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
 		fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
 		libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
-		
 	}
 	
 	return 0;
@@ -678,9 +669,26 @@ if( (beforeButtons & (button) ) == (button) ){ \
 	time = sceKernelLibcClock(); \
 } \
 
+
+/*
+ ボタン長押し こういうマクロの使い方はよくないかも
+ */
+#define HOLD_BUTTONS_WAIT(button,firstWait) \
+if( (beforeButtons & (button) ) == (button) ){ \
+	if( firstFlag && (sceKernelLibcClock() - time) >= (firstWait) ){ \
+			firstFlag = false; \
+	}else{\
+		continue; \
+	} \
+}else{ \
+	firstFlag = true; \
+	beforeButtons = button; \
+	time = sceKernelLibcClock(); \
+	continue; \
+}
+
 void main_menu(void)
 {
-
 
 	wait_button_up(&padData);
 
@@ -706,7 +714,7 @@ void main_menu(void)
 		if( hitobashiraFlag ) libmPrint(416,10,FG_COLOR,BG_COLOR,(hitobashiraFlag == 1)?PPREFSMSG_HITOBASHIRA:PPREFSMSG_HITOBASHIRA_2);
 		else libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
 		
-		libmPrintf(0,254,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE,buttonData[buttonNum[0]].name);
+		libmPrintf(0,254,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE,buttonData[buttonNum[0]].name,buttonData[buttonNum[1]].name);
 		libmPrintf(0,264,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE_2);
 
 		libmPrintf(15,24,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",getSepluginsTextName(commonBuf,config.basePath,now_type));
@@ -736,37 +744,29 @@ void main_menu(void)
 				ALLORW_WAIT((PSP_CTRL_DOWN|PSP_CTRL_UP|PSP_CTRL_RIGHT|PSP_CTRL_LEFT),3 * 100 * 1000,1 * 100 * 1000);
 
 				//ここの描画処理が適当すぎるのでいつかなおそう
-				tmp = 0;
+
+				tmp = 0;//use as flag
 				if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){//↓ / ↑
 					tmp = move_arrow(padData.Buttons, &now_arrow, &headOffset, 1);
 				}else if( !( padData.Buttons & PSP_CTRL_SQUARE ) ){// ← / → 
 					fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
 					libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,
 					"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
-					
 					if( padData.Buttons & PSP_CTRL_LEFT ){
-						for ( i = 0; i < 5; i++ ){
-							if( now_arrow == 0 ) break;
-							tmp |= move_arrow( PSP_CTRL_UP,&now_arrow,&headOffset,0);
-						}
+						for ( i = 0; i < 5; i++ ) tmp |= move_arrow( PSP_CTRL_UP,&now_arrow,&headOffset,0);
 					}else{
-						for ( i = 0; i < 5; i++ ){
-							if( now_arrow == pdata[now_type].num - 1 ) break;
-							tmp |= move_arrow( PSP_CTRL_DOWN,&now_arrow,&headOffset,0);
-						}
+						for ( i = 0; i < 5; i++ ) tmp |= move_arrow( PSP_CTRL_DOWN,&now_arrow,&headOffset,0);
 					}
-
 					fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
 					libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,
 					"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
-
 				}
 				
 				if( tmp > 0 ) break;
 
 
 			}
-			else if( padData.Buttons & buttonData[buttonNum[0]].flag && pdata[now_type].num > 0 )
+			else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && pdata[now_type].num > 0 )
 			{
 				if( beforeButtons & buttonData[buttonNum[0]].flag ) continue;
 				beforeButtons = buttonData[buttonNum[0]].flag;
@@ -778,6 +778,26 @@ void main_menu(void)
 				            15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),SL_COLOR,BG_COLOR,
 				            "[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print
 				);
+			}
+			else if( (padData.Buttons & buttonData[buttonNum[1]].flag) && pdata[now_type].num > 0 )
+			{
+				
+				HOLD_BUTTONS_WAIT(buttonData[buttonNum[1]].flag,3 * 100 * 1000);
+				
+				pdata[now_type].edit = true;
+
+				tmp = 1;//use as flag
+				for( i = 0; i < pdata[now_type].num; i++ ){//すべてOFFにする
+					if( pdata[now_type].line[i].toggle == true ){
+						pdata[now_type].line[i].toggle = false;
+						tmp = 0;
+					}
+				}
+				if( tmp ){//一つもONのプラグインがなかったら 全部ONにする
+					for( i = 0; i < pdata[now_type].num; i++ ) pdata[now_type].line[i].toggle = true;
+				}
+				
+				break;//再描画
 			}
 			else if( padData.Buttons & PSP_CTRL_RTRIGGER && padData.Buttons & PSP_CTRL_LTRIGGER )
 			{
@@ -844,8 +864,7 @@ void main_menu(void)
 
 				wait_button_up(&padData);
 				
-				tmp = 0;//this is flag
-				
+				tmp = 0;//as flag
 				if( ! config.onePushRestart ){
 					makeWindowWithGettingButton(
 						100 , 36 ,
@@ -996,25 +1015,30 @@ void main_menu(void)
 
 }
 
-void getRootPath(char *rtn,char *str)
+void getRootPath(char *dst,char *src)
 {
 	int i;
-	for( i = 0; str[i] != '\0'; i++ ){
-		rtn[i] = str[i];
-		if( str[i] == '/' ){
-			rtn[i+1] = '\0';
+	for( i = 0; src[i] != '\0'; i++ ){
+		dst[i] = src[i];
+		if( dst[i] == '/' ){
+			dst[i+1] = '\0';
 			return;
 		}
 	}
 	return;
 }
 
+
+
+
+
+
 int module_start( SceSize arglen, void *argp )
 {
 	nidResolve();
-
 	Get_FirstThreads();
-	stop_flag = 1;
+
+
 
 	strcpy(ownPath, argp);
 	getRootPath(rootPath, argp);
@@ -1027,11 +1051,13 @@ int module_start( SceSize arglen, void *argp )
 	//4 -> go
 	//8 -> 3000 09g t箱?
 	deviceModel = sceKernelGetModel();
-	if( deviceModel < 0 || deviceModel > 8) deviceModel = 9;
+	if( deviceModel < 0 || deviceModel > 8) deviceModel = 9;//unknown
+
+
+
+
 
 	SceUID thid;
-	
-
 	//umd dumpとは逆で flag == 0 の時にストップする仕様
 	stop_flag = 1;
 	thid = sceKernelCreateThread( "PPREFS", main_thread, 30, 0x6000, PSP_THREAD_ATTR_NO_FILLSTACK, 0 );

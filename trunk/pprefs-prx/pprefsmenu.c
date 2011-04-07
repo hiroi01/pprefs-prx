@@ -87,7 +87,7 @@ int pprefsMakeSelectBox( int start_x, int start_y, const char *itemName , u32 se
 */
 
 
-int pprefsMakeSelectBox( int start_x, int start_y,char *titleLabel, char *itemName[] , u32 selectKey, int type)
+int pprefsMakeSelectBox_( int start_x, int start_y,char *titleLabel, char *itemName[] , u32 selectKey, int type, bool isSpeedy)
 {
 
 	int numOfItem,i,tmp,end_x,end_y;
@@ -106,8 +106,8 @@ int pprefsMakeSelectBox( int start_x, int start_y,char *titleLabel, char *itemNa
 	start_y += 2;
 
 
-
-	makeWindow( start_x , start_y , end_x, end_y, FG_COLOR, BG_COLOR );
+	if( isSpeedy ) makeWindowSpeedy( start_x , start_y , end_x, end_y, FG_COLOR, BG_COLOR );
+	else makeWindow( start_x , start_y , end_x, end_y, FG_COLOR, BG_COLOR );
 
 	
 	libmPrint(start_x + 4 , start_y - 2 ,FG_COLOR,BG_COLOR,titleLabel);
@@ -160,7 +160,6 @@ void pprefsSleep(clock_t sleepTime)
 }
 
 //一瞬で窓を作る
-//この関数マクロで作れる気がする
 void makeWindowQuick(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
 {
 	libmFillRect(sx , sy , ex , ey , bgcolor );
@@ -183,6 +182,25 @@ void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
 	}
 	
 }
+
+
+//にゅーってでる窓を作る(高速版)
+void makeWindowSpeedy(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
+{
+	int nowx = sx,nowy = sy;
+	while(1){
+		nowx += 8;
+		nowy += 8;
+		if( nowx > ex ) nowx = ex;
+		if( nowy > ey ) nowy = ey;
+		libmFillRect(sx , sy , nowx , nowy , bgcolor );
+		libmFrame(sx , sy , nowx ,nowy , fgcolor );
+		if( nowx == ex && nowy == ey ) break;
+		pprefsSleep(1 * 1000);
+	}
+	
+}
+
 
 //にゅーってしている最中にもボタンをgetする
 void makeWindowWithGettingButton(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor, SceCtrlData *pad)

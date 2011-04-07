@@ -2,10 +2,15 @@
 #include "sortgame.h"
 #include "pprefsmenu.h"
 #include "configmenu.h"
+#include "dxlibp/dxppng.h"
 #include "common.h"
 
 #define MAX_PATH_LEN (256)
-#define MAX_DISPLAY_NUM 21
+#define MAX_DISPLAY_NUM 7
+
+
+
+/*-----------------------------------------------------------------------*/
 
 
 /** sceIoChstat bitmasks */
@@ -20,7 +25,7 @@ enum IOFileStatBitmask {
 }; 
 
 
-#define SORTGAME_FLAG_NUM 6//not use?
+#define SORTGAME_FLAG_NUM 6//not used?
 enum {
   SORTGAME_FLAG_ISO = 1,
   SORTGAME_FLAG_CSO = 2,
@@ -30,24 +35,104 @@ enum {
   SORTGAME_FLAG_OTHERDIR = 32,
 };
 
+//48x27
+#define SORTGAME_IMG_BUF_SIZE (1296)
+typedef struct sortgame_img_{
+	u32 raw[SORTGAME_IMG_BUF_SIZE];
+	int width,height;
+} sortgame_img;
 
 typedef struct {
   ScePspDateTime time;//並び順の判定基準になる時間
   char name[MAX_PATH_LEN];
   int sort_type;
   SceIoStat stat;
+  sortgame_img img;
 } sortgame_dir_t;
-
 
 
 #define DIR_BUF_NUM 150
 
 
+
+typedef struct EBOOT_PBP_HEADER_{
+	char signature[4];// 0x00 0x50 0x42 0x50
+	u32 version;//0x00 0x00 0x01 0x00
+	u32 offsetOfParamSfo;
+	u32 offsetOfIcon0Png;
+	u32 offsetOfIcon1Pmf;
+	u32 offsetOfIcon1Png;
+	u32 offsetPic1Png;
+	u32 offsetOfSnd0At3;
+	u32 offsetOfDataPsp;
+	u32 offsetOfDataPsar;
+}EBOOT_PBP_HEADER;
+
+/*-----------------------------------------------------------------------*/
+
+//static int loadIconThreadState = 0;// == 0 not created / == 1 working / == 2 waiting / == 3 stopping
+//static int loadIconSemaId = 0;
+static sortgame_dir_t *sortgameBuf = NULL;
+static int sortgameBufNum = 0;
+
+/*-----------------------------------------------------------------------*/
+
+
+
+int loadIcon0(const char *dirname, DXPPNG *png)
+{
+	EBOOT_PBP_HEADER header;
+	DXPPNG_PARAMS param;
+	SceUID fd;
+	char path[256];
+	
+	strcpy(path, dirname);
+	//最後が'/'で終わるパスじゃないなら
+	if( path[strlen(path) - 1] != '/' ){
+		strcat(path ,"/EBOOT.PBP");
+	}else{
+		strcat(path ,"EBOOT.PBP");
+	}
+	
+	if( (fd = sceIoOpen(path, PSP_O_RDONLY, 0777)) < 0 ) return fd;
+	sceIoLseek(fd, 0, SEEK_SET);
+	sceIoRead(fd , &header, sizeof(header));
+	
+	param.srcLength = header.offsetOfIcon1Pmf - header.offsetOfIcon0Png;
+
+	if( param.srcLength == 0 ){
+		sceIoClose(fd);
+		return 1;
+	}
+	
+	param.src = malloc(param.srcLength);
+	if( param.src == NULL ){
+		sceIoClose(fd);
+		return 2;
+	}
+	
+	sceIoLseek(fd, header.offsetOfIcon0Png, SEEK_SET);
+	sceIoRead(fd, param.src, param.srcLength);
+	
+	sceIoClose(fd);
+	
+	param.mode = DXPPNG_MODE_RAW;
+	
+	param.funcs.pfree = 0;
+	int rtn = dxppng_decode(&param, png);
+	
+	free(param.src);
+	
+	return rtn;
+	
+}
+
+//go only
 void sortgame_selectStrage(char *path)
 {
 	
 	int num = 0;
-	char menuStr[6] = "ms0:/";
+	char menuStr[6] = "**0:/";
 	char *menu[] = { 
 		menuStr,
 		"ef0:/",
@@ -234,11 +319,17 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 	return file_num;
 }
 
-void sortgame_run_sort( sortgame_dir_t *dir, int dirNum ,int mode)
+void sortgame_run_sort( sortgame_dir_t *dir, int dirNum, char *rootPath ,int mode , bool isRemoveIsocache )
 {
 	int i = (mode == 0)?1:0;
 	ScePspDateTime time = dir[i].time;
 
+	if( isRemoveIsocache ){
+		char removedFilePath[128];
+		strcpy(removedFilePath, rootPath);
+		strcat(removedFilePath, "PSP/SYSTEM/ISOCACHE.BIN");
+		sceIoRemove(removedFilePath);
+	}
 
 	for( i++; i < dirNum; i++ )
 	{
@@ -285,6 +376,7 @@ void sortgame_run_sort( sortgame_dir_t *dir, int dirNum ,int mode)
 
 
 //降順と昇順を間違えてしまったので、引数をキャストするときに逆にしてごまかした(ぇ
+//てきとう実装、もっと高速なソートアルゴリズムがあると思う
 //callback for qsort
 int gamesort_compare(const void *arg1, const void *arg2)
 {
@@ -324,17 +416,87 @@ int sortgame_listup_category(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPat
 	for( i = file_num; i > 0; i-- ) dirBuf[i] = dirBuf[i-1];
 	file_num++;
 	
-		
+	for( i = 0; i < file_num; i ++){
+		memset(dirBuf[i].img.raw, 0, sizeof(u32) * SORTGAME_IMG_BUF_SIZE);
+		dirBuf[i].img.width = 0;
+		dirBuf[i].img.height = 0;
+	}
+	
 	strcpy(dirBuf[0].name,"[Uncategorized]");
 	
 	return file_num;
 
 }
 
+/*
+void reducationRaw(u32 *srcData, int srcWidth, int srcHeight, u32 *dstData, int degree)
+{
+	int dstWidth = srcWidth / degree;
+	int dstHeight = srcHeight / degree;
+	u32 red, green, blue;
+	int degreeX2 = degree * 2;
+	
+	int dstX,dstY,srcX,srcY,i,j;
+	
+	srcX = 0; srcY = 0; i = 0;
+	for( dstY = 0; dstY < dstHeight; dstY++ ){
+		for( dstX = 0; dstX < dstWidth; dstX++ ){
+
+			blue = 0; green = 0; red = 0;
+			for( i = 0; i < degree; i++ ){
+				for( j = 0; j < degree; j++ ){
+					blue  += (srcData[(srcX + j) + (srcY + i) * srcWidth] >> 16) & 0xff;
+					green += (srcData[(srcX + j) + (srcY + i) * srcWidth] >> 8) & 0xff;
+					red   += (srcData[(srcX + j) + (srcY + i) * srcWidth]) & 0xff;
+				}
+			}
+			srcX += degree;
+			if( srcX >= srcWidth ){
+				srcX = 0;
+				srcY += degree;
+			}
+			
+			dstData[dstX + dstY * dstWidth] = 0xff000000 | ((blue/degreeX2)<<16) | ((green/degreeX2)<<8) | (red/degreeX2);
+		}
+	}
+	
+}
+*/
+
+
+/// http://thorshammer.blog95.fc2.com/blog-entry-169.html
+/// <summary>
+/// 単純に補間間引きによる拡大縮小
+/// </summary>
+void reducationRaw2(u32 *data, int xSize, int ySize, u32 *rescaledata, int hxSize, int hySize)
+{
+    // 拡大縮小用
+    double xpos, ypos;
+    double hokanX = (double)xSize / hxSize;
+    double hokanY = (double)ySize / hySize;
+	int i,j;
+	int offset;
+    ypos = 0.0;
+    for (i = 0; i < hySize; i++)
+    {
+        xpos = 0.0;
+        for (j = 0; j < hxSize; j++)
+        {
+            // 単純補間・間引き
+            offset = j + i * hxSize;
+            rescaledata[j + i * hxSize] = data[(int)xpos + ((int)ypos) * xSize];
+            xpos += hokanX;
+        }
+        ypos += hokanY;
+    }
+
+    return;
+}
+
 int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *exPath, u32 type)
 {
 
-	int file_num = 0,i,len;
+	int file_num = 0,i = 0,len;
 	char path[256];
 	u32 flag = 0;
 	
@@ -362,14 +524,54 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 		    (path[i] == 'i' || path[i] == 'I') &&
 		    (path[i+1] == 's' || path[i+1] == 'S') &&
 		    (path[i+2] == 'o' || path[i+2] == 'O')
-		){
+		){//if iso folder
 			file_num = sortgame_read_dir(exPath, dirBuf, file_num, dirBufNum, (SORTGAME_FLAG_ISO|SORTGAME_FLAG_CSO) );
 		}else{
 			file_num = sortgame_read_dir(exPath, dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR );
 		}
 	}
+
 	
 	
+	
+	if( config.sortType & SORT_TYPE_NOTDISPLAY_ICON0 ){
+		for( i = 0; i < file_num; i ++){
+			memset(dirBuf[i].img.raw, 0, sizeof(u32) * SORTGAME_IMG_BUF_SIZE);
+			dirBuf[i].img.width = 0;
+			dirBuf[i].img.height = 0;
+		}
+	}else{
+		DXPPNG pngtmp;
+		char *gauge[] = {
+			"-",
+			"\\",
+			"|",
+			"/"
+		};
+		libmPrint(20,22,BG_COLOR,FG_COLOR,"Loading...");
+		//clear & set img
+		for( i = 0; i < file_num; i ++){
+			memset(dirBuf[i].img.raw, 0, sizeof(u32) * SORTGAME_IMG_BUF_SIZE);
+			dirBuf[i].img.width = 0;
+			dirBuf[i].img.height = 0;
+			
+			if( loadIcon0(dirBuf[i].name, &pngtmp) == 0 ){//iconの読み込みに成功したら
+				dirBuf[i].img.width = pngtmp.widthN2 / 3;
+				dirBuf[i].img.height = pngtmp.heightN2 / 3;
+
+				if( dirBuf[i].img.width > 48 ) dirBuf[i].img.width = 48;
+				if( dirBuf[i].img.height > 27 ) dirBuf[i].img.height = 27;
+				reducationRaw2((u32 *)pngtmp.raw, pngtmp.widthN2, pngtmp.heightN2, dirBuf[i].img.raw, dirBuf[i].img.width, dirBuf[i].img.height);
+
+				free(pngtmp.raw);
+			}
+			libmPrint(100,22,BG_COLOR,FG_COLOR,gauge[i%4]);
+
+		}
+	}
+	
+	
+	//sort
 	qsort(dirBuf, file_num, sizeof(sortgame_dir_t), gamesort_compare);
 
 	return file_num;
@@ -379,7 +581,6 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 
 /*
  矢印(カーソル)を↑↓長押しでもうまくスクロールするようにというマクロ
- なんとなく関数でなくマクロで実装してしまった
  */
 #define ALLORW_WAIT(button,firstWait,wait) \
 if( (beforeButtons & (button) ) == (button) ){ \
@@ -404,6 +605,96 @@ if( (beforeButtons & (button) ) == (button) ){ \
 } \
 
 
+/*
+void sortgame_move_to_top()
+{
+	for( i = tmp; i > *now_arrow; i-- ){
+		swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
+	}
+}
+
+void sortgame_move_to_bottom()
+{
+	for( i = tmp; i < *now_arrow; i++ ){
+		swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i+1]);
+	}
+
+}
+*/
+
+
+
+
+void sortgame_display_img(sortgame_img *img, u32 startX, u32 startY)
+{
+	u32 x,y,count = 0;
+	for(y = 0; y < img->height; y++){
+		for(x = 0; x < img->width; x++){
+			libmPoint(libmMakeDrawAddr(startX + x, startY + y),img->raw[count++]);
+		}
+	}
+}
+
+
+/*
+void stopLoadIconThreadAndWait()
+{
+	if( loadIconThreadState == 1 ){//loadIconThread is working
+		loadIconThreadState = 3;//stop
+	}
+	while( loadIconThreadState != 2 );
+}
+
+void startLoadIconThread()
+{
+	if( loadIconThreadState == 2 ){//loadIconThread is waiting
+		loadIconThreadState = 1;//work
+		sceKernelSignalSema(loadIconSemaId, 1);
+	}
+}
+
+
+int loadIconThread( SceSize arglen, void *argp )
+{
+	DXPPNG pngtmp;
+	int i;
+	
+	
+	while(1){
+		loadIconThreadState = 2;//wait
+		sceKernelWaitSema(loadIconSemaId,1,0);
+
+		loadIconThreadState = 1;//work
+		sceKernelSignalSema(loadIconSemaId, 0);
+		
+		for( i = 0; i < sortgameBufNum; i ++){
+			if( loadIcon0(sortgameBuf[i].name, &pngtmp) == 0 ){//iconの読み込みに成功したら
+				sortgameBuf[i].img.width = pngtmp.widthN2 / 3;
+				sortgameBuf[i].img.height = pngtmp.heightN2 / 3;
+				if( sortgameBuf[i].img.width > 48 ) sortgameBuf[i].img.width = 48;
+				if( sortgameBuf[i].img.height > 27 ) sortgameBuf[i].img.height = 27;
+				reducationRaw2((u32 *)pngtmp.raw, pngtmp.widthN2, pngtmp.heightN2, sortgameBuf[i].img.raw, sortgameBuf[i].img.width, sortgameBuf[i].img.height);
+
+				free(pngtmp.raw);
+			}
+			if( loadIconThreadState == 3 ) break;
+			sceKernelDelayThread(1000 * 1000);
+		}
+	}
+	
+	return 0;
+
+}
+
+*/
+
+#define SPACE_BETWEEN_THE_LINES (31)
+
+
+#define printOneGame(i, offset) \
+libmFillRect(5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 3, 475, 35 + i*(SPACE_BETWEEN_THE_LINES) + 3 + 27 ,BG_COLOR); \
+sortgame_display_img(&dir[i+offset].img, 7, 35 + i*(SPACE_BETWEEN_THE_LINES) + 3 ); \
+libmPrint(7 + 48 + 5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 9, FG_COLOR, BG_COLOR,  dir[i+offset].name); \
 
 
 
@@ -420,14 +711,30 @@ int sortgame_menu(void)
 	char rootName[16];
 	char dirPath[128];
 	int mode = 0;// == 0 カテゴリリストを表示
+	
 
 	strcpy(rootName,rootPath);
-	
-	dir = malloc( sizeof(sortgame_dir_t) * DIR_BUF_NUM );
-	if( dir == NULL ) return -1;
 
+
+	dir = malloc( sizeof(sortgame_dir_t) * DIR_BUF_NUM );
+	if( dir == NULL ) return -2;
+	sortgameBuf = dir;
+		
+	/*
+	if( loadIconThreadState == 0 ){
+		loadIconSemaId = sceKernelCreateSema("loadicon_sema", 0, 0, 1, 0);
+		SceUID thid = sceKernelCreateThread( "PPREFS_LOADICON", loadIconThread, 10, 0x1000, PSP_THREAD_ATTR_CLEAR_STACK, 0 );
+		if( thid ){
+			sceKernelStartThread( thid, 0, NULL );
+		}else{
+			return -1;
+		}
+	}
+	*/
+	
 
 	PRINT_SCREEN();
+	
 	
 	if( config.sortType == 0 ){
 		char *menu[] = { "OK", NULL };
@@ -436,21 +743,25 @@ int sortgame_menu(void)
 		PRINT_SCREEN();
 	}
 	
+	
 
 	//init
 	dirPath[0] = '\0';
 	
 	if( config.sortType & SORT_TYPE_NORMAL_LIST ) mode = 1;
-
+	
 LIST_UP:
+	
+//	stopLoadIconThreadAndWait();
 	
 	if( mode == 0 ){
 		file_num = sortgame_listup_category(dir, DIR_BUF_NUM, rootName, config.sortType );
 	}else{
 		file_num = sortgame_listup(dir, DIR_BUF_NUM, rootName, dirPath, config.sortType );
 	}
+	sortgameBufNum = file_num;
 
-
+//	startLoadIconThread();
 
 	//init
 	now_arrow = 0;
@@ -460,12 +771,15 @@ LIST_UP:
 	firstFlag = true;
 	editFlag = false;
 
+	libmFillRect( 0 , 35 , 480 , 35 + MAX_DISPLAY_NUM*(SPACE_BETWEEN_THE_LINES),BG_COLOR );
 	while(1){
-		libmFillRect( 0 , 38 , 480 , 46 + MAX_DISPLAY_NUM*(LIBM_CHAR_HEIGHT+2),BG_COLOR );
 		for( i = 0; i < file_num && i < MAX_DISPLAY_NUM; i++ ){
-			libmPrintf(15,38 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dir[i+offset].name);
+//			libmPrintf(15,38 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dir[i+offset].name);
+//			libmFillRect(6, 38 + i*(SPACE_BETWEEN_THE_LINES) + 3, 5 + 48, 38 + i*(SPACE_BETWEEN_THE_LINES) + 3 + 27 ,BG_COLOR);
+			printOneGame(i, offset);
 		}
-		libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+//		libmPrintf(5 ,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+		libmFrame(5 , 35 + now_arrow*(SPACE_BETWEEN_THE_LINES), 475, 35 + (now_arrow+1)*(SPACE_BETWEEN_THE_LINES) - 1, FG_COLOR );
 
 		libmPrint(20,22,BG_COLOR,FG_COLOR,PPREFSMSG_SORTGAME_TITLE);
 		libmFillRect(0 , 254 , 480 , 272 ,BG_COLOR);
@@ -483,7 +797,9 @@ LIST_UP:
 				if( padData.Buttons & PSP_CTRL_DOWN ){
 					if( now_arrow + 1 < MAX_DISPLAY_NUM && now_arrow + 1 < file_num ){
 						now_arrow++;
-						libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+//						libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+						libmFrame(5 , 35 + now_arrow*(SPACE_BETWEEN_THE_LINES), 475, 35 + (now_arrow+1)*(SPACE_BETWEEN_THE_LINES) - 1, FG_COLOR );
+
 					}else{
 						if( offset+MAX_DISPLAY_NUM < file_num ){
 							offset++;
@@ -509,23 +825,36 @@ LIST_UP:
 						dir[tmp2]				= dir[now_arrow + offset];
 						dir[now_arrow + offset]	= dirTmp;
 
-						fillLine(38 +       tmp*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-						fillLine(38 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
-						libmPrintf(15,38 +       tmp*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dir[      tmp+offset].name);
-						libmPrintf(15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dir[now_arrow+offset].name);
+//						fillLine(38 +       tmp*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+//						fillLine(38 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR);
+//						libmPrintf(15,38 +       tmp*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dir[      tmp+offset].name);
+//						libmPrintf(15,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dir[now_arrow+offset].name);
+
+						printOneGame(tmp, offset);
+						printOneGame(now_arrow, offset);
+//						libmFillRect(5, 38 + tmp*(SPACE_BETWEEN_THE_LINES) + 3, 475, 38 + tmp*(SPACE_BETWEEN_THE_LINES) + 3 + 27 ,BG_COLOR);
+//						libmFillRect(5, 38 + now_arrow*(SPACE_BETWEEN_THE_LINES) + 3, 475, 38 + now_arrow*(SPACE_BETWEEN_THE_LINES) + 3 + 27 ,BG_COLOR);
+//						sortgame_display_img(&dir[tmp+offset].img, 5, 38 + tmp*(SPACE_BETWEEN_THE_LINES) + 3 );
+//						libmPrint(5 + 74 + 5, 38 + tmp*(SPACE_BETWEEN_THE_LINES) + 9, FG_COLOR, BG_COLOR, dir[tmp+offset].name);
+//						sortgame_display_img(&dir[now_arrow+offset].img, 5, 38 + now_arrow*(SPACE_BETWEEN_THE_LINES) + 3 );
+//						libmPrint(5 + 74 + 5, 38 + now_arrow*(SPACE_BETWEEN_THE_LINES) + 9, FG_COLOR, BG_COLOR, dir[now_arrow+offset].name);
+
 					}
 				}
 				
 				if( flag ) break;
 				
-				libmPrintf(5,38 +       tmp*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
-				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+//				libmPrintf(5,38 +       tmp*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
+//				libmPrintf(5,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+				libmFrame(5 , 35 + tmp*(SPACE_BETWEEN_THE_LINES), 475, 35 + (tmp+1)*(SPACE_BETWEEN_THE_LINES) - 1, BG_COLOR );
+				libmFrame(5 , 35 + now_arrow*(SPACE_BETWEEN_THE_LINES), 475, 35 + (now_arrow+1)*(SPACE_BETWEEN_THE_LINES) - 1, FG_COLOR );
 
 			}
 			else if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 0 && padData.Buttons & (buttonData[buttonNum[0]].flag|PSP_CTRL_RTRIGGER) )
 			{
 
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
+				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+
 
 				//if select [Uncategorize]
 				if( now_arrow+offset == 0 ) dirPath[0] = '\0';
@@ -541,10 +870,10 @@ LIST_UP:
 				beforeButtons = PSP_CTRL_LTRIGGER;
 
 				if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 1 ){
-					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
+					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
 					mode = 0;
 				}else if( deviceModel == 4 ){//if device is 'go'
-					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, mode);
+					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
 					sortgame_selectStrage(rootName);
 				}else{
 					continue;
@@ -558,7 +887,7 @@ LIST_UP:
 				if( beforeButtons & PSP_CTRL_START ) continue;
 				beforeButtons = PSP_CTRL_START;
 				
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir,file_num, mode);
+				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
 				goto LIST_UP;
 			}
 			else if( padData.Buttons & PSP_CTRL_SELECT )
@@ -581,21 +910,13 @@ LIST_UP:
 				if( beforeButtons & PSP_CTRL_HOME ) continue;
 				beforeButtons = PSP_CTRL_HOME;
 				
-				/*
-				tmp = 0;
-				if( editFlag ){
-					char *menu[] = { PPREFSMSG_YESORNO_LIST };
-					if( pprefsMakeSelectBox(24,  40, PPREFSMSG_SORTGAME_SAVE, menu, buttonData[buttonNum[0]].flag, 1 ) == 0 ){
-						tmp = 1;
-					}
-				}
-				if( tmp ) sortgame_run_sort(dir, file_num, mode);
-				*/
+				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
 				
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir,file_num, mode);
-
 				free(dir);
+				sortgameBuf = NULL;
+				sortgameBufNum = 0;
 				wait_button_up(&padData);
+				
 				return 0;
 			}
 			else

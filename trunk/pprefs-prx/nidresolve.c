@@ -29,8 +29,38 @@ int (*sceDisplayWaitVblankStart_Real)(void);
 
 int (*sceKernelExitVSHVSH_Real)(struct SceKernelLoadExecVSHParam *param);
 
+SceUID (*sceKernelLoadModule_Real)(const char *path, int flags, SceKernelLMOption *option);
+
+
 // Thanks to Davee
 #define PSP_FIRMWARE(f) ((((f >> 8) & 0xF) << 24) | (((f >> 4) & 0xF) << 16) | ((f & 0xF) << 8) | 0x10)
+
+
+
+u32 Get_LoadModule_NID(void)
+{
+	u32 ver = sceKernelDevkitVersion();
+
+	switch(ver)
+	{
+		// FW5.00`FW5.50
+		case 0x05000010:
+		case 0x05000310:
+		case 0x05050010:
+			return 0xC5A281C5;
+
+		// FW 6.20
+		case 0x06020010:
+			return 0xE3CCC6EA;
+
+		// FW 6.35
+		case 0x06030510:
+			return 0xFFB9B760;
+
+		default:
+			return 0xC5A281C5;
+	}
+}
 
 u32 Get_GetModelNid()
 {
@@ -57,11 +87,15 @@ void nidResolve(void)
 {
 	sceKernelDevkitVersion_Real = (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x3FC9AE6A);
 
+	//???
+	sceKernelLoadModule_Real = sceKernelLoadModule;
+//	sceKernelLoadModule_Real = (void *)FindProc("sceModuleManager", "ModuleMgrForKernel", Get_LoadModule_NID());
+
 	//resolve only 6.35
 	if( sceKernelDevkitVersion_Real() == PSP_FIRMWARE(0x635) ){
-		sceKernelAllocPartitionMemory_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x237DBD4F);
-		sceKernelGetBlockHeadAddr_Real			= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0x9D9A5BA1);
-		sceKernelFreePartitionMemory_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0xB6D61D02);
+		sceKernelAllocPartitionMemory_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemForKernel", 0x4621A9CC);
+		sceKernelGetBlockHeadAddr_Real			= (void *)FindProc("sceSystemMemoryManager", "SysMemForKernel", 0x52B54B93);
+		sceKernelFreePartitionMemory_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemForKernel", 0x8FDAFC4C);
 //		sceKernelTotalFreeMemSize_Real		= (void *)FindProc("sceSystemMemoryManager", "SysMemUserForUser", 0xF919F628);
 		sceKernelGetModel_Real					= (void *)FindProc("sceSystemMemoryManager", "SysMemForKernel", Get_GetModelNid());
 		sceKernelLibcTime_Real					= (void *)FindProc("sceSystemMemoryManager", "UtilsForUser", 0x27CC57F0);
@@ -73,7 +107,7 @@ void nidResolve(void)
 		sceDisplayGetFrameBuf_Real				= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0x08A10838);
 		sceDisplaySetFrameBuf_Real				= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0x37533141);
 		sceDisplayWaitVblankStart_Real			= (void *)FindProc("sceDisplay_Service", "sceDisplay_driver", 0xC30D327D);
-
+		
 		sceKernelExitVSHVSH_Real				= (void *)FindProc("sceLoadExec", "LoadExecForKernel", 0x5AA1A6D2);
 	}else{
 

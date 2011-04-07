@@ -13,8 +13,8 @@
 enum
 {
 	SORT_TYPE_NORMAL_LIST = 1,	//
-	SORT_TYPE_CATEGORY_LIST = 2,	//not need?
-	SORT_TYPE_ISOCSO_LIST = 4,	//not needd?
+	SORT_TYPE_CATEGORY_LIST = 2,	//not used
+	SORT_TYPE_ISOCSO_LIST = 4,	//not used
 
 	SORT_TYPE_CATEGORIZES = 8,	//
 	SORT_TYPE_CATEGORIZES_LIGHT = 16,	//
@@ -23,6 +23,9 @@ enum
 	SORT_TYPE_GAME = 64,	//
 	SORT_TYPE_GAME150 = 128, //
 	SORT_TYPE_GAME500 = 256, //
+
+	SORT_TYPE_NOTREMOVE_ISOCACHE = 512, //trueÇ»ÇÁè¡Ç≥Ç»Ç¢
+	SORT_TYPE_NOTDISPLAY_ICON0 = 1024, //trueÇ»ÇÁï\é¶ÇµÇ»Ç¢
 };
 
 

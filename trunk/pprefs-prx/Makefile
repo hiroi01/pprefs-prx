@@ -1,90 +1,14 @@
-TARGET = pprefs
-PSP_FW_VERSION = 500
-BUILD_PRX = 1
-
-
-OBJS =	\
-	main.o \
-	file.o \
-	pprefsmenu.o \
-	button.o \
-	exports.o \
-	thread.o \
-	conf.o \
-	common.o \
-	configmenu.o \
-	nidresolve.o \
-	sepluginstxt.o \
-	editpergame.o \
-	fileselecter.o \
-	usb.o \
-	ciso.o \
-	charConv.o \
-	sortgame.o \
-	syslibc/syslibc.o \
-	syslibc/strncasecmp.o \
-	syslibc/qsort.o \
-	syslibc/memory.o \
-
-
-OBJS	+=	../libmenu/static.o
-OBJS	+=	../libmenu/import.o
-
-
-
-
-#DRAW
-OBJS	+=	../libmenu/Draw/libmConvert8888_XXXX.o
-OBJS	+=	../libmenu/Draw/libmConvertXXXX_8888.o
-OBJS	+=	../libmenu/Draw/libmAlphaBlend.o
-OBJS	+=	../libmenu/Draw/libmDebugScreenSetXY.o
-OBJS	+=	../libmenu/Draw/libmPrintXY.o
-OBJS	+=	../libmenu/Draw/libmPrintfXY.o
-OBJS	+=	../libmenu/Draw/libmPutCharXY.o
-OBJS	+=	../libmenu/Draw/libmPoint.o
-OBJS	+=	../libmenu/Draw/libmPointEx.o
-OBJS	+=	../libmenu/Draw/libmLine.o
-OBJS	+=	../libmenu/Draw/libmFrame.o
-OBJS	+=	../libmenu/Draw/libmFillRect.o
-OBJS	+=	../libmenu/Draw/libmCircle.o
-OBJS	+=	../libmenu/Draw/libmInitBuffers.o
-OBJS	+=	../libmenu/Draw/libmClearBuffers.o
-OBJS	+=	../libmenu/Draw/libmSwapBuffers.o
-OBJS	+=	../libmenu/Draw/libmMakeDrawAddr.o
-OBJS	+=	../libmenu/Draw/libmGetColor.o
-OBJS	+=	../libmenu/Draw/libmGetCurVInfo.o
-OBJS	+=	../libmenu/Draw/libmSetCurVInfo.o
-
-
-
-
-PRX_EXPORTS = exports.exp
-USE_KERNEL_LIBC	= 1
-USE_KERNEL_LIBS	= 1
-
-CLASSG_LIBS = libs
-#CLASSG_LIBS = libc
-
-
-
-
-INCDIR = $(CLASSG_LIBS)
-CFLAGS = -Os -G0 -Wall -fno-strict-aliasing -fno-builtin-printf -DLNGJPN
-CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
-ASFLAGS = $(CFLAGS)
-#INCDIR			=	$(DIR_CLASSG)
-#CFLAGS		=	-Os -G 0 -Wall -fno-strict-aliasing -DLNGJPN
-##CFLAGS 	= -O3 -G0 -Wall -DLNGJPN
-#ASFLAGS		=	$(CFLAGS)
-
-LIBDIR			= 
-LDFLAGS		=	-mno-crt0 -nostartfiles
-LIBS = -lpspsystemctrl_kernel -lm -lz -lpspusb -lpspkubridge -lpspusbstor 
-
-
-
-PSPSDK=$(shell psp-config --pspsdk-path)
-include $(PSPSDK)/lib/build_prx.mak
-
 all:
+	make -f Makefile_pprefs
+en:
+	make -f Makefile_pprefs LANGUAGE=english
+english:
+	make en
+lite:
+	make -f Makefile_pprefs_lite
+litejp:
+	make -f make -f Makefile_pprefs
 
+clean:
+	make -f Makefile_pprefs clean
+	make -f Makefile_pprefs_lite clean

@@ -47,9 +47,9 @@ int Read_Line(SceUID fd, char *buf, int n)
 	if(fd < 0)
 		return 0;
 
-	do
-	{
+	do{
 		res = sceIoRead(fd, &c, 1);
+		if( !(res > 0) ) break;
 
 		if(c == '\r' || c == ' ')	continue;
 		else if(c == '\n')			break;
@@ -58,8 +58,7 @@ int Read_Line(SceUID fd, char *buf, int n)
 		{
 			buf[count++] = c;
 		}
-	}
-	while (res > 0 && count < n);
+	}while (count < (n-1));
 
 	buf[count] = '\0';
 	return count;
@@ -269,7 +268,7 @@ int INI_Read_Conf(const char *path, INI_Key *key)
 	while (Check_EOF(fd) == 0)
 	{
 		// 一行読み込む
-		Read_Line(fd, buf, 255);
+		Read_Line(fd, buf, 256);
 
 		// コメントと改行ならスキップ
 		if(buf[0] == '#' || buf[0] == '\n' || buf[0] == '\0') continue;

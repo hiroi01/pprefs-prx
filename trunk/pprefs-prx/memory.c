@@ -1,26 +1,13 @@
-// from libmenu
+// from libmenu sample
+// thank you maxem
+
+#include <pspkernel.h>
+#include <string.h>
+#include <math.h>
 
 #include "memory.h"
 #include "nidresolve.h"
 
-/*
-void *memoryAlloc( SceSize size )
-{
-	return memoryAllocEx( "ms_malloc", MEMORY_USER, 0, size, PSP_SMEM_Low, NULL );
-}
-
-
-
-void memoryFree( void *memblock )
-{
-	if( ! memblock ) return;
-	 memory_header *header = (memory_header*)( (uintptr_t)memblock - sizeof(memory_header) );
-	
-	//return 
-	sceKernelFreePartitionMemory( header->blockId );
-}
-
-*/
 
 void *memoryAllocEx( const char *name, MemoryPartition partition, unsigned int align, SceSize size, int type, void *addr )
 {
@@ -56,4 +43,38 @@ void *memoryAllocEx( const char *name, MemoryPartition partition, unsigned int a
 	
 	return memblock;
 }
+
+
+#ifdef USE_KERNEL_LIBRARY
+void *malloc( size_t size )
+#else
+void *memoryAlloc( size_t size )
+#endif
+{
+	return memoryAllocEx( "ms_malloc", MEMORY_USER, 0, size, PSP_SMEM_Low, NULL );
+}
+
+#ifdef USE_KERNEL_LIBRARY
+void *memalign(size_t boundary, size_t size)
+#else
+void *memoryAlign(size_t boundary, size_t size)
+#endif
+{
+	return memoryAllocEx( "ms_memalign", MEMORY_USER, boundary, size, PSP_SMEM_Low, NULL );
+}
+
+#ifdef USE_KERNEL_LIBRARY
+void free( void *memblock )
+#else
+void memoryFree( void *memblock )
+#endif
+{
+	if( ! memblock ) return;
+	 memory_header *header = (memory_header*)( (uintptr_t)memblock - sizeof(memory_header) );
+	
+	//return 
+	sceKernelFreePartitionMemory( header->blockId );
+}
+
+
 

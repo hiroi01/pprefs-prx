@@ -21,14 +21,14 @@
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs lite Ver. 1.000   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs lite Ver. 1.010    by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 #else
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.101beta1   by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.110beta    by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 #endif
@@ -38,6 +38,9 @@ extern char pprefsPrintBuf[128];
 #define libmPrintf(x,y,fg,bg,format, ... ) libmPrintfXY(x,y,fg,bg,pprefsPrintBuf,COMMON_BUF_LEN,format, ##__VA_ARGS__)
 #define libmPrint libmPrintXY
 #define fillLine(sy,color) libmFillRect( 0 , sy , 480 , sy + LIBM_CHAR_HEIGHT ,color);
+
+#define pprefsMakeSelectBoxSpeedy(start_x,start_y,titleLabel, itemName , selectKey, type) pprefsMakeSelectBox_(start_x,start_y,titleLabel, itemName , selectKey, type, true)
+#define pprefsMakeSelectBox(start_x,start_y,titleLabel, itemName , selectKey, type) pprefsMakeSelectBox_(start_x,start_y,titleLabel, itemName , selectKey, type, false)
 
 /*-----------------------------------------------
 セレクトボックスを作る
@@ -57,14 +60,19 @@ extern char pprefsPrintBuf[128];
 @prams : type
          == 0 ノーマル
          == 1 HOMEボタンで選択を「止める」事が出来るセレクトボックスになる
+@prams : isSpeedy
+         セレクトボックスの描画を高速化するか?
+         
 @returns :
             >= 0  選ばれた項目が1番目なら0,2番目なら1,...という値
-            <  0  @params : type が1のとき「止める」が選択されたら
+            <  0  @params : (type が1のときだけ)「止める」が選択されたら
 
 -----------------------------------------------*/
-int pprefsMakeSelectBox( int start_x, int start_y,char *titleLabel, char *itemName[] , u32 selectKey, int type);
+int pprefsMakeSelectBox_( int start_x, int start_y,char *titleLabel, char *itemName[] , u32 selectKey, int type, bool isSpeedy);
 void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
+void makeWindowSpeedy(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
 void makeWindowWithGettingButton(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor, SceCtrlData *pad);
 void makeWindowQuick(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor);
+
 
 #endif
