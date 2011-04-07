@@ -37,14 +37,30 @@ typedef enum {
 	MEMORY_USER_MIRROR
 } MemoryPartition;
 
+
+/*=========================================================
+
+=========================================================*/
+
 void *memoryAllocEx( const char *name, MemoryPartition partition, unsigned int align, SceSize size, int type, void *addr );
 
-
+#if USE_KERNEL_LIBRARY
 void *malloc( size_t size );
-
+void *memalign(size_t boundary, size_t size);
 void free( void *memblock );
+
+#define memoryAlloc malloc
+#define memoryAlign memalign
+#define memoryFree free
+
+#else
+
+void *memoryAlloc( size_t size );
+void *memoryAlign(size_t boundary, size_t size);
+void memoryFree( void *memblock );
 
 #endif
 
 
+#endif
 

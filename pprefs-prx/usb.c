@@ -57,37 +57,37 @@ int USBinit(){
 	if( ! sceKernelFindModuleByName("sceChkreg") )
 		modules[0] = LoadStartModule("flash0:/kd/chkreg.prx");
 	else
-		modules[0] = 0;
+		modules[0] = 1;
 
 	if( ! sceKernelFindModuleByName("scePspNpDrm_Driver") )
 		modules[1] = LoadStartModule("flash0:/kd/npdrm.prx");
 	else
-		modules[1] = 0;
+		modules[1] = 1;
 
 	if( ! sceKernelFindModuleByName("sceSemawm") )
 		modules[2] = LoadStartModule("flash0:/kd/semawm.prx");
 	else
-		modules[2] = 0;
+		modules[2] = 1;
 
 	if( ! sceKernelFindModuleByName("sceUSB_Stor_Driver") )
 		modules[3] = LoadStartModule("flash0:/kd/usbstor.prx");
 	else
-		modules[3] = 0;
+		modules[3] = 1;
 
 	if( ! sceKernelFindModuleByName("sceUSB_Stor_Mgr_Driver") )
 		modules[4] = LoadStartModule("flash0:/kd/usbstormgr.prx");
 	else
-		modules[4] = 0;
+		modules[4] = 1;
 
 	if( ! sceKernelFindModuleByName("sceUSB_Stor_Ms_Driver") )
 		modules[5] = LoadStartModule("flash0:/kd/usbstorms.prx");
 	else
-		modules[5] = 0;
+		modules[5] = 1;
 
 	if( ! sceKernelFindModuleByName("sceUSB_Stor_Boot_Driver") )//sceUsbstorBootSetCapacity
 		modules[6] = LoadStartModule("flash0:/kd/usbstorboot.prx");
 	else
-		modules[6] = 0;
+		modules[6] = 1;
 
     //setup USB drivers
     retVal = sceUsbStart(PSP_USBBUS_DRIVERNAME, 0, 0);
@@ -123,7 +123,7 @@ int USBEnd(){
     sceUsbStop(PSP_USBSTOR_DRIVERNAME, 0, 0);
     sceUsbStop(PSP_USBBUS_DRIVERNAME, 0, 0);
     for (i=0; i<7; i++){
-		if( modules[i] != 0 ) StopUnloadModule(modules[i]);
+		if( modules[i] == 0 ) StopUnloadModule(modules[i]);
     }
     return 0;
 }

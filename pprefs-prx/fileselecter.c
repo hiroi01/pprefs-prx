@@ -38,14 +38,12 @@ void selectStrage(char *path)
 	char *menu_go[] = { 
 		"ms0:/",
 		"ef0:/",
-		"fatms0:/",
 		"disk0:/",
 		NULL
 	};
 	char *menu_go_hitobashira[] = { 
 		"ms0:/",
 		"ef0:/",
-		"fatms0:/",
 		"disk0:/",
 		"flash0:/",
 		"flash1:/",
@@ -71,8 +69,6 @@ void selectStrage(char *path)
 		*/
 		menu[0][0] = 'm';
 		menu[0][1] = 's';
-		menu[2][3] = 'm';
-		menu[2][4] = 's';
 	}else{
 		if( hitobashiraFlag ){
 			menu = menu_fat_hitobashira;

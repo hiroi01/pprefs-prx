@@ -33,6 +33,9 @@ u32 selectSorttypeByuser()
 	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_GAME500 ,yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
 		rtn |= SORT_TYPE_GAME500;
 	}
+	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_NOTDISPLAY_ICON0, yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
+		rtn |= SORT_TYPE_NOTDISPLAY_ICON0;
+	}
 
 	return rtn;
 }
@@ -46,11 +49,62 @@ u32 selectSorttypeByuser(){
 void selectBasePath(char *path)
 {
 	wait_button_up(&padData);
-	if(  fileSelecter(config.basePath,&dirTmp, PPREFSMSG_SELECTBASEPATH, 2, NULL ) == 0  ){
+		
+	int selectNumber;
+	
+	char listBuf[16] = "**0:/seplugins/";
+	char listBuf2[16] = "**0:/plugins/";
+	/*
+	6.20TN、6.35PRO-B2以降のパスのエイリアス機能(?)対策
+	文字列リテラルで"ms0～"とすると"ef0～"と置き換えられるのでその対策
+	*/
+	listBuf[0] = 'm'; listBuf[1] = 's';
+	listBuf2[0] = 'm'; listBuf2[1] = 's';
+
+	if( deviceModel == 4 ){//if device is go
+		char *list[] = {
+			"ef0:/seplugins/" ,//0
+			listBuf ,//1
+			"ef0:/plugins/" ,//2
+			listBuf2 ,//3
+			PPREFSMSG_THEOTHER ,//4
+			NULL
+		};
+
+		selectNumber = pprefsMakeSelectBoxSpeedy(8, 8, PPREFSMSG_SELECTBASEPATH,list, buttonData[buttonNum[0]].flag, 1 );
+		if( selectNumber >= 0 &&  selectNumber != 4 ){
+			strcpy(path,list[selectNumber]);
+			wait_button_up(&padData);
+			return;
+		}
+
+	}else{//1000 or 2000 or 3000
+		char *list[] = {
+			listBuf ,//0
+			listBuf2 ,//1
+			PPREFSMSG_THEOTHER ,//2
+			NULL
+		};
+		
+		selectNumber = pprefsMakeSelectBoxSpeedy(8, 8, PPREFSMSG_SELECTBASEPATH,list, buttonData[buttonNum[0]].flag, 1 );
+		if( selectNumber >= 0 && selectNumber != 2 ){
+			strcpy(path,list[selectNumber]);
+			wait_button_up(&padData);
+			return;
+		}
+	}
+
+
+	//if selected PPREFSMSG_THEOTHER
+	if( selectNumber >= 0 && fileSelecter(config.basePath,&dirTmp, PPREFSMSG_SELECTBASEPATH, 2, NULL ) == 0  ){
 		strcpy(path,dirTmp.name);
 	}
+	
 	wait_button_up(&padData);
 }
+
+
+//キー検出
 u32 detect_key(void)
 {
 	
@@ -90,6 +144,7 @@ u32 detect_key(void)
 }
 
 #define SPACE_BETWEEN_THE_LINES (LIBM_CHAR_HEIGHT + 2)
+
 /*
 #define ARROW_POSITION ( \
 ( now_arrow < conf[0].keyNum )? \

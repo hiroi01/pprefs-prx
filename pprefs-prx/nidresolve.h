@@ -24,6 +24,8 @@ extern int (*sceDisplayWaitVblankStart_Real)(void);
 
 extern int (*sceKernelExitVSHVSH_Real)(struct SceKernelLoadExecVSHParam *param);
 
+extern SceUID (*sceKernelLoadModule_Real)(const char *path, int flags, SceKernelLMOption *option);
+
 
 #define sceKernelAllocPartitionMemory sceKernelAllocPartitionMemory_Real
 #define sceKernelGetBlockHeadAddr sceKernelGetBlockHeadAddr_Real
@@ -42,6 +44,8 @@ extern int (*sceKernelExitVSHVSH_Real)(struct SceKernelLoadExecVSHParam *param);
 #define sceDisplayWaitVblankStart sceDisplayWaitVblankStart_Real
 
 #define sceKernelExitVSHVSH sceKernelExitVSHVSH_Real
+
+#define sceKernelLoadModule sceKernelLoadModule_Real
 
 
 void nidResolve(void);
