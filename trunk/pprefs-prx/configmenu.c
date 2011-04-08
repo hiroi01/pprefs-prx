@@ -113,7 +113,7 @@ u32 detect_key(void)
 	u32 beforeKey = 0;
 	
 	wait_button_up(&padData);
-	makeWindow(
+	makeWindowSpeedy(
 		24 , 28 ,
 		480 - LIBM_CHAR_WIDTH*3 , 28 + LIBM_CHAR_HEIGHT*5,
 		FG_COLOR,BG_COLOR
@@ -231,7 +231,6 @@ int config_menu(void)
 					if( strcasecmp( "BasePath", conf[now_arrow].key ) == 0 ){
 						char *list[] = {PPREFSMSG_CONFIG_BASEPATH_LIST};
 						int selectNum = pprefsMakeSelectBox(32,  32, PPREFSMSG_CONFIG_BASEPATH_TITLE,list, buttonData[buttonNum[0]].flag, 1 );
-						
 						if( selectNum == 0 ){
 							selectBasePath(conf[now_arrow].value.s);
 						}else if( selectNum == 1){

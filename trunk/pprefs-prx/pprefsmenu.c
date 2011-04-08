@@ -121,6 +121,8 @@ int pprefsMakeSelectBox_( int start_x, int start_y,char *titleLabel, char *itemN
 
 	i = 0;
 	libmPrint(start_x + 2 ,start_y + (i+1)*SPACE_BETWEEN_THE_LINES + 2,FG_COLOR,BG_COLOR,">");
+
+	wait_button_up(&padData);
 	while(1){
 		wait_button_up(&pad);
 		get_button(&pad);

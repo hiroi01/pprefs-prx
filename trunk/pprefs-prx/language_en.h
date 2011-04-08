@@ -12,9 +12,9 @@
 #define PB_SYM_PSP_SQUARE		"\x87"
 #define PB_SYM_PSP_NOTE			"\x88"
 
-#define PPREFSMSG_MAINMENU_HOTOUSE " %s:Sel. hold%s:AllOFF/ON \x84:Menu \x87+\x80/\x82:Move L+R:ChangeDir"
-#define PPREFSMSG_MAINMENU_HOTOUSE_2 "SELECT:reload HOME:Save&Quit START:Save&RESTART VSH"
-#define PPREFSMSG_MAINMENU_REPUSHSTART "re-press START\n,and RESTART VSH"
+#define PPREFSMSG_MAINMENU_HOTOUSE "%s:Sel. hold%s:AllOFF/ON \x84:Menu \x87+\x80/\x82:Move L+R:ChangeDir"
+#define PPREFSMSG_MAINMENU_HOTOUSE_2 "SELECT:reload HOME:Save&Quit START:Save&RESTARTVSH"
+#define PPREFSMSG_MAINMENU_REPUSHSTART "re-press START\n,to RESTART VSH"
 #define PPREFSMSG_MAINMENU_RELOAD " reload(not saving)  Really? "
 
 #define PPREFSMSG_YESORNO "%s:YES %s:NO"
@@ -22,8 +22,8 @@
 
 #define PPREFSMSG_ADD_TOP "<<add>> select plugin you want to add "
 #define PPREFSMSG_ADD_HOWTOUSE " %s:Sel. HOME:Quit L:UpDir R:OpenDir "
-#define PPREFSMSG_ADD_HOWTOUSE_2 " %s:Sel. HOME:Quit L:UpDir R:OpenDir START:Select current dir "
-#define PPREFSMSG_ADD_HOWTOUSE_3 " HOME:Quit L:UpDir R/%s:OpenDir START:Select current dir"
+#define PPREFSMSG_ADD_HOWTOUSE_2 " %s:Sel. HOME:Quit L:UpDir R:OpenDir START:SelectCurrentDir "
+#define PPREFSMSG_ADD_HOWTOUSE_3 " HOME:Quit L:UpDir R/%s:OpenDir START:SelectCurrentDir"
 
 #define PPREFSMSG_SELECTBOX_HOTOUSE " %s:Sel. "
 #define PPREFSMSG_SELECTBOX_HOTOUSE_2 " %s:Sel. HOME:Quit "
@@ -74,7 +74,7 @@
 #define PPREFSMSG_CONFIGMENU_WHATISTHIS \
 "Hot key to start this plugin", \
 "Swap X and O", \
-"to RESTART VSH on start menu ... true -> press START once  false -> press START twice", \
+"to RESTART VSH on start menu\ntrue -> press START once  false -> press START twice", \
 "Line Feed Code", \
 "Folder that has vsh.txt , game.txt , pops.txt", \
 "Foreground color", \
