@@ -7,8 +7,8 @@ english:
 lite:
 	make -f Makefile_pprefs_lite
 litejp:
-	make -f make -f Makefile_pprefs
+	make -f Makefile_pprefs_lite LANGUAGE=japanese
 
 clean:
 	make -f Makefile_pprefs clean
-#	make -f Makefile_pprefs_lite clean
+	make -f Makefile_pprefs_lite clean

@@ -78,6 +78,7 @@ void wait_button_up(SceCtrlData *data)
   {
     sceCtrlPeekBufferPositive( data, 1 );
   }
+
 }
 
 void wait_button_down(SceCtrlData *data,unsigned int key)

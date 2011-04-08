@@ -3,9 +3,6 @@ PSP_FW_VERSION = 500
 BUILD_PRX = 1
 
 
-ifeq ($(LANGUAGE),english)
-OPTION_FLAGS = -DPPREFS_LANGUAGE_ENGLISH
-endif
 
 OBJS =	\
 	main.o \
@@ -24,14 +21,21 @@ OBJS =	\
 	fileselecter.o \
 	usb.o \
 	ciso.o \
-	charConv.o \
 	sortgame.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \
 
-
 OBJS += ./dxlibp/dxppng.o
+
+ifeq ($(LANGUAGE),english)
+OPTION_FLAGS = -DPPREFS_LANGUAGE_ENGLISH
+else
+OPTION_FLAGS = -DPPREFS_CHARCONV
+OBJS += charConv.o
+endif
+
+
 
 PRX_EXPORTS = exports.exp
 USE_KERNEL_LIBC	= 1

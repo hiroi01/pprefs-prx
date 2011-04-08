@@ -168,17 +168,18 @@ PRINT_LIST:
 		libmFillRect( 0 , 46 , 480 , 46 + MAX_DISPLAY_NUM*(LIBM_CHAR_HEIGHT+2),BG_COLOR );
 		if( dir_num != 0 ){
 			for( i = 0; i < dir_num && i < MAX_DISPLAY_NUM; i++ ){
-#ifdef PPREFS_LITE
-				if( dirBuf[i+offset].type == TYPE_DIR )
-					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",dirBuf[i+offset].name);
-				else
-					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dirBuf[i+offset].name);
-#else
+#ifdef PPREFS_CHARCONV
 				psp2chUTF82Sjis(commonBuf,dirBuf[i+offset].name);
 				if( dirBuf[i+offset].type == TYPE_DIR )
 					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",commonBuf);
 				else
 					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",commonBuf);
+#else
+				if( dirBuf[i+offset].type == TYPE_DIR )
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",dirBuf[i+offset].name);
+				else
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dirBuf[i+offset].name);
+
 #endif
 			}
 			libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
