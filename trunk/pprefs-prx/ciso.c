@@ -50,34 +50,7 @@ typedef enum {
 
 
 
-/*---------------------------------------------------------------------------
-  ファイルリード
----------------------------------------------------------------------------*/
 
-int file_read(void* buf, const char* path, file_type type, int pos, int size)
-{
-  int ret = ERR_OPEN;
-
-  switch(type)
-  {
-    case TYPE_ISO:
-    case TYPE_SYS:
-      ret = ms_read(buf, path, pos, size);
-      break;
-
-    case TYPE_CSO:
-      ret = cso_read(buf, path, pos, size);
-      break;
-/*
-    case TYPE_UMD:
-      ret = umd_read(buf, path, pos, size);
-      break;
-*/
-    default:
-      break;
-  }
-  return ret;
-}
 
 
 

@@ -80,6 +80,8 @@ int ms_read(void* buf, const char* path, int pos, int size);
 ---------------------------------------------------------------------------*/
 //int ms_sector_read(void* buf, const char* path, int sec, int num);
 
+int file_read(void* buf, const char* path, file_type type, int sec, int num);
+
 /*---------------------------------------------------------------------------
   ファイルライト
 ---------------------------------------------------------------------------*/
