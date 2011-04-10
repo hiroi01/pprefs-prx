@@ -309,3 +309,173 @@ PRINT_LIST:
 		}
 	}
 }
+
+
+
+
+
+int fileManager(const char *startPath ,char* titleLabel,int selectType, char *dir_type_sort)
+{
+	
+	if( selectType < 0 || selectType > 2 ) selectType = 0;
+
+	dir_t *dirBuf = malloc(sizeof(dir_t)*DIR_BUF_NUM);
+	if( dirBuf == NULL ) return -1;
+	
+	int dir_num,offset,i,now_arrow;
+	u32 beforeButtons = 0;
+	clock_t time = 0;
+	char currentPath[256];
+	bool firstFlag = true;
+	strcpy(currentPath,startPath);
+
+	while(1){
+
+		
+		dir_num = read_dir(dirBuf,currentPath, 0,dir_type_sort,DIR_BUF_NUM);
+		offset = 0;
+		now_arrow = 0;
+
+		PRINT_SCREEN();
+		libmPrintf(15,28,BG_COLOR,FG_COLOR, titleLabel);
+		libmPrintf(15,36,BG_COLOR,FG_COLOR,"[%d] [%s]",dir_num,currentPath);
+		libmPrintf(5,264,EX_COLOR,BG_COLOR, (selectType == 0)?PPREFSMSG_ADD_HOWTOUSE:(selectType == 1)?PPREFSMSG_ADD_HOWTOUSE_2:PPREFSMSG_ADD_HOWTOUSE_3, buttonData[buttonNum[0]].name);
+
+PRINT_LIST:
+		libmFillRect( 0 , 46 , 480 , 46 + MAX_DISPLAY_NUM*(LIBM_CHAR_HEIGHT+2),BG_COLOR );
+		if( dir_num != 0 ){
+			for( i = 0; i < dir_num && i < MAX_DISPLAY_NUM; i++ ){
+#ifdef PPREFS_CHARCONV
+				psp2chUTF82Sjis(commonBuf,dirBuf[i+offset].name);
+				if( dirBuf[i+offset].type == TYPE_DIR )
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",commonBuf);
+				else
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",commonBuf);
+#else
+				if( dirBuf[i+offset].type == TYPE_DIR )
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s/",dirBuf[i+offset].name);
+				else
+					libmPrintf(15,46 + i*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,"%s",dirBuf[i+offset].name);
+
+#endif
+			}
+			libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+		}
+		
+		while(1){
+			get_button(&padData);
+			if( padData.Buttons & PSP_CTRL_DOWN )
+			{
+				ALLORW_WAIT(PSP_CTRL_DOWN,3 * 100 * 1000,1 * 100 * 1000);
+				
+				if( now_arrow + 1 < MAX_DISPLAY_NUM && now_arrow + 1 < dir_num ){
+					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
+					now_arrow++;
+					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+				}else{
+					if( offset+MAX_DISPLAY_NUM < dir_num ){
+						offset++;
+						goto PRINT_LIST;
+					}
+				}
+			}
+			else if( padData.Buttons & PSP_CTRL_UP )
+			{
+				ALLORW_WAIT(PSP_CTRL_UP,3 * 100 * 1000,1 * 100 * 1000);
+				
+				if( now_arrow - 1 >= 0 ){
+					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
+					now_arrow--;
+					libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+				}else{
+					if( offset > 0 ){
+						offset--;
+						goto PRINT_LIST;
+					}
+				}
+			}
+			else if( padData.Buttons & PSP_CTRL_RIGHT )
+			{
+				ALLORW_WAIT(PSP_CTRL_RIGHT,2 * 100 * 1000,1 * 100 * 1000);
+				
+				i = (dir_num >= MAX_DISPLAY_NUM)?dir_num - MAX_DISPLAY_NUM:0;//tmp value
+				if( i == offset ){
+					now_arrow = (i == 0)?dir_num-1:MAX_DISPLAY_NUM-1;
+				}else{
+					offset += MAX_DISPLAY_NUM;
+					now_arrow=0;
+					if( offset+MAX_DISPLAY_NUM >= dir_num ) offset = i;
+				}
+				goto PRINT_LIST;
+				
+				
+			}
+			else if( padData.Buttons & PSP_CTRL_LEFT )
+			{
+				ALLORW_WAIT(PSP_CTRL_LEFT,2 * 100 * 1000,1 * 100 * 1000);
+				if( offset == 0 ){
+					now_arrow = 0;
+				}else{
+					offset -= MAX_DISPLAY_NUM;
+					if( offset < 0 ) offset = 0;
+					now_arrow = 0;
+				}
+				goto PRINT_LIST;
+			}
+			else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) )
+			{
+				beforeButtons = (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER);
+
+				//現在地が空のフォルダではない
+				if(  dir_num != 0 ){
+					//選択されたものがフォルダー
+					if( dirBuf[offset+now_arrow].type == TYPE_DIR ){
+						strcat(currentPath,dirBuf[offset+now_arrow].name);
+						strcat(currentPath,"/");
+						wait_button_up(&padData);
+						break;
+					//選択されたものがファイル && buttonData[buttonNum[0]].flagボタンが押されている
+					}else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && dir_num != 0 && selectType != 2 ){
+						char tmpPath[256];
+						char *yesnoList[] = { PPREFSMSG_YESORNO_LIST };
+
+						strcpy( tmpPath , currentPath );
+						strcat( tmpPath , dirBuf[offset+now_arrow].name );
+						if( pprefsMakeSelectBox(24,  40, "Really?", yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
+							sceIoRemove(tmpPath);
+							wait_button_up(&padData);
+							break;
+						}else{
+							wait_button_up(&padData);
+							goto PRINT_LIST;
+						}
+					}
+				}
+				wait_button_up(&padData);
+			}
+			else if( padData.Buttons & PSP_CTRL_LTRIGGER )
+			{
+				beforeButtons = PSP_CTRL_LTRIGGER;
+				
+				wait_button_up(&padData);
+				if( currentPath[strlen(currentPath) - 2] == ':' ){
+					selectStrage(currentPath);
+					break;
+				}else if( up_dir(currentPath) >= 0 ){
+					break;
+				}
+			}
+			else if( padData.Buttons & PSP_CTRL_HOME )
+			{
+				wait_button_up(&padData);
+				free(dirBuf);
+				return 1;
+			}
+			else
+			{
+				beforeButtons = 0;
+			}
+//			wait_button_up(&padData);
+		}
+	}
+}

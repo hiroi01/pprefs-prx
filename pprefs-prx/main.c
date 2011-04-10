@@ -5,6 +5,7 @@
 
 */
 
+#include <pspsysevent.h>
 
 #include "sepluginstxt.h"
 #include "configmenu.h"
@@ -194,6 +195,18 @@ int pauseGameTest()
 #endif
 
 
+
+
+
+int Callback_Suspend(int ev_id, char *ev_name, void *param, int *result)
+{
+	// 返り値に 0 ではなく -1 を返すと、スリープを無効化できる
+	Kprintf("testTest");
+	return 0;
+}
+
+
+
 const char *INI_Key_lineFeedCode_list[] = {
 	"CR+LF",
 	"LF",
@@ -205,22 +218,10 @@ const char *INI_Key_lineFeedCode_list[] = {
 
 
 
-#define initClearPdata(pdata) \
-	pdata[0].num = 0; \
-	pdata[1].num = 0; \
-	pdata[2].num = 0; \
-	pdata[0].edit = false; \
-	pdata[1].edit = false; \
-	pdata[2].edit = false; \
-	pdata[0].exist = false; \
-	pdata[1].exist = false; \
-	pdata[2].exist = false; \
-
-
-
-
 int main_thread( SceSize arglen, void *argp )
 {
+	pspDebugInstallKprintfHandler(NULL);
+	Kprintf("Hello\n");
 
 	int usbState = 0;
 	char *temp;
@@ -318,6 +319,15 @@ int main_thread( SceSize arglen, void *argp )
 
 	
 
+	PspSysEventHandler events;
+	
+	events.size			= 0x40;
+	events.name			= "MSE_Suspend";
+	events.type_mask	= 0x0000FF00;
+	events.handler		= Callback_Suspend;
+	
+	sceKernelRegisterSysEventHandler(&events);
+	
 	padData.Buttons = 0;
 
 #ifndef PPREFS_LITE
@@ -487,8 +497,13 @@ int sub_menu(int currentSelected,int position){
 			now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
 		}
 	}else{
-		char *menu[] = {PPREFSMSG_SUBMENU_LIST};
-		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+		if( hitobashiraFlag ){
+			char *menu[] = {PPREFSMSG_SUBMENU_LIST_HITOBASHIRA};
+			now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+		}else{
+			char *menu[] = {PPREFSMSG_SUBMENU_LIST};
+			now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
+		}
 	}
 
 
@@ -542,6 +557,10 @@ int sub_menu(int currentSelected,int position){
 			}
 			if( tmp !=  1 ) readSepluginsText(3,true,config.basePath);
 		}
+	//REMOVE
+	}else if( now_arrow == 6 ){
+
+		fileManager(config.basePath, "rm FILE", 0, NULL);
 	}
 
 	wait_button_up(&padData);
@@ -1054,6 +1073,12 @@ int module_start( SceSize arglen, void *argp )
 	if( deviceModel < 0 || deviceModel > 8) deviceModel = 9;//unknown
 
 
+	char path[256], *temp;
+	strcpy(path, argp);
+	temp = strrchr(path, '/');
+	if( temp != NULL ) *temp = '\0';
+	strcat(path,"/hitobashira.txt");
+	if( ! check_file(path) ) hitobashiraFlag = 1;
 
 
 

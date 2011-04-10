@@ -20,6 +20,7 @@ OBJS =	\
 	editpergame.o \
 	fileselecter.o \
 	usb.o \
+	iso.o \
 	ciso.o \
 	sortgame.o \
 	syslibc/syslibc.o \

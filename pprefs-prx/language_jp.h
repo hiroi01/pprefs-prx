@@ -94,8 +94,9 @@
 
 #define PPREFSMSG_SUBMENU_TITLE "メニュー"
 #define PPREFSMSG_SUBMENU_LIST "追記","削除","pergame編集","SORT GAMEβ","設定","COPY ME",NULL
+#define PPREFSMSG_SUBMENU_LIST_HITOBASHIRA "追記","削除","pergame編集","SORT GAMEβ","設定","COPY ME","rm FILE",NULL
 #define PPREFSMSG_SUBMENU_LIST_GO "追記","削除","pergame編集","SORT GAMEβ","設定",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "追記","削除","pergame編集","SORT GAMEβ","設定","中断ゲームファイル弄る",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "追記","削除","pergame編集","SORT GAMEβ","設定","中断ゲームファイル弄る","rm FILE",NULL
 
 #define PPREFSMSG_EDITPERGAME_SELECTPRX "プラグインを選択してね"
 #define PPREFSMSG_EDITPERGAME_SELECTGAME "ゲームを選択してね"

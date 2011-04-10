@@ -5,7 +5,6 @@
 #include "file.h"
 
 
-int file_read(void* buf, const char* path, file_type type, int sec, int num);
 int get_umd_id(char* id, const char* path, file_type type);
 
 

@@ -90,8 +90,9 @@
 
 #define PPREFSMSG_SUBMENU_TITLE "menu"
 #define PPREFSMSG_SUBMENU_LIST "add","remove","edit pergame","SORT GAME\x91","config","COPY ME",NULL
+#define PPREFSMSG_SUBMENU_LIST_HITOBASHIRA "add","remove","edit pergame","SORT GAME\x91","config","COPY ME","rm FILE",NULL
 #define PPREFSMSG_SUBMENU_LIST_GO "add","remove","edit pergame","SORT GAME\x91","config",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "add","remove","edit pergame","SORT GAME\x91","config","edit pause game",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "add","remove","edit pergame","SORT GAME\x91","config","edit pause game","rm FILE",NULL
 
 #define PPREFSMSG_EDITPERGAME_SELECTPRX "select plugin"
 #define PPREFSMSG_EDITPERGAME_SELECTGAME "select game"

@@ -3,6 +3,7 @@
 #include "pprefsmenu.h"
 #include "configmenu.h"
 #include "dxlibp/dxppng.h"
+#include "iso.h"
 #include "common.h"
 
 #define MAX_PATH_LEN (256)
@@ -35,6 +36,13 @@ enum {
   SORTGAME_FLAG_OTHERDIR = 32,
 };
 
+enum{
+	FILE_TYPE_EBOOTPBPDIR = 0,
+	FILE_TYPE_ISO,
+	FILE_TYPE_CSO,
+	FILE_TYPE_CATDIR,
+};
+
 //48x27
 #define SORTGAME_IMG_BUF_SIZE (1296)
 typedef struct sortgame_img_{
@@ -45,7 +53,7 @@ typedef struct sortgame_img_{
 typedef struct {
   ScePspDateTime time;//並び順の判定基準になる時間
   char name[MAX_PATH_LEN];
-  int sort_type;
+  int file_type;
   SceIoStat stat;
   sortgame_img img;
 } sortgame_dir_t;
@@ -79,47 +87,66 @@ static int sortgameBufNum = 0;
 
 
 
-int loadIcon0(const char *dirname, DXPPNG *png)
+int loadIcon0(const char *filePath, DXPPNG *png, int type)
 {
 	EBOOT_PBP_HEADER header;
 	DXPPNG_PARAMS param;
-	SceUID fd;
-	char path[256];
+	int rtn;
 	
-	strcpy(path, dirname);
-	//最後が'/'で終わるパスじゃないなら
-	if( path[strlen(path) - 1] != '/' ){
-		strcat(path ,"/EBOOT.PBP");
-	}else{
-		strcat(path ,"EBOOT.PBP");
-	}
-	
-	if( (fd = sceIoOpen(path, PSP_O_RDONLY, 0777)) < 0 ) return fd;
-	sceIoLseek(fd, 0, SEEK_SET);
-	sceIoRead(fd , &header, sizeof(header));
-	
-	param.srcLength = header.offsetOfIcon1Pmf - header.offsetOfIcon0Png;
+	if( type == FILE_TYPE_EBOOTPBPDIR ){
+		char path[256];
+		SceUID fd;
 
-	if( param.srcLength == 0 ){
-		sceIoClose(fd);
-		return 1;
-	}
+		strcpy(path, filePath);
+		//最後が'/'で終わるパスじゃないなら
+		if( path[strlen(path) - 1] != '/' ){
+			strcat(path ,"/EBOOT.PBP");
+		}else{
+			strcat(path ,"EBOOT.PBP");
+		}
+		
+		if( (fd = sceIoOpen(path, PSP_O_RDONLY, 0777)) < 0 ) return fd;
+		sceIoLseek(fd, 0, SEEK_SET);
+		sceIoRead(fd , &header, sizeof(header));
+		
+		param.srcLength = header.offsetOfIcon1Pmf - header.offsetOfIcon0Png;
+		
+		if( param.srcLength == 0 ){
+			sceIoClose(fd);
+			return 1;
+		}
+		
+		param.src = malloc(param.srcLength);
+		if( param.src == NULL ){
+			sceIoClose(fd);
+			return -1;
+		}
 	
-	param.src = malloc(param.srcLength);
-	if( param.src == NULL ){
+		sceIoLseek(fd, header.offsetOfIcon0Png, SEEK_SET);
+		sceIoRead(fd, param.src, param.srcLength);
+	
 		sceIoClose(fd);
+	}else if( type == FILE_TYPE_ISO || type == FILE_TYPE_CSO ){
+		int pos,size_pos,size;
+		if(
+		iso_get_file_info(&pos, &size, &size_pos, filePath, (type == FILE_TYPE_ISO)?TYPE_ISO:TYPE_CSO, "PSP_GAME/ICON0.PNG")
+		!= 0 ){
+			return -1;
+		}
+		param.srcLength = size;
+		param.src = malloc(param.srcLength);
+		
+		file_read(param.src, filePath, (type == FILE_TYPE_ISO)?TYPE_ISO:TYPE_CSO, pos, size);
+	}else{
 		return 2;
 	}
+
 	
-	sceIoLseek(fd, header.offsetOfIcon0Png, SEEK_SET);
-	sceIoRead(fd, param.src, param.srcLength);
-	
-	sceIoClose(fd);
 	
 	param.mode = DXPPNG_MODE_RAW;
 	
 	param.funcs.pfree = 0;
-	int rtn = dxppng_decode(&param, png);
+	rtn = dxppng_decode(&param, png);
 	
 	free(param.src);
 	
@@ -258,7 +285,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 				{
 					if( strncasecmp(&entry.d_name[num - 4], ".iso", 4) == 0 ){
 						dir[file_num].time = dir[file_num].stat.st_ctime;
-						dir[file_num].sort_type = 1;
+						dir[file_num].file_type = FILE_TYPE_ISO;
 						file_num++;
 						continue;
 					}
@@ -267,7 +294,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 				{
 					if( strncasecmp(&entry.d_name[num - 4], ".cso", 4) == 0 ){
 						dir[file_num].time = dir[file_num].stat.st_ctime;
-						dir[file_num].sort_type = 1;
+						dir[file_num].file_type = FILE_TYPE_CSO;
 						file_num++;
 						continue;
 					}
@@ -283,7 +310,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 						
 						if( exist_ebootpbp(dir[file_num].name) == 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
-							dir[file_num].sort_type = 0;
+							dir[file_num].file_type = FILE_TYPE_EBOOTPBPDIR;
 							file_num++;
 							continue;
 						}
@@ -293,7 +320,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 					{
 						if( strncasecmp(entry.d_name, "CAT_", 4) == 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
-							dir[file_num].sort_type = 0;
+							dir[file_num].file_type = FILE_TYPE_CATDIR;
 							file_num++;
 							continue;
 						}
@@ -303,7 +330,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 					{
 						if( exist_ebootpbp(dir[file_num].name) != 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
-							dir[file_num].sort_type = 0;
+							dir[file_num].file_type = FILE_TYPE_CATDIR;
 							file_num++;
 							continue;
 						}
@@ -319,6 +346,29 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 	return file_num;
 }
 
+void sortgame_move_dir_t_to_top(sortgame_dir_t *dir, int file_num, int target_num)
+{
+	int i;
+	sortgame_dir_t tmp;
+	for( i = target_num; i > 0; i-- ){
+		tmp = dir[i];
+		dir[i] = dir[i-1];
+		dir[i-1] = tmp;
+	}
+}
+
+void sortgame_move_dir_t_to_bottom(sortgame_dir_t *dir, int file_num, int target_num)
+{
+	int i;
+	sortgame_dir_t tmp;
+
+	for( i = target_num + 1; i < file_num; i++  ){
+		tmp = dir[i];
+		dir[i] = dir[i-1];
+		dir[i-1] = tmp;
+	}
+}
+
 void sortgame_run_sort( sortgame_dir_t *dir, int dirNum, char *rootPath ,int mode , bool isRemoveIsocache )
 {
 	int i = (mode == 0)?1:0;
@@ -331,6 +381,8 @@ void sortgame_run_sort( sortgame_dir_t *dir, int dirNum, char *rootPath ,int mod
 		sceIoRemove(removedFilePath);
 	}
 
+	if( mode == 2 ) sortgame_move_dir_t_to_top(dir, dirNum, dirNum-1);
+	
 	for( i++; i < dirNum; i++ )
 	{
 
@@ -363,9 +415,11 @@ void sortgame_run_sort( sortgame_dir_t *dir, int dirNum, char *rootPath ,int mod
 //		}
 
 
-
-		if( dir[i].sort_type == 0 ) dir[i].stat.st_mtime = time;
-		else dir[i].stat.st_ctime = time;
+		if( dir[i].file_type == FILE_TYPE_ISO ||  dir[i].file_type == FILE_TYPE_CSO ){
+			dir[i].stat.st_ctime = time;
+		}else{
+			dir[i].stat.st_mtime = time;
+		}
 		
 		sceIoChstat(dir[i].name, &dir[i].stat, (FIO_CST_CT | FIO_CST_MT));
 		
@@ -555,7 +609,7 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 			dirBuf[i].img.width = 0;
 			dirBuf[i].img.height = 0;
 			
-			if( loadIcon0(dirBuf[i].name, &pngtmp) == 0 ){//iconの読み込みに成功したら
+			if( loadIcon0(dirBuf[i].name, &pngtmp, dirBuf[i].file_type) == 0 ){//iconの読み込みに成功したら
 				dirBuf[i].img.width = pngtmp.widthN2 / 3;
 				dirBuf[i].img.height = pngtmp.heightN2 / 3;
 
@@ -565,7 +619,7 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 
 				free(pngtmp.raw);
 			}
-			libmPrint(100,22,BG_COLOR,FG_COLOR,gauge[i%4]);
+			libmPrintf(100,22,BG_COLOR,FG_COLOR,"%s(%02d)", gauge[i%4], i+1);
 
 		}
 	}
@@ -577,6 +631,7 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 	return file_num;
 
 }
+
 
 
 /*
@@ -605,22 +660,7 @@ if( (beforeButtons & (button) ) == (button) ){ \
 } \
 
 
-/*
-void sortgame_move_to_top()
-{
-	for( i = tmp; i > *now_arrow; i-- ){
-		swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
-	}
-}
 
-void sortgame_move_to_bottom()
-{
-	for( i = tmp; i < *now_arrow; i++ ){
-		swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i+1]);
-	}
-
-}
-*/
 
 
 
@@ -699,6 +739,8 @@ libmPrint(7 + 48 + 5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 9, FG_COLOR, BG_COLOR, 
 
 
 
+
+
 int sortgame_menu(void)
 {
 	wait_button_up(&padData);
@@ -710,7 +752,7 @@ int sortgame_menu(void)
 	bool firstFlag,editFlag;
 	char rootName[16];
 	char dirPath[128];
-	int mode = 0;// == 0 カテゴリリストを表示
+	int mode = 0;// == 0 カテゴリ表示モード / == 1 ゲーム表示モード / == 2 ゲーム表示モード(ただしcategories light仕様かつ一番上のカテゴリ内の場合)
 	
 
 	strcpy(rootName,rootPath);
@@ -758,6 +800,9 @@ LIST_UP:
 		file_num = sortgame_listup_category(dir, DIR_BUF_NUM, rootName, config.sortType );
 	}else{
 		file_num = sortgame_listup(dir, DIR_BUF_NUM, rootName, dirPath, config.sortType );
+		if( mode == 2 ){
+			sortgame_move_dir_t_to_bottom(dir, file_num, 0);
+		}
 	}
 	sortgameBufNum = file_num;
 
@@ -806,7 +851,7 @@ LIST_UP:
 							flag = 1;
 						}
 					}
-				}else{
+				}else{//pressed UP
 					if( now_arrow - 1 >= 0 ){
 						now_arrow--;
 					}else{
@@ -855,11 +900,11 @@ LIST_UP:
 
 				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
 
-
-				//if select [Uncategorize]
-				if( now_arrow+offset == 0 ) dirPath[0] = '\0';
+				if( now_arrow+offset == 0 ) dirPath[0] = '\0';//if select [Uncategorize]
 				else strcpy(dirPath, dir[now_arrow+offset].name);
-				mode = 1;
+				
+				if( (now_arrow + offset) == 1 && config.sortType & SORT_TYPE_CATEGORIZES_LIGHT ) mode = 2;
+				else mode = 1;
 				
 				wait_button_up(&padData);
 				goto LIST_UP;
@@ -869,7 +914,7 @@ LIST_UP:
 				if( beforeButtons & PSP_CTRL_LTRIGGER ) continue;
 				beforeButtons = PSP_CTRL_LTRIGGER;
 
-				if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 1 ){
+				if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode != 0 ){
 					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
 					mode = 0;
 				}else if( deviceModel == 4 ){//if device is 'go'
