@@ -38,6 +38,7 @@ enum {
 
 enum{
 	FILE_TYPE_EBOOTPBPDIR = 0,
+	FILE_TYPE_PARAMPBPDIR,
 	FILE_TYPE_ISO,
 	FILE_TYPE_CSO,
 	FILE_TYPE_CATDIR,
@@ -93,16 +94,19 @@ int loadIcon0(const char *filePath, DXPPNG *png, int type)
 	DXPPNG_PARAMS param;
 	int rtn;
 	
-	if( type == FILE_TYPE_EBOOTPBPDIR ){
+	if( type == FILE_TYPE_EBOOTPBPDIR || type== FILE_TYPE_PARAMPBPDIR){
 		char path[256];
 		SceUID fd;
 
 		strcpy(path, filePath);
 		//最後が'/'で終わるパスじゃないなら
 		if( path[strlen(path) - 1] != '/' ){
-			strcat(path ,"/EBOOT.PBP");
-		}else{
+			strcat(path ,"/");
+		}
+		if( type == FILE_TYPE_EBOOTPBPDIR ){
 			strcat(path ,"EBOOT.PBP");
+		}else{
+			strcat(path ,"PARAM.PBP");
 		}
 		
 		if( (fd = sceIoOpen(path, PSP_O_RDONLY, 0777)) < 0 ) return fd;
@@ -202,20 +206,12 @@ pathで指定されたフォルダにEBOOT.PBPが存在するか?
           == 0 存在する
           != 0 存在しない
 */
-int exist_ebootpbp(char *path)
+int is_ebootpbp_exist(char *path)
 {
 	char str[256];
 	int i;
 	SceIoStat stat;
 
-	/*
-	strcpy(str, dirName);
-	i = strlen(str);
-	if( str[i-1] != '/' ){
-		str[i] = '/';
-		str[i+1] = '\0';
-	}
-	*/
 	
 	strcpy(str, path);
 	i = strlen(str);
@@ -223,10 +219,27 @@ int exist_ebootpbp(char *path)
 		str[i] = '/';
 		str[i+1] = '\0';
 	}
-
 	strcat(str, "EBOOT.PBP");
 	
+	
+	return sceIoGetstat(str, &stat);
+}
 
+int is_parampbp_exist(char *path)
+{
+	char str[256];
+	int i;
+	SceIoStat stat;
+
+	
+	strcpy(str, path);
+	i = strlen(str);
+	if( str[i-1] != '/' ){
+		str[i] = '/';
+		str[i+1] = '\0';
+	}
+	strcat(str, "PARAM.PBP");
+	
 	
 	return sceIoGetstat(str, &stat);
 }
@@ -300,17 +313,22 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 					}
 				}
 			break;
-
-			case FIO_S_IFDIR://ディレクトリなら
+			//ディレクトリなら
+			case FIO_S_IFDIR:
+				// . ..は除く
 				if( (strcmp(&entry.d_name[0], ".") != 0) && (strcmp(&entry.d_name[0], "..") != 0) )
 				{
 					if( type & SORTGAME_FLAG_EBOOTDIR )
 					{
 						if( type & SORTGAME_FLAG_CATDIR && strncasecmp(entry.d_name, "CAT_", 4) == 0 ) continue;
-						
-						if( exist_ebootpbp(dir[file_num].name) == 0 ){
+						if( is_ebootpbp_exist(dir[file_num].name) == 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
 							dir[file_num].file_type = FILE_TYPE_EBOOTPBPDIR;
+							file_num++;
+							continue;
+						}else if( is_parampbp_exist(dir[file_num].name) == 0  ){
+							dir[file_num].time = dir[file_num].stat.st_mtime;
+							dir[file_num].file_type = FILE_TYPE_PARAMPBPDIR;
 							file_num++;
 							continue;
 						}
@@ -318,6 +336,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 
 					if( type & SORTGAME_FLAG_CATDIR )
 					{
+						//CAT_で始まるディレクトリなら
 						if( strncasecmp(entry.d_name, "CAT_", 4) == 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
 							dir[file_num].file_type = FILE_TYPE_CATDIR;
@@ -328,7 +347,8 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 					
 					if( type & SORTGAME_FLAG_CATDIR_2 )
 					{
-						if( exist_ebootpbp(dir[file_num].name) != 0 ){
+						//EBOOT.PBPもPARAM.PBPも存在しないディレクトリなら
+						if( is_ebootpbp_exist(dir[file_num].name) != 0 && is_parampbp_exist(dir[file_num].name) != 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
 							dir[file_num].file_type = FILE_TYPE_CATDIR;
 							file_num++;

@@ -21,13 +21,12 @@
 PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 
 
-
 /*------------------------------------------------------*/
 
 static int now_type = 0;//It means ... 0 : vsh.txt / 1 : game.txt / 2:pops.txt
 static struct pdataLine tmp_pdataLine;
 static int stop_flag;
-
+static int disable_suspend = 0;
 
 /*------------------------------------------------------*/
 
@@ -195,14 +194,16 @@ int pauseGameTest()
 #endif
 
 
-
-
+#define PSP_SYSEVENT_SUSPEND_QUERY 0x100 
 
 int Callback_Suspend(int ev_id, char *ev_name, void *param, int *result)
 {
 	// 返り値に 0 ではなく -1 を返すと、スリープを無効化できる
-	Kprintf("testTest");
-	return 0;
+	int ret = 0;
+	
+	if (ev_id == PSP_SYSEVENT_SUSPEND_QUERY && disable_suspend ) ret = -1;
+
+	return ret;
 }
 
 
@@ -368,8 +369,10 @@ int main_thread( SceSize arglen, void *argp )
 	if( config.usbConnect && usbState == 0 ){
 		while( stop_flag ){
 			if((padData.Buttons & config.bootKey) == config.bootKey){
+				disable_suspend = 1;
 				main_menu();
 				resumeThreads();
+				disable_suspend = 0;
 			}else if( usbState == 0 &&  (padData.Buttons & config.usbConnectKey) == config.usbConnectKey ){
 				USBActivate();
 				usbState = 1;
@@ -387,8 +390,10 @@ int main_thread( SceSize arglen, void *argp )
 #endif
 		while( stop_flag ){
 			if((padData.Buttons & config.bootKey) == config.bootKey){
+				disable_suspend = 1;
 				main_menu();
 				resumeThreads();
+				disable_suspend = 0;
 			}
 			
 			sceCtrlPeekBufferPositive( &padData, 1 );
