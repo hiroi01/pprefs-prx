@@ -57,10 +57,10 @@
 #define PPREFSMSG_SELECTBASEPATH "vsh.txt,game.txt,pops.txtがあるフォルダを指定してください"
 #define PPREFSMSG_CONFIG_SORTTYPE_ISOCSO "*.iso/*.csoファイルを含める?"
 #define PPREFSMSG_CONFIG_SORTTYPE_GAME150 "GAME150フォルダを含める?"
-#define PPREFSMSG_CONFIG_SORTTYPE_GAME500 "GAME500フォルダを含める?"
+#define PPREFSMSG_CONFIG_SORTTYPE_GAME5XX "GAME5XXフォルダを含める?"
 #define PPREFSMSG_CONFIG_SORTTYPE_TYPE "どのpluginを使っていますか?"
-#define PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST "使ってない","gamecategories","gamecategories light",NULL
-#define PPREFSMSG_CONFIG_SORTTYPE_NOTDISPLAY_ICON0 "アイコン表\示を無効にしますか?"
+#define PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST "使ってない","gamecategories","gamecategories light(FW6.20)","gamecategories light(FW6.3x)",NULL
+#define PPREFSMSG_CONFIG_SORTTYPE_NOTDISPLAY_ICON0 "アイコン表\示をしますか?"
 
 #define PPREFSMSG_THEOTHER "その他"
 

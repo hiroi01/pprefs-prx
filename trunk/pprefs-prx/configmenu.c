@@ -19,8 +19,10 @@ u32 selectSorttypeByuser()
 		rtn |= SORT_TYPE_NORMAL_LIST;
 	}else if( tmp == 1 ){
 		rtn |= SORT_TYPE_CATEGORIZES;
-	}else{
-		rtn |= SORT_TYPE_CATEGORIZES_LIGHT;
+	}else if( tmp == 2 ){
+		rtn |= SORT_TYPE_CATEGORIZES_LIGHT_620;
+	}else if( tmp == 3){
+		rtn |= SORT_TYPE_CATEGORIZES_LIGHT_63X;
 	}
 
 
@@ -30,10 +32,10 @@ u32 selectSorttypeByuser()
 	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_GAME150 ,yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
 		rtn |= SORT_TYPE_GAME150;
 	}
-	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_GAME500 ,yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
-		rtn |= SORT_TYPE_GAME500;
+	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_GAME5XX ,yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
+		rtn |= SORT_TYPE_GAME5XX;
 	}
-	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_NOTDISPLAY_ICON0, yesnoList, buttonData[buttonNum[0]].flag, 0 ) == 0 ){
+	if( pprefsMakeSelectBox(24,  40, PPREFSMSG_CONFIG_SORTTYPE_NOTDISPLAY_ICON0, yesnoList, buttonData[buttonNum[0]].flag, 0) == 1 ){
 		rtn |= SORT_TYPE_NOTDISPLAY_ICON0;
 	}
 
