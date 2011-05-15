@@ -15,7 +15,7 @@
 #define PPREFSMSG_MAINMENU_HOTOUSE "%s:Sel. hold%s:AllOFF/ON \x84:Menu \x87+\x80/\x82:Move L+R:ChangeDir"
 #define PPREFSMSG_MAINMENU_HOTOUSE_2 "SELECT:reload HOME:Save&Quit START:Save&RESTARTVSH"
 #define PPREFSMSG_MAINMENU_REPUSHSTART "re-press START\n,to RESTART VSH"
-#define PPREFSMSG_MAINMENU_RELOAD " reload(not saving)  Really? "
+#define PPREFSMSG_MAINMENU_RELOAD " Reload(withoutSaving)  Really? "
 
 #define PPREFSMSG_YESORNO "%s:YES %s:NO"
 #define PPREFSMSG_YESORNO_LIST "YES","NO",NULL
@@ -52,10 +52,10 @@
 #define PPREFSMSG_SELECTBASEPATH "select the folder that has vsh.txt,game.txt,pops.txt"
 #define PPREFSMSG_CONFIG_SORTTYPE_ISOCSO "include *.iso/*.cso files ?"
 #define PPREFSMSG_CONFIG_SORTTYPE_GAME150 "include GAME150 folder?"
-#define PPREFSMSG_CONFIG_SORTTYPE_GAME500 "include GAME500 folder?"
+#define PPREFSMSG_CONFIG_SORTTYPE_GAME5XX "include GAME5XX folder?"
 #define PPREFSMSG_CONFIG_SORTTYPE_TYPE "Which plugins are you using?"
-#define PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST "not using","gamecategories","gamecategories light",NULL
-#define PPREFSMSG_CONFIG_SORTTYPE_NOTDISPLAY_ICON0 "disable to display icon?"
+#define PPREFSMSG_CONFIG_SORTTYPE_TYPE_LIST "not using","gamecategories","gamecategories light(FW6.20)","gamecategories light(FW6.3x)",NULL
+#define PPREFSMSG_CONFIG_SORTTYPE_NOTDISPLAY_ICON0 "Display icon?"
 
 #define PPREFSMSG_THEOTHER "the other"
 

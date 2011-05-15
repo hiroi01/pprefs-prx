@@ -480,8 +480,8 @@ int sortgame_listup_category(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPat
 		file_num = sortgame_read_dir(getFullpath(path,rootPath,"ISO/"), dirBuf, file_num, dirBufNum, (type & SORT_TYPE_CATEGORIZES_LIGHT)?SORTGAME_FLAG_CATDIR_2:SORTGAME_FLAG_CATDIR);
 	if( type & SORT_TYPE_GAME150)
 		file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME150/"), dirBuf, file_num, dirBufNum, (type & SORT_TYPE_CATEGORIZES_LIGHT)?SORTGAME_FLAG_CATDIR_2:SORTGAME_FLAG_CATDIR);
-	if( type & SORT_TYPE_GAME500)
-		file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME500/"), dirBuf, file_num, dirBufNum, (type & SORT_TYPE_CATEGORIZES_LIGHT)?SORTGAME_FLAG_CATDIR_2:SORTGAME_FLAG_CATDIR);
+	if( type & SORT_TYPE_GAME5XX)
+		file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME5XX/"), dirBuf, file_num, dirBufNum, (type & SORT_TYPE_CATEGORIZES_LIGHT)?SORTGAME_FLAG_CATDIR_2:SORTGAME_FLAG_CATDIR);
 
 	qsort(dirBuf, file_num, sizeof(sortgame_dir_t), gamesort_compare);
 	
@@ -583,8 +583,8 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 			file_num = sortgame_read_dir(getFullpath(path,rootPath,"ISO/"), dirBuf, file_num, dirBufNum, (SORTGAME_FLAG_ISO|SORTGAME_FLAG_CSO) );
 		if( type & SORT_TYPE_GAME150 )
 			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME150/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag );
-		if( type & SORT_TYPE_GAME500 )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME500/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag);
+		if( type & SORT_TYPE_GAME5XX )
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME5XX/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag);
 	}else{
 		strcpy(path,exPath);
 		len = strlen(path);
@@ -772,7 +772,7 @@ int sortgame_menu(void)
 	bool firstFlag,editFlag;
 	char rootName[16];
 	char dirPath[128];
-	int mode = 0;// == 0 カテゴリ表示モード / == 1 ゲーム表示モード / == 2 ゲーム表示モード(ただしcategories light仕様かつ一番上のカテゴリ内の場合)
+	int mode = 0;// == 0 カテゴリ表示モード / == 1 ゲームリスト表示モード / == 2 ゲーム表示モード(ただしcategories light for 6.3x使用時 && 一番上のカテゴリ内の場合)
 	
 
 	strcpy(rootName,rootPath);
@@ -849,7 +849,7 @@ LIST_UP:
 		libmPrint(20,22,BG_COLOR,FG_COLOR,PPREFSMSG_SORTGAME_TITLE);
 		libmFillRect(0 , 254 , 480 , 272 ,BG_COLOR);
 		libmPrintf(0,264,EX_COLOR ,BG_COLOR,PPREFSMSG_SORTGAME_HOWTOUSE,buttonData[buttonNum[0]].name);
-
+		
 		while(1){
 			get_button(&padData);
 			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) )
@@ -916,15 +916,13 @@ LIST_UP:
 
 			}
 			else if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 0 && padData.Buttons & (buttonData[buttonNum[0]].flag|PSP_CTRL_RTRIGGER) )
-			{
-
+			{// using categories plugin && mode == displaying categories && pressed RTRIGGER or EnterButton
 				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
 
-				if( now_arrow+offset == 0 ) dirPath[0] = '\0';//if select [Uncategorize]
+				if( now_arrow+offset == 0 ) dirPath[0] = '\0';//if [Uncategorize] is selected
 				else strcpy(dirPath, dir[now_arrow+offset].name);
 				
-				if( (now_arrow + offset) == 1 && config.sortType & SORT_TYPE_CATEGORIZES_LIGHT ) mode = 2;
-				else mode = 1;
+				mode = ( ((now_arrow + offset) == 1)&&(config.sortType & SORT_TYPE_CATEGORIZES_LIGHT_63X) )? 2 : 1;
 				
 				wait_button_up(&padData);
 				goto LIST_UP;
