@@ -3,6 +3,8 @@
 // ヘッダー
 #include <pspthreadman.h>
 #include "thread.h"
+#include <stdbool.h>
+#include "nidresolve.h"
 
 // グローバル変数
 static int first_th[MAX_THREAD];
@@ -10,6 +12,49 @@ static int first_count;
 
 static int current_th[MAX_THREAD];
 static int current_count;
+
+static bool threadsState = false;// == ture : suspend / == false : resume
+
+static clock_t safelySuspendTime;
+
+
+
+
+
+void safelySuspendThreadsInit()
+{
+	safelySuspendTime = sceKernelLibcClock();
+}
+
+int safelySuspendThreads( clock_t waitTime )
+{
+	if( ! threadsState ){
+		if( (sceKernelLibcClock() - safelySuspendTime) >= waitTime ){
+//			Suspend_Resume_Threads(SUSPEND_MODE);
+			suspendThreads();
+			return 1;
+		}
+		return -1;
+	}
+	
+	return 0;
+}
+
+void suspendThreads()
+{
+	if( ! threadsState ){
+		Suspend_Resume_Threads(SUSPEND_MODE);
+		threadsState = true;
+	}	
+}
+
+void resumeThreads()
+{
+	if( threadsState ){
+		Suspend_Resume_Threads(RESUME_MODE);
+		threadsState = false;
+	}
+}
 
 // 関数
 void Get_FirstThreads()

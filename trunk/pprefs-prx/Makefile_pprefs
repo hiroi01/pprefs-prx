@@ -23,6 +23,7 @@ OBJS =	\
 	iso.o \
 	ciso.o \
 	sortgame.o \
+	backupmenu.o \
 	syslibc/syslibc.o \
 	syslibc/strncasecmp.o \
 	syslibc/qsort.o \

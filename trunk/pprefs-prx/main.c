@@ -14,6 +14,7 @@
 #include "editpergame.h"
 #include "usb.h"
 #include "sortgame.h"
+#include "backupmenu.h"
 #include "common.h"
 
 
@@ -23,7 +24,7 @@ PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
 
 /*------------------------------------------------------*/
 
-static int now_type = 0;//It means ... 0 : vsh.txt / 1 : game.txt / 2:pops.txt
+static int now_type = 0;//This means ... 0 : vsh.txt / 1 : game.txt / 2:pops.txt
 static struct pdataLine tmp_pdataLine;
 static int stop_flag;
 static int disable_suspend = 0;
@@ -283,6 +284,8 @@ int main_thread( SceSize arglen, void *argp )
 	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//6
 	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//7
 	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//8
+	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//9
+	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//10
 #else
 	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
 	INI_Add_Bool(conf, "BootMessage", &config.bootMessage, true );//1
@@ -294,10 +297,12 @@ int main_thread( SceSize arglen, void *argp )
 	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//7
 	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//8
 	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//9
-	INI_Add_Bool(conf, "UsbConnect", &config.usbConnect, false );//10
-	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//11
-	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//12
-	INI_Add_Hex(conf, "SortType", &config.sortType, 0, NULL);//13
+	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//10
+	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//11
+	INI_Add_Bool(conf, "UsbConnect", &config.usbConnect, false );//12
+	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//13
+	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//14
+	INI_Add_Hex(conf, "SortType", &config.sortType, 0, NULL);//15
 #endif
 
 	INI_Read_Conf(iniPath, conf);
@@ -405,6 +410,7 @@ int main_thread( SceSize arglen, void *argp )
 }
 
 
+#define printEditedMark() libmPrint(63 , 24 , BG_COLOR , FG_COLOR,"*")
 
 /*
 
@@ -446,14 +452,22 @@ int sub_menu(int currentSelected,int position){
 	}else if( now_arrow == 1 ){
 		removeAnItem(now_type,currentSelected);
 		pdata[now_type].edit = true;
-	//設定
+	//backup
 	}else if( now_arrow == 2 ){
+		if( confirm_save() == 0 ){
+			if( backupmenu(config.basePath, &now_type) != 0 ){
+				pdata[now_type].edit = true;
+				printEditedMark();
+			}
+		}
+	//設定
+	}else if( now_arrow == 3 ){
 		if( confirm_save() == 0 ){
 			config_menu();
 			readSepluginsText(3,false,config.basePath);//re-read vsh.txt game.txt pops.txt
 		}
 	//COPY ME
-	}else if( now_arrow == 3 ){
+	}else if( now_arrow == 4 ){
 		int tmp = copyMeProcess();
 		if( tmp < 0 ){
 			makeWindow(
@@ -524,9 +538,14 @@ int sub_menu(int currentSelected,int position){
 	}else if( now_arrow == 1 ){
 		removeAnItem(now_type,currentSelected);
 		pdata[now_type].edit = true;
-	//pergame編集
+	//backup menu
 	}else if( now_arrow == 2 ){
-		editPergameMenu();
+		if( confirm_save() == 0 ){
+			if( backupmenu(config.basePath, &now_type) != 0 ){
+				pdata[now_type].edit = true;
+				printEditedMark();
+			}
+		}
 	//SORT GAME
 	}else if( now_arrow == 3 ){
 		sortgame_menu();
@@ -536,8 +555,11 @@ int sub_menu(int currentSelected,int position){
 			config_menu();
 			readSepluginsText(3,false,config.basePath);//re-read vsh.txt game.txt pops.txt
 		}
-	//COPY ME or omake
+	//pergame編集
 	}else if( now_arrow == 5 ){
+		editPergameMenu();
+	//not GO -> COPY ME  / is GO -> omake
+	}else if( now_arrow == 6 ){
 		if(deviceModel == 4 ){
 			if(  hitobashiraFlag ){
 				pauseGameTest();
@@ -560,8 +582,8 @@ int sub_menu(int currentSelected,int position){
 			}
 			if( tmp !=  1 ) readSepluginsText(3,true,config.basePath);
 		}
-	//REMOVE
-	}else if( now_arrow == 6 ){
+	//REMOVER
+	}else if( now_arrow == 7 ){
 
 		fileManager(config.basePath, "rm FILE", 0, NULL);
 	}
@@ -584,14 +606,18 @@ int sub_menu(int currentSelected,int position){
 
 
 
-#define printEditedMark() libmPrint(63 , 24 , BG_COLOR , FG_COLOR,"*")
+
 
 #define printALine(start_y, lineNumber, fgColor) \
 { \
+	if( pdata[now_type].line[lineNumber].toggle ){ \
+		libmPrint(15, 38 + (start_y)*(LIBM_CHAR_HEIGHT+2) ,ON_COLOR, BG_COLOR, "[O N]"); \
+	}else{ \
+		libmPrint(15, 38 + (start_y)*(LIBM_CHAR_HEIGHT+2) ,OF_COLOR, BG_COLOR, "[OFF]"); \
+	} \
 	libmPrintf( \
-		15, 38 + (start_y)*(LIBM_CHAR_HEIGHT+2) ,fgColor, BG_COLOR, \
-		"[%s] %s", \
-		pdata[now_type].line[lineNumber].toggle?"O N":"OFF", pdata[now_type].line[lineNumber].print \
+		15 + (LIBM_CHAR_WIDTH*5 + 4), 38 + (start_y)*(LIBM_CHAR_HEIGHT+2) ,fgColor, BG_COLOR, \
+		"%s", pdata[now_type].line[lineNumber].print \
 	); \
 }
 
@@ -758,9 +784,9 @@ void main_menu(void)
 
 		if( hitobashiraFlag ) libmPrint(416,10,FG_COLOR,BG_COLOR,(hitobashiraFlag == 1)?PPREFSMSG_HITOBASHIRA:PPREFSMSG_HITOBASHIRA_2);
 		else libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
-		
-		libmPrintf(0,254,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE,buttonData[buttonNum[0]].name,buttonData[buttonNum[1]].name);
-		libmPrintf(0,264,EX_COLOR ,BG_COLOR,PPREFSMSG_MAINMENU_HOTOUSE_2);
+
+		libmPrintf(0, 254, EX_COLOR, BG_COLOR, PPREFSMSG_MAINMENU_HOTOUSE,buttonData[buttonNum[0]].name,buttonData[buttonNum[1]].name);
+		libmPrintf(0, 264, EX_COLOR, BG_COLOR, PPREFSMSG_MAINMENU_HOTOUSE_2);
 
 		libmPrintf(15,24,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",getSepluginsTextName(commonBuf,config.basePath,now_type));
 		if( pdata[now_type].edit ) printEditedMark();
@@ -810,8 +836,6 @@ void main_menu(void)
 				}
 				
 				if( tmp > 0 ) break;
-
-
 			}
 			else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && pdata[now_type].num > 0 )
 			{
@@ -863,7 +887,7 @@ void main_menu(void)
 			{
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == PSP_CTRL_RTRIGGER ) continue;
 				beforeButtons = PSP_CTRL_RTRIGGER;
-
+				
 				if( now_type == 0 ) now_type = 1;
 				else if( now_type == 1 ) now_type = 2;
 				else if( now_type == 2 ) now_type = 0;
@@ -877,7 +901,7 @@ void main_menu(void)
 			{
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == PSP_CTRL_LTRIGGER ) continue;
 				beforeButtons = PSP_CTRL_LTRIGGER;
-
+				
 				if( now_type == 0 ) now_type = 2;
 				else if( now_type == 1 ) now_type = 0;
 				else if( now_type == 2 ) now_type = 1;
@@ -891,7 +915,7 @@ void main_menu(void)
 			{
 				if( beforeButtons & PSP_CTRL_TRIANGLE ) continue;
 				beforeButtons = PSP_CTRL_TRIANGLE;
-
+				
 				suspendThreads();
 				tmp = sub_menu(now_arrow,( now_arrow < 10 )?148:46);
 				if( tmp == 0 ){
@@ -972,8 +996,8 @@ void main_menu(void)
 
 				if( pdata[0].edit || pdata[1].edit || pdata[2].edit ){
 					char *menu[] = { PPREFSMSG_YESORNO_LIST };
-						
-					i = pprefsMakeSelectBox(24, 70, PPREFSMSG_MAINMENU_RELOAD,menu, buttonData[buttonNum[0]].flag, 1 );
+					
+					i = pprefsMakeSelectBox(24, 70, PPREFSMSG_MAINMENU_RELOAD,menu, buttonData[buttonNum[0]].flag, 1);
 					
 					if ( i == 0 ){
 						readSepluginsText(3,false,config.basePath);

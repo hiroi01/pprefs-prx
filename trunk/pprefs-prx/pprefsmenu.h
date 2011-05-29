@@ -10,28 +10,29 @@
 #define BG_COLOR config.color1
 #define SL_COLOR config.color2
 #define EX_COLOR config.color3
-
-#define ON_COLOR WHITE
-#define OF_COLOR GRAY
+#define ON_COLOR config.color4
+#define OF_COLOR config.color5
 
 #define FG_COLOR_DEFAULT WHITE
 #define BG_COLOR_DEFAULT BLACK
 #define SL_COLOR_DEFAULT RED
 #define EX_COLOR_DEFAULT SILVER
+#define ON_COLOR_DEFAULT WHITE
+#define OF_COLOR_DEFAULT GRAY
 
 
 #ifdef PPREFS_LITE
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs lite Ver. 1.010    by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs lite Ver. 1.020     by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 #else
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.112beta2    by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.120     by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 #endif

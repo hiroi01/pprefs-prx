@@ -1,7 +1,6 @@
 /*
 	
-	ありがとう、
-	maxemさん、plumさん、takkaさん(アルファベット順)
+	thank you  maxem, plum, takka
 
 */
 
@@ -50,7 +49,7 @@ const char *lineFeedCode[] = { "\r\n", "\n", "\r"};
 SceCtrlData padData;
 
 
-//buttonNum buttonDataは,ボタン入れ替えに使う
+//buttonNum buttonDataは,ボタンの役割入れ替えのためのもの
 //buttonNumの数字を入れ替えれば役割も入れ替わる
 //
 //e.g. 1)
@@ -67,7 +66,7 @@ char ownPath[256];
 
 int now_type = 0;
 
-bool now_state = false; // = true suspending   = false no suspending
+bool suspend_state = false; // = true suspending   = false no suspending
 
 bool hitobashiraFlag = false;
 
@@ -97,7 +96,6 @@ enum
 	TAIL_IS_EOF			= 4,
 	TAIL_IS_N			= 8,
 	ERROR_TOOBIG		= 16,
-	USE_MOREBUF			= 32,
 };
 
 /*-----------------------------------------------------*/
@@ -107,11 +105,11 @@ int stop_flag;
 
 char ptxtBuf_stack[PTXTBUF_SIZE];
 char *ptxtBuf = ptxtBuf_stack;
-char *ptxtBuf_more = NULL;
+
 
 int ptxt_headOffset = 0;
 int ptxt_readSize = 0;
-int ptxt_readSize_more = 0;
+
 
 
 
@@ -187,7 +185,7 @@ int getOffsetOfPreviousLine(char *str,int offset)
 
 
 //1文字描画
-int pprefsPutChar( int x, int y, u32 fg, u32 bg, const char *str )
+int ptextPutChar( int x, int y, u32 fg, u32 bg, const char *str )
 {
 	int ret;
 	char tmp[3] = { str[0], 0, '\0' };
@@ -203,42 +201,36 @@ int pprefsPutChar( int x, int y, u32 fg, u32 bg, const char *str )
 	return ret;
 }
 
+#define printText(headOffset, end_y) printText_(headOffset, end_y, 1)
+#define noPrintText(headOffset, end_y) printText_(headOffset, end_y, 0)
 
-u16  printText( int headOffset,  int end_y)
+
+u16  printText_(int headOffset, int end_y, int printFlag)
 {
-	int i,x_count = 0,y_count = 0,ret = 0;
-	char *pergameBuf;
-	if( headOffset >= ptxt_readSize ){
-		if( ptxtBuf_more == NULL ) return ERROR_TOOBIG;
-
-		pergameBuf = ptxtBuf_more;
-		i = headOffset - ptxt_readSize;
-	}else{
-		pergameBuf = ptxtBuf;
-		i = headOffset;
-	}
+	int i, x_count = 0, y_count = 0, ret = 0;
+	char *buf;
 	
-	for( ; ; i++ ){
-		if( pergameBuf[i] == '\0' ){
-			if( pergameBuf == ptxtBuf && ptxtBuf_more != NULL ){
-				pergameBuf = ptxtBuf_more;
-				i = 0;
-				ret |= USE_MOREBUF;
-			}else{
-				ret |= TAIL_IS_EOF;
-				break;
-			}
+	buf = ptxtBuf;
+	i = headOffset;
+	while{
+		if( buf[i] == '\0' ){
+			ret |= TAIL_IS_EOF;
+			break;
 		}
 		
-		if( pergameBuf[i] == '\n' ){
+		if( buf[i] == '\n' ){
 			x_count = 0;
 			y_count++;
 			if( y_count >= end_y ) break;
+			
 			continue;
 		}
 		
-		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,19+LIBM_CHAR_HEIGHT*y_count ,FG_COLOR, BG_COLOR, &pergameBuf[i])
-		   == 1 ) i++; //2byte文字なら
+		//display a character
+		if( printFlag )
+			ptextPutChar(LIBM_CHAR_WIDTH*x_count ,19+LIBM_CHAR_HEIGHT*y_count ,FG_COLOR, BG_COLOR, &buf[i]);
+		//if 2byte character
+		if( jms1(buf[i] ) i++;
 		
 		x_count++;
 		if( x_count >= MAXDISPLAY_X ){
@@ -246,88 +238,17 @@ u16  printText( int headOffset,  int end_y)
 			y_count++;
 			if( y_count >= end_y ) break;
 		}
+		
+		i++;
 	}
 	
-	if( pergameBuf[i] == '\n' ) ret |= TAIL_IS_N;
+	if( buf[i] == '\n' ) ret |= TAIL_IS_N;
 	
 	return ret;
 }
 
-//buf, bufの始まりの位置, 始まりの行数, 現在の選択されている行数, yの最大数
-u16  noPrintText( int headOffset,  int end_y)
-{
-	int i,x_count = 0,y_count = 0,ret = 0;
-	char *pergameBuf;
-	if( headOffset >= ptxt_readSize ){
-		if( ptxtBuf_more == NULL ) return ERROR_TOOBIG;
 
-		pergameBuf = ptxtBuf_more;
-		i = headOffset - ptxt_readSize;
-	}else{
-		pergameBuf = ptxtBuf;
-		i = headOffset;
-	}
-	
-	for( ; ; i++ ){
-		if( pergameBuf[i] == '\0' ){
-			if( pergameBuf == ptxtBuf && ptxtBuf_more != NULL ){
-				pergameBuf = ptxtBuf_more;
-				i = 0;
-			}else{
-				ret |= TAIL_IS_EOF;
-				break;
-			}
-		}
-		
-		if( pergameBuf[i] == '\n' ){
-			x_count = 0;
-			y_count++;
-			if( y_count >= end_y ) break;
-			continue;
-		}
-		
-//		if( pprefsPutChar(LIBM_CHAR_WIDTH*x_count ,19+LIBM_CHAR_HEIGHT*y_count ,FG_COLOR, BG_COLOR, &pergameBuf[i])
-//		   == 1 ) i++; //2byte文字なら
-		if( jms1(pergameBuf[i]) ) i++;
-		
-		x_count++;
-		if( x_count >= MAXDISPLAY_X ){
-			x_count = 0;
-			y_count++;
-			if( y_count >= end_y ) break;
-		}
-	}
-	
-	if( pergameBuf[i] == '\n' ) ret |= TAIL_IS_N;
-	
-	return ret;
-}
 
-//start = 行の先頭のオフセット
-//指定された行を削除
-void deleteLineOfString(char *str,int start)
-{
-	int i;
-	int flag = 1;
-	
-	while( flag != 0 ){
-		if( str[start] == '\n' ||  str[start] == '\0' ) flag = 0;
-		for( i = start; str[i] != '\0'; i++ ) str[i] = str[i+1]; //1文字詰める
-	}
-}
-
-//渡された行のコメントアウトを入れ替え
-void changeHeadChar(char *str, int start,char c, int maxSize)
-{
-	int i;
-	if( str[start] == c ){
-		for( i = start; str[i] != '\0'; i++ ) str[i] = str[i+1]; //1文字詰める
-	}else{
-		if( start+1 >= maxSize ) return;
-		for( i = strlen(str); i >= start; i-- ) str[i+1] = str[i];//1文字右にシフト
-		str[start] = c;
-	}
-}
 
 /*
  shiftというよりswapな気がする
@@ -358,6 +279,7 @@ void rightShiftChar(char *str, int start, int num)
 
 //不正な文字列を渡すとどうなるか分からない
 //str = "abcdefg\nhijklmn\nopqrstu\0" のようなタイプの文字列の行を入れ替える
+//
 void swapLineOfString(char *str, int first, int second)
 {
 	char tmp;
@@ -441,7 +363,7 @@ char currentPath[256];
 //in file.c
 extern const char dir_type_sort_default[];
 
-int now_display_flag = 0;
+int display_state = 0;
 
 clock_t safely_suspend_time;
 
@@ -476,16 +398,8 @@ if( (before & (flag)) == (flag) ){ \
 } \
 
 
-#define SAFELY_SUSPEND() \
-if( ! now_state ){ \
-	if( (sceKernelLibcClock() - safely_suspend_time) >= (5 * 100 * 1000) ){ \
-		SUSPEND_THREADS(); \
-	} \
-} \
 
 
-#define SAFELY_SUSPEND_INIT() \
-safely_suspend_time = sceKernelLibcClock(); \
 
 
 /*---------------------------------------------------------------------------*/
@@ -512,20 +426,17 @@ void selectStrage(char *path)
 	char *menu_go[] = { 
 		"ms0:/",
 		"ef0:/",
-		"fatms0:/",
 		"disk0:/",
 		NULL
 	};
 	char *menu_go_hitobashira[] = { 
 		"ms0:/",
 		"ef0:/",
-		"fatms0:/",
 		"disk0:/",
 		"flash0:/",
 		"flash1:/",
 		"flash2:/",
 		"flash3:/",
-		"eh0:/",
 		"isofs0:/",
 		NULL
 	};
@@ -545,8 +456,6 @@ void selectStrage(char *path)
 		 */
 		menu[0][0] = 'm';
 		menu[0][1] = 's';
-		menu[2][3] = 'm';
-		menu[2][4] = 's';
 	}else{
 		if( hitobashiraFlag ){
 			menu = menu_fat_hitobashira;
@@ -577,7 +486,7 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 
 	DIR_PRINT();
 	
-	SAFELY_SUSPEND_INIT();
+	safelySuspendThreadsInit();
 	while(1){
 
 
@@ -595,7 +504,7 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 		
 		//ボタンgetと処理
 		while(1){
-			SAFELY_SUSPEND();
+			safelySuspendThreads(5 * 100 * 1000);
 			
 			get_button(&padData);
 			
@@ -703,30 +612,18 @@ int main_menu()
 	libmClearBuffers();
 	libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); 
 
-	/*
-	//バッファ確保
-	if( ptxtBuf == NULL ){
-		ptxtBuf = malloc(PTXTBUF_SIZE);
-		if( ptxtBuf == NULL ) return -1;
-	}
-	*/
-
 
 
 	while(1){
 		
 		//ファイルセレクト
-		if( now_display_flag == 0){
-			if( ptxtBuf_more != NULL ){
-				free(ptxtBuf_more);
-				ptxtBuf_more = NULL;
-			}
+		if( display_state == 0){
 
-			if( fileSelecter(config.startPath, &now_open_file, PTXTMSG_SELECTER_TITLE, 0) != 0 ){
+			if( fileSelecter(config.startPath, &now_open_file, PTXTMSG_SELECTER_TITLE, 0) != 0 ){//not select
 				return 0;
 			}
 
-			SUSPEND_THREADS();
+			safelySuspendThreads(5 * 100 * 1000);
 			
 			sceIoGetstat(now_open_file.name, &stat);
 			fd = sceIoOpen(now_open_file.name, PSP_O_RDONLY, 0777);
@@ -735,16 +632,6 @@ int main_menu()
 			}
 			
 			ptxt_readSize = sceIoRead(fd, ptxtBuf, PTXTBUF_SIZE - 1);
-			if( ptxt_readSize == PTXTBUF_SIZE - 1){
-				if( ptxtBuf_more == NULL ){
-					ptxtBuf_more = malloc(stat.st_size - ptxt_readSize + 1);
-					if( ptxtBuf_more == NULL ) return -1;
-				}
-				
-				ptxt_readSize_more = sceIoRead(fd, ptxtBuf_more, stat.st_size - ptxt_readSize );
-				ptxtBuf_more[ptxt_readSize_more] = '\0';
-				ptxt_readSize_more = remove_r(ptxtBuf_more);
-			}
 
 			ptxtBuf[ptxt_readSize] = '\0';
 			ptxt_readSize = remove_r(ptxtBuf);
@@ -755,7 +642,7 @@ int main_menu()
 			}
 			
 			ptxt_headOffset = 0;
-			now_display_flag = 1;
+			display_state = 1;
 		}
 		
 		
@@ -769,17 +656,17 @@ int main_menu()
 		
 		beforeButtons = 0;
 		timesec = 0;
-		SAFELY_SUSPEND_INIT();
+		safelySuspendThreadsInit();
 		while(1){
 			
 			libmFillRect( 0 , 17 , 480 , 261 , BG_COLOR); 
 			printState = printText( ptxt_headOffset, MAXDISPLAY_Y );
-			libmPrintf(0, 264, FG_COLOR,BG_COLOR, "readSize:%d readSize_more:%d moreIs:%s usemoreIs:%s  ",ptxt_readSize,ptxt_readSize_more,ptxtBuf_more?"true":"NULL",(printState & USE_MOREBUF)?"true":"false"  );
+			libmPrintf(0, 264, FG_COLOR,BG_COLOR, "readSize:%d",ptxt_readSize);
 
 			
 			if( beforeButtons == 0 ) wait_button_up(&padData);
 			while(1){
-				SAFELY_SUSPEND();
+				safelySuspendThreads(5 * 100 * 1000);
 		
 				get_button(&padData);
 		
@@ -831,7 +718,7 @@ int main_menu()
 				else if( padData.Buttons & buttonData[buttonNum[1]].flag )
 				{
 					wait_button_up(&padData);
-					now_display_flag = 0;
+					display_state = 0;
 					break;
 				}
 				else if( padData.Buttons & PSP_CTRL_HOME )
@@ -867,7 +754,7 @@ int main_menu()
 				}
 				
 			}
-			if( now_display_flag == 0 ) break;
+			if( display_state == 0 ) break;
 	}
 
 	}
