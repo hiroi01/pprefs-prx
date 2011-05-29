@@ -26,6 +26,8 @@ OBJS	+=	./Draw/libmGetColor.o
 OBJS	+=	./Draw/libmGetCurVInfo.o
 OBJS	+=	./Draw/libmSetCurVInfo.o
 
+OBJS	+=	./Draw/libmPrintXYEnlargement.o
+
 INCDIR		= 
 CFLAGS 		= -O3 -G0 -Wall
 CXXFLAGS 	= $(CFLAGS) -fno-exceptions -fno-rtti

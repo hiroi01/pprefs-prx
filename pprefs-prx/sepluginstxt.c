@@ -162,21 +162,27 @@ int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 
 	if( 0 <= ptype &&  ptype <= 2 ){
 		type = ptype;
-		loopend = ptype + 1;
+		loopend = type + 1;
 	}else if( ptype == 3 ){
 		type = 0;
 		loopend = 3;
 	}else{
-		 return -1;
+		type = 0;
+		loopend = 1;
 	}
 	
 //	checkMs();
 	
 	for( ; type < loopend; type++){
 		pdata[type].edit = false;
+
 		
-		strcpy(path, basePath);
-		strcat(path, textFileName[type]);
+		if( ptype > 3 ){
+			strcpy(path, basePath);
+		}else{
+			strcpy(path, basePath);
+			strcat(path, textFileName[type]);
+		}
 
 		if( sceIoGetstat(path, &stat) < 0 ){//ƒtƒ@ƒCƒ‹‚ª‘¶Ý‚µ‚È‚¢
 			pdata[type].exist = false;
@@ -238,3 +244,4 @@ int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 	}
 	return ret;
 }
+

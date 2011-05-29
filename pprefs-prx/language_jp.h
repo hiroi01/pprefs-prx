@@ -64,6 +64,10 @@
 
 #define PPREFSMSG_THEOTHER "その他"
 
+#define PPREFSMSG_BACKUPMENU {"ロード","セーブ",NULL}
+#define PPREFSMSG_BACKUPMENU_HOWOTOUSE "%s:選択 HOME:やめる [R]/[L]Textの種類切り替え"
+#define PPREFSMSG_BACKUPMENU_NOTEXITST "ファイルが存在しません"
+
 #define PPREFSMSG_HITOBASHIRA "人柱"
 #define PPREFSMSG_HITOBASHIRA_2 "人柱2"
 
@@ -72,8 +76,8 @@
 /*--------------------------------------*/
 
 #define PPREFSMSG_SUBMENU_TITLE " メニュー "
-#define PPREFSMSG_SUBMENU_LIST "追記","削除","設定","COPY ME",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO "追記","削除","設定",NULL
+#define PPREFSMSG_SUBMENU_LIST "追記","削除","バックアップ","設定","COPY ME",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO "追記","削除","バックアップ","設定",NULL
 
 #define PPREFSMSG_CONFIGMENU_WHATISTHIS \
 "pprefsを起動させるボタンの指定", \
@@ -84,7 +88,9 @@
 "通常の文字色", \
 "背景の色", \
 "選択された文字色", \
-"下に表\示される説明の文字色", 
+"下に表\示される説明の文字色", \
+"[ON]の色", \
+"[OFF]の色", \
 
 /*--------------------------------------*/
 #else
@@ -93,10 +99,10 @@
 #define PPREFSMSG_BOOTMESSAGE " pprefs 起動準備完了! / 起動ボタン:"
 
 #define PPREFSMSG_SUBMENU_TITLE "メニュー"
-#define PPREFSMSG_SUBMENU_LIST "追記","削除","pergame編集","SORT GAMEβ","設定","COPY ME",NULL
-#define PPREFSMSG_SUBMENU_LIST_HITOBASHIRA "追記","削除","pergame編集","SORT GAMEβ","設定","COPY ME","rm FILE",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO "追記","削除","pergame編集","SORT GAMEβ","設定",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "追記","削除","pergame編集","SORT GAMEβ","設定","中断ゲームファイル弄る","rm FILE",NULL
+#define PPREFSMSG_SUBMENU_LIST					"追記","削除","バックアップ","SORT GAME","設定","pergame編集","COPY ME",NULL
+#define PPREFSMSG_SUBMENU_LIST_HITOBASHIRA		"追記","削除","バックアップ","SORT GAME","設定","pergame編集","COPY ME","remove FILE",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO				"追記","削除","バックアップ","SORT GAME","設定","pergame編集",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA	"追記","削除","バックアップ","SORT GAME","設定","pergame編集","中断ゲームファイル弄る","remove FILE",NULL
 
 #define PPREFSMSG_EDITPERGAME_SELECTPRX "プラグインを選択してね"
 #define PPREFSMSG_EDITPERGAME_SELECTGAME "ゲームを選択してね"
@@ -116,6 +122,8 @@
 "背景の色", \
 "選択された文字色", \
 "下に表\示される説明の文字色", \
+"[ON]の色", \
+"[OFF]の色", \
 "USB接続機能\βを true→有効 false→無効 ※この機能\は5.XX専用\nテスト実装なのでいくつか問題がある 有効無効を切り替えたら本体(VSH)を再起動が必要", \
 "USB接続ボタン(USB切断ボタンと同じでもOK)", \
 "USB切断ボタン(USB接続ボタンと同じでもOK)", \
@@ -125,7 +133,7 @@
 
 #define PPREFSMSG_SORTGAME_SAVE " 保存しますか? "
 #define PPREFSMSG_SORTGAME_HOWTOUSE "□+↑/↓:並び替え HOME:終了 START:保存 SELECT:編集破棄&リロード %s/R:開く L:戻る"
-#define PPREFSMSG_SORTGAME_TITLE "SORT GAMEβ 並び替えたらRESTART VSHして下さい(キャッシュをクリアするため)"
+#define PPREFSMSG_SORTGAME_TITLE "SORT GAME 並び替えたらRESTART VSHして下さい(キャッシュをクリアするため)"
 #define PPREFSMSG_SORTGAME_PLEASECONFIG "\"設定\"でSortTypeの設定を行ってください"
 
 #endif

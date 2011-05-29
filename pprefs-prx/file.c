@@ -363,7 +363,7 @@ int ms_write_apend(const void* buf, const char* path, int pos, int size)
 /*---------------------------------------------------------------------------
   ファイルリード
 ---------------------------------------------------------------------------*/
-
+#ifndef PPREFS_LITE
 int file_read(void* buf, const char* path, file_type type, int pos, int size)
 {
   int ret = ERR_OPEN;
@@ -388,7 +388,7 @@ int file_read(void* buf, const char* path, file_type type, int pos, int size)
   }
   return ret;
 }
-
+#endif
 /*---------------------------------------------------------------------------
   ファイルライト
 ---------------------------------------------------------------------------*/

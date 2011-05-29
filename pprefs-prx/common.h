@@ -92,13 +92,13 @@ struct pprefsButtonDatas{
 #ifdef PPREFS_LITE
 
 #define INI_NAME "/pprefs_lite.ini"
-#define PPREFS_CONF_NUM 9
+#define PPREFS_CONF_NUM 11
 
 
 #else
 
 #define INI_NAME "/pprefs.ini"
-#define PPREFS_CONF_NUM 14
+#define PPREFS_CONF_NUM 16
 
 
 #endif

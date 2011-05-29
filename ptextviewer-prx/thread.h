@@ -3,12 +3,26 @@
 #ifndef __THREAD_H__
 #define __THREAD_H__
 
+#include <pspkernel.h>
 
 // 定義
 #define			MAX_THREAD			64
 #define			SUSPEND_MODE		0
 #define			RESUME_MODE			1
 
+void safelySuspendThreadsInit();
+/*
+@return : 
+          == 0 already suspended
+          <  0 until suspended
+          >  0 now just suspend
+*/
+
+int safelySuspendThreads( clock_t waitTime );
+
+
+void suspendThreads();
+void resumeThreads();
 
 /*
 	起動時のスレッドを取得する

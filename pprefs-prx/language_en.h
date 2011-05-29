@@ -59,6 +59,10 @@
 
 #define PPREFSMSG_THEOTHER "the other"
 
+#define PPREFSMSG_BACKUPMENU {"Load","Save",NULL}
+#define PPREFSMSG_BACKUPMENU_HOWOTOUSE "%s:Sel. HOME:Quit [Rtri]/[Ltri]:ChangeTextType"
+#define PPREFSMSG_BACKUPMENU_NOTEXITST "The file doesn't exist"
+
 
 #define PPREFSMSG_HITOBASHIRA "\x89\x8a"
 #define PPREFSMSG_HITOBASHIRA_2 "\x89\x8a\2"
@@ -68,8 +72,8 @@
 /*--------------------------------------*/
 
 #define PPREFSMSG_SUBMENU_TITLE " MENU "
-#define PPREFSMSG_SUBMENU_LIST "add","remove","config","COPY ME",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO "add","remove","config",NULL
+#define PPREFSMSG_SUBMENU_LIST "add","remove","backup","config","COPY ME",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO "add","remove","backup","config",NULL
 
 #define PPREFSMSG_CONFIGMENU_WHATISTHIS \
 "Hot key to start this plugin", \
@@ -80,7 +84,11 @@
 "Foreground color", \
 "Background color", \
 "Selected color", \
-"Color of explanation on bottom of screen", 
+"Color of explanation on bottom of screen", \
+"[ON] color", \
+"[OFF] color", \
+
+
 
 /*--------------------------------------*/
 #else
@@ -89,10 +97,10 @@
 #define PPREFSMSG_BOOTMESSAGE " pprefs \x8b\x8c\x8d\x8e\x8f\x90!  / StartButton:"
 
 #define PPREFSMSG_SUBMENU_TITLE "menu"
-#define PPREFSMSG_SUBMENU_LIST "add","remove","edit pergame","SORT GAME\x91","config","COPY ME",NULL
-#define PPREFSMSG_SUBMENU_LIST_HITOBASHIRA "add","remove","edit pergame","SORT GAME\x91","config","COPY ME","rm FILE",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO "add","remove","edit pergame","SORT GAME\x91","config",NULL
-#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA "add","remove","edit pergame","SORT GAME\x91","config","edit pause game","rm FILE",NULL
+#define PPREFSMSG_SUBMENU_LIST					"add","remove","backup","SORT GAME","config","edit pergame","COPY ME",NULL
+#define PPREFSMSG_SUBMENU_LIST_HITOBASHIRA		"add","remove","backup","SORT GAME","config","edit pergame","COPY ME","remove FILE",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO				"add","remove","backup","SORT GAME","config","edit pergame",NULL
+#define PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA	"add","remove","backup","SORT GAME","config","edit pergame","edit pause game","remove FILE",NULL
 
 #define PPREFSMSG_EDITPERGAME_SELECTPRX "select plugin"
 #define PPREFSMSG_EDITPERGAME_SELECTGAME "select game"
@@ -112,6 +120,8 @@
 "Background color", \
 "Selected color", \
 "Color of explanation on bottom of screen",  \
+"[ON] color", \
+"[OFF] color", \
 "true->enable false->disable *thisWorksOnOnly5.xx\nThisIs\x91,soItHasSomeIssues.IfSwapEn/Disable,restartVSH", \
 "button to connect USB\n(button to disconnect USB also can do)", \
 "button to disconnect USB\n(button to connect USB also can do)", \
@@ -121,7 +131,7 @@
 
 #define PPREFSMSG_SORTGAME_SAVE " save? "
 #define PPREFSMSG_SORTGAME_HOWTOUSE "\x87+\x80/\x82:move HOME:quit START:save SEL:reload %s/R:open L:back"
-#define PPREFSMSG_SORTGAME_TITLE "SORT GAME\x91 After the sort,RESTART VSH becauseToClearCache"
+#define PPREFSMSG_SORTGAME_TITLE "SORT GAME After the sort,RESTART VSH becauseToClearCache"
 #define PPREFSMSG_SORTGAME_PLEASECONFIG "please configure SortType in \"config\""
 
 #endif

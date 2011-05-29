@@ -4,9 +4,11 @@
 #include "configmenu.h"
 #include "dxlibp/dxppng.h"
 #include "iso.h"
+#include "charConv.h"
 #include "common.h"
 
 #define MAX_PATH_LEN (256)
+#define MAX_TITLE_LEN (129)
 #define MAX_DISPLAY_NUM 7
 
 
@@ -54,6 +56,7 @@ typedef struct sortgame_img_{
 typedef struct {
   ScePspDateTime time;//並び順の判定基準になる時間
   char name[MAX_PATH_LEN];
+  char title[MAX_TITLE_LEN];
   int file_type;
   SceIoStat stat;
   sortgame_img img;
@@ -86,7 +89,229 @@ static int sortgameBufNum = 0;
 
 /*-----------------------------------------------------------------------*/
 
+static unsigned char ebootpbpSignature[] = { 0x00, 0x50, 0x42, 0x50 };
+static unsigned char paramsfoMagic[] = { 0x00, 0x50, 0x53, 0x46 };
 
+typedef struct ebootpbp_header_{
+	u8 signature[4];
+	u32 version;
+	u32 offset[8];
+}ebootpbp_header;
+
+typedef struct psf_header_{
+	u8 magic[4];
+	u8 rfu000[4];
+	u32 label_ptr;
+	u32 data_ptr;
+	u32 nsects;
+}psf_header;
+
+typedef struct psf_section_{
+	u16 label_off;
+	u8 rfu001;
+	u8 data_type;
+	u32 datafield_used;
+	u32 datafield_size;
+	u32 data_off;
+}psf_section;
+
+/*-----------------------------------------------------------------------*/
+
+//Read from Buffer like File
+
+typedef struct RBF_fd_{
+	char *buf;
+	int bufSize;
+	off_t offset;
+}RBF_fd;
+
+
+
+void RBFOpen(RBF_fd *fd, char *buf, int bufSize)
+{
+	fd->buf = buf;
+	fd->bufSize = bufSize;
+	fd->offset = 0;
+}
+
+off_t RBFLseek(RBF_fd *fd, off_t offset, int whence)
+{
+	if( whence == SEEK_SET ){
+		fd->offset = 0;
+	}else if(whence == SEEK_END){
+		fd->offset = fd->bufSize - 1;
+	}
+	
+	fd->offset += offset;
+	if( fd->offset < 0 ) fd->offset = 0;
+	if( fd->offset >= fd->bufSize ) fd->offset = fd->bufSize - 1;
+	
+	return fd->offset;
+}
+
+int RBFRead(RBF_fd *fd, void *buf, size_t nbytes)
+{
+	int remainingSize = fd->bufSize - fd->offset;
+	int readSize = (remainingSize < nbytes)?remainingSize:nbytes;
+	
+	memcpy(buf, fd->buf + fd->offset, readSize);
+	
+	fd->offset += readSize;
+	
+	return readSize;
+}
+
+int RBFClose(RBF_fd *fd)
+{
+	memset(fd, 0, sizeof(RBF_fd));
+	return 0;
+}
+
+//------------------------------------------------
+
+
+int readGameTitleFromBuf(RBF_fd *fd, char *rtn, int rtnSize)
+{
+	ebootpbp_header pbpHeader;
+	psf_header header;
+	psf_section section;
+	int i;
+	off_t currentPosition;
+	off_t offset = 0;
+	char label[6];//TITLE[EOS]
+	
+
+	offset = RBFLseek(fd, 0, SEEK_CUR);
+	RBFRead(fd, &pbpHeader, sizeof(ebootpbp_header));
+	if( memcmp(&pbpHeader.signature, ebootpbpSignature, sizeof(ebootpbpSignature)) == 0){
+		offset += pbpHeader.offset[0];
+	}
+
+	RBFLseek(fd, offset, SEEK_SET);
+	RBFRead(fd, &header, sizeof(psf_header));
+	if( memcmp(&header.magic, paramsfoMagic, sizeof(paramsfoMagic)) != 0){
+		return -1;
+	}
+
+	currentPosition = RBFLseek(fd, 0 ,SEEK_CUR);
+	for( i = 0; i < header.nsects; i++ ){
+		RBFLseek(fd, currentPosition, SEEK_SET);
+		RBFRead(fd, &section, sizeof(psf_section));
+		currentPosition = RBFLseek(fd, 0 ,SEEK_CUR);
+		
+		RBFLseek(fd, offset + header.label_ptr + section.label_off, SEEK_SET);
+		RBFRead(fd, label, sizeof(label)-1);
+		label[sizeof(label)-1] = '\0';
+	
+		if(strcmp(label, "TITLE") == 0){
+			RBFLseek(fd, offset + header.data_ptr + section.data_off, SEEK_SET);
+			RBFRead(fd, rtn, rtnSize - 1);
+			rtn[rtnSize - 1] = '\0';
+			return 0;
+		}
+	}
+
+	//not found "TITLE" section
+	return 1;
+}
+
+
+int readGameTitle(int fd, char *rtn, int rtnSize)
+{
+	ebootpbp_header pbpHeader;
+	psf_header header;
+	psf_section section;
+	int i;
+	off_t currentPosition;
+	off_t offset = 0;
+	char label[6];//TITLE[EOS]
+	
+
+	offset = sceIoLseek(fd, 0, SEEK_CUR);
+	sceIoRead(fd, &pbpHeader, sizeof(ebootpbp_header));
+	if( memcmp(&pbpHeader.signature, ebootpbpSignature, sizeof(ebootpbpSignature)) == 0){
+		offset += pbpHeader.offset[0];
+	}
+
+	sceIoLseek(fd, offset, SEEK_SET);
+	sceIoRead(fd, &header, sizeof(psf_header));
+	if( memcmp(&header.magic, paramsfoMagic, sizeof(paramsfoMagic)) != 0){
+		return -1;
+	}
+
+	currentPosition = sceIoLseek(fd, 0 ,SEEK_CUR);
+	for( i = 0; i < header.nsects; i++ ){
+		sceIoLseek(fd, currentPosition, SEEK_SET);
+		sceIoRead(fd, &section, sizeof(psf_section));
+		currentPosition = sceIoLseek(fd, 0 ,SEEK_CUR);
+		
+		sceIoLseek(fd, offset + header.label_ptr + section.label_off, SEEK_SET);
+		sceIoRead(fd, label, sizeof(label)-1);
+		label[sizeof(label)-1] = '\0';
+	
+		if(strcmp(label, "TITLE") == 0){
+			sceIoLseek(fd, offset + header.data_ptr + section.data_off, SEEK_SET);
+			sceIoRead(fd, rtn, rtnSize - 1);
+			rtn[rtnSize - 1] = '\0';
+			return 0;
+		}
+	}
+
+	//not found "TITLE" section
+	return 1;
+}
+int getGameTitleFromPBP(const char *dirPath,int type, char *title, int titleSize)
+{
+	SceUID fd;
+	title[0] = '\0';
+	char path[256];
+
+	strcpy(path, dirPath);
+	//最後が'/'で終わるパスじゃないなら
+	if( path[strlen(path) - 1] != '/' ){
+		strcat(path ,"/");
+	}
+	if( type == FILE_TYPE_EBOOTPBPDIR ){
+		strcat(path ,"EBOOT.PBP");
+	}else{
+		strcat(path ,"PARAM.PBP");
+	}
+
+	if( (fd = sceIoOpen(path, PSP_O_RDONLY, 0777)) < 0 ) return fd;
+	sceIoLseek(fd, 0, SEEK_SET);
+	readGameTitle(fd, title, titleSize);
+	sceIoClose(fd);
+	
+#ifdef PPREFS_CHARCONV
+//	char tmp[titleSize];
+	psp2chUTF82Sjis(title, title);
+#endif
+
+	return 0;
+}
+
+int getGameTitleFromISO(const char *path, file_type type, char *title, int titleSize)
+{
+	int bufSize =  1024;
+	char buf[bufSize];
+
+	title[0] = '\0';
+	memset(&buf, 0 , bufSize);
+
+	if( iso_read(buf, bufSize, path, type, "PSP_GAME/PARAM.SFO") < 0 ) return -1;
+
+	RBF_fd fd;
+	RBFOpen(&fd, buf, bufSize);
+	readGameTitleFromBuf(&fd, title, titleSize);
+	RBFClose(&fd);
+
+#ifdef PPREFS_CHARCONV
+//	char tmp[titleSize];
+	psp2chUTF82Sjis(title, title);
+#endif
+
+	return 0;
+}
 
 int loadIcon0(const char *filePath, DXPPNG *png, int type)
 {
@@ -299,6 +524,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 					if( strncasecmp(&entry.d_name[num - 4], ".iso", 4) == 0 ){
 						dir[file_num].time = dir[file_num].stat.st_ctime;
 						dir[file_num].file_type = FILE_TYPE_ISO;
+						getGameTitleFromISO(dir[file_num].name, TYPE_ISO, dir[file_num].title, MAX_TITLE_LEN);
 						file_num++;
 						continue;
 					}
@@ -308,6 +534,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 					if( strncasecmp(&entry.d_name[num - 4], ".cso", 4) == 0 ){
 						dir[file_num].time = dir[file_num].stat.st_ctime;
 						dir[file_num].file_type = FILE_TYPE_CSO;
+						getGameTitleFromISO(dir[file_num].name, TYPE_CSO, dir[file_num].title, MAX_TITLE_LEN);
 						file_num++;
 						continue;
 					}
@@ -324,11 +551,13 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 						if( is_ebootpbp_exist(dir[file_num].name) == 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
 							dir[file_num].file_type = FILE_TYPE_EBOOTPBPDIR;
+							getGameTitleFromPBP(dir[file_num].name, FILE_TYPE_EBOOTPBPDIR, dir[file_num].title, MAX_TITLE_LEN);
 							file_num++;
 							continue;
 						}else if( is_parampbp_exist(dir[file_num].name) == 0  ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
 							dir[file_num].file_type = FILE_TYPE_PARAMPBPDIR;
+							getGameTitleFromPBP(dir[file_num].name, FILE_TYPE_PARAMPBPDIR, dir[file_num].title, MAX_TITLE_LEN);
 							file_num++;
 							continue;
 						}
@@ -340,6 +569,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 						if( strncasecmp(entry.d_name, "CAT_", 4) == 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
 							dir[file_num].file_type = FILE_TYPE_CATDIR;
+							strcpy(dir[file_num].title, entry.d_name + 4);
 							file_num++;
 							continue;
 						}
@@ -351,6 +581,7 @@ int sortgame_read_dir(char *path, sortgame_dir_t *dir, int file_num, int maxDirN
 						if( is_ebootpbp_exist(dir[file_num].name) != 0 && is_parampbp_exist(dir[file_num].name) != 0 ){
 							dir[file_num].time = dir[file_num].stat.st_mtime;
 							dir[file_num].file_type = FILE_TYPE_CATDIR;
+							strcpy(dir[file_num].title, entry.d_name);
 							file_num++;
 							continue;
 						}
@@ -496,7 +727,8 @@ int sortgame_listup_category(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPat
 		dirBuf[i].img.height = 0;
 	}
 	
-	strcpy(dirBuf[0].name,"[Uncategorized]");
+	strcpy(dirBuf[0].name,"Uncategorized");
+	strcpy(dirBuf[0].title, "[Uncategorized]");
 	
 	return file_num;
 
@@ -639,7 +871,7 @@ int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *
 
 				free(pngtmp.raw);
 			}
-			libmPrintf(100,22,BG_COLOR,FG_COLOR,"%s(%02d)", gauge[i%4], i+1);
+			libmPrintf(100,22,BG_COLOR,FG_COLOR,"%s(%03d)", gauge[i%4], i+1);
 
 		}
 	}
@@ -754,7 +986,8 @@ int loadIconThread( SceSize arglen, void *argp )
 #define printOneGame(i, offset) \
 libmFillRect(5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 3, 475, 35 + i*(SPACE_BETWEEN_THE_LINES) + 3 + 27 ,BG_COLOR); \
 sortgame_display_img(&dir[i+offset].img, 7, 35 + i*(SPACE_BETWEEN_THE_LINES) + 3 ); \
-libmPrint(7 + 48 + 5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 9, FG_COLOR, BG_COLOR,  dir[i+offset].name); \
+libmPrint(7 + 48 + 5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 5, FG_COLOR, BG_COLOR,  dir[i+offset].title); \
+libmPrintf(7 + 48 + 5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 18, FG_COLOR, BG_COLOR, "(%s)", dir[i+offset].name); \
 
 
 
