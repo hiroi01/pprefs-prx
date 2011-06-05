@@ -247,6 +247,8 @@ int config_menu(void)
 						if( *conf[now_arrow].value.u == RED ){
 							*conf[now_arrow].value.u = GREEN;
 						}else if( *conf[now_arrow].value.u == GREEN ){
+							*conf[now_arrow].value.u = 0xffff4040;
+						}else if( *conf[now_arrow].value.u == 0xffff4040 ){
 							*conf[now_arrow].value.u = RED;
 						}
 					}else if( conf[now_arrow].type & INI_TYPE_BUTTON ){

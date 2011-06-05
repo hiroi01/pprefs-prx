@@ -25,14 +25,14 @@
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs lite Ver. 1.020     by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs lite Ver. 1.021     by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 #else
 
 #define PRINT_SCREEN() \
 libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR); \
-libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.120     by hiroi01"); \
+libmPrint(10,10,FG_COLOR,BG_COLOR,"pprefs Ver. 1.121     by hiroi01"); \
 libmPrint(440,10,FG_COLOR,BG_COLOR,modelName[deviceModel]);
 
 #endif

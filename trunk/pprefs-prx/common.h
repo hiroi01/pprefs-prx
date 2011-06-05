@@ -21,7 +21,7 @@
 #include "conf.h"
 #include "memory.h"
 #include "button.h"
-#include "thread.h"
+#include "safelySuspend.h"
 #include "file.h"
 #include "language.h"
 #include "nidresolve.h"

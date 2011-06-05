@@ -215,7 +215,7 @@ int readGameTitleFromBuf(RBF_fd *fd, char *rtn, int rtnSize)
 	return 1;
 }
 
-
+#if 0
 int readGameTitle(int fd, char *rtn, int rtnSize)
 {
 	ebootpbp_header pbpHeader;
@@ -260,11 +260,18 @@ int readGameTitle(int fd, char *rtn, int rtnSize)
 	//not found "TITLE" section
 	return 1;
 }
+#endif
+
 int getGameTitleFromPBP(const char *dirPath,int type, char *title, int titleSize)
 {
+	int bufSize =  1024;
+	char buf[bufSize];
+
 	SceUID fd;
-	title[0] = '\0';
 	char path[256];
+
+	title[0] = '\0';
+	memset(&buf, 0 , bufSize);
 
 	strcpy(path, dirPath);
 	//最後が'/'で終わるパスじゃないなら
@@ -279,8 +286,13 @@ int getGameTitleFromPBP(const char *dirPath,int type, char *title, int titleSize
 
 	if( (fd = sceIoOpen(path, PSP_O_RDONLY, 0777)) < 0 ) return fd;
 	sceIoLseek(fd, 0, SEEK_SET);
-	readGameTitle(fd, title, titleSize);
+	sceIoRead(fd, buf, bufSize);
 	sceIoClose(fd);
+
+	RBF_fd RBF_fd;
+	RBFOpen(&RBF_fd, buf, bufSize);
+	readGameTitleFromBuf(&RBF_fd, title, titleSize);
+	RBFClose(&RBF_fd);
 	
 #ifdef PPREFS_CHARCONV
 //	char tmp[titleSize];
@@ -802,39 +814,68 @@ void reducationRaw2(u32 *data, int xSize, int ySize, u32 *rescaledata, int hxSiz
 int sortgame_listup(sortgame_dir_t *dirBuf,int dirBufNum, char *rootPath, char *exPath, u32 type)
 {
 
-	int file_num = 0,i = 0,len;
+	int file_num = 0,i = 0;
 	char path[256];
-	u32 flag = 0;
 	
-	if( type & SORT_TYPE_CATEGORIZES ) flag |= SORTGAME_FLAG_CATDIR;
 	
 	if( exPath[0] == '\0' ){//Uncategorized
-		if( type & SORT_TYPE_GAME )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag );
-		if( type & SORT_TYPE_ISOCSO )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"ISO/"), dirBuf, file_num, dirBufNum, (SORTGAME_FLAG_ISO|SORTGAME_FLAG_CSO) );
-		if( type & SORT_TYPE_GAME150 )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME150/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag );
-		if( type & SORT_TYPE_GAME5XX )
-			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME5XX/"), dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR | flag);
-	}else{
-		strcpy(path,exPath);
-		len = strlen(path);
+		u32 flag = SORTGAME_FLAG_EBOOTDIR;
+		if( type & SORT_TYPE_CATEGORIZES ) flag |= SORTGAME_FLAG_CATDIR;
 
-		for( i = 0; i + 1 < len ; i++ ){
-			if( path[i] == ':' &&  path[i+1] == '/' ) break;
+		if( type & SORT_TYPE_GAME )
+		{
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME/"), dirBuf, file_num, dirBufNum,  flag );
 		}
-		i += 2;
-		
-		if( 
-		    (path[i] == 'i' || path[i] == 'I') &&
-		    (path[i+1] == 's' || path[i+1] == 'S') &&
-		    (path[i+2] == 'o' || path[i+2] == 'O')
-		){//if iso folder
-			file_num = sortgame_read_dir(exPath, dirBuf, file_num, dirBufNum, (SORTGAME_FLAG_ISO|SORTGAME_FLAG_CSO) );
-		}else{
-			file_num = sortgame_read_dir(exPath, dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR );
+		if( type & SORT_TYPE_ISOCSO )
+		{
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"ISO/"), dirBuf, file_num, dirBufNum, (SORTGAME_FLAG_ISO|SORTGAME_FLAG_CSO) );
 		}
+		if( type & SORT_TYPE_GAME150 )
+		{
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME150/"), dirBuf, file_num, dirBufNum, flag );
+		}
+		if( type & SORT_TYPE_GAME5XX )
+		{
+			file_num = sortgame_read_dir(getFullpath(path,rootPath,"PSP/GAME5XX/"), dirBuf, file_num, dirBufNum, flag);
+		}
+	}else{
+		char *baseName;
+
+		for( i = strlen(exPath); i > 0 ; i-- ){
+			if( exPath[i] == '/' ){
+				i++;
+				break;
+			}
+		}
+		baseName = exPath + i;
+
+
+		if( type & SORT_TYPE_GAME )
+		{
+			getFullpath(path,rootPath,"PSP/GAME/");
+			strcat(path, baseName);
+			
+			file_num = sortgame_read_dir(path, dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR);
+		}
+		if( type & SORT_TYPE_ISOCSO )
+		{
+			getFullpath(path,rootPath,"ISO/");
+			strcat(path, baseName);
+			file_num = sortgame_read_dir(path, dirBuf, file_num, dirBufNum, (SORTGAME_FLAG_ISO|SORTGAME_FLAG_CSO) );
+		}
+		if( type & SORT_TYPE_GAME150 )
+		{
+			getFullpath(path,rootPath,"PSP/GAME150/");
+			strcat(path, baseName);
+			file_num = sortgame_read_dir(path, dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR);
+		}
+		if( type & SORT_TYPE_GAME5XX )
+		{
+			getFullpath(path,rootPath,"PSP/GAME5XX/");
+			strcat(path, baseName);
+			file_num = sortgame_read_dir(path, dirBuf, file_num, dirBufNum, SORTGAME_FLAG_EBOOTDIR);
+		}
+
 	}
 
 	

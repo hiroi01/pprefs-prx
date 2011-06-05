@@ -11,7 +11,6 @@ OBJS =	\
 	pprefsmenu.o \
 	button.o \
 	exports.o \
-	thread.o \
 	conf.o \
 	common.o \
 	configmenu.o \
@@ -68,7 +67,7 @@ LIBS += libmenue.a
 else
 LIBS += libmenuj.a
 endif
-
+LIBS += safelySuspend.a
 LIBS +=	-lm -lz \
 	-lpspsystemctrl_kernel \
 	-lpspusb -lpspkubridge -lpspusbstor \

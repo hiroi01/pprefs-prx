@@ -19,7 +19,7 @@
 
 
 // モジュールの定義
-PSP_MODULE_INFO( "PLUPREFS", PSP_MODULE_KERNEL, 0, 0 );
+PSP_MODULE_INFO( "PPREFS", PSP_MODULE_KERNEL, 0, 0 );
 
 
 /*------------------------------------------------------*/
@@ -394,6 +394,13 @@ int main_thread( SceSize arglen, void *argp )
 		while( stop_flag ){
 			if((padData.Buttons & config.bootKey) == config.bootKey){
 				disable_suspend = 1;
+				do{
+					if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+						libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... please wait");
+						sceDisplayWaitVblankStart();
+					}
+					sceKernelDelayThread( 50 );
+				}while( safelySuspendForVSH() != 0 );
 				main_menu();
 				resumeThreads();
 				disable_suspend = 0;
@@ -770,12 +777,12 @@ void main_menu(void)
 	
 
 
-	while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+	while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_IMMEDIATE) ){
 		sceDisplayWaitVblankStart();
 	}
 	
 	PRINT_SCREEN();
-	safelySuspendThreadsInit();
+//	safelySuspendThreadsInit();
 	while(1){
 //		libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
 //		PRINT_SCREEN();
@@ -797,7 +804,7 @@ void main_menu(void)
 
 		if( beforeButtons == 0 ) wait_button_up(&padData);
 		while(1){
-
+			/*
 			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
 			if( safelySuspendThreads(5 * 100 * 1000) == 1 ){//まさにいまsuspendした
 				//描画に失敗しているかチェック
@@ -810,6 +817,7 @@ void main_menu(void)
 					break;
 				}
 			}
+			*/
 			
 			
 			get_button(&padData);
@@ -874,7 +882,7 @@ void main_menu(void)
 				if( (beforeButtons & (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER)) == (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER) ) continue;
 				beforeButtons |= PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER;
 
-				suspendThreads();
+//				suspendThreads();
 				if( confirm_save() == 0 ){
 					selectBasePath(config.basePath);
 					readSepluginsText(3,false,config.basePath);
@@ -916,7 +924,7 @@ void main_menu(void)
 				if( beforeButtons & PSP_CTRL_TRIANGLE ) continue;
 				beforeButtons = PSP_CTRL_TRIANGLE;
 				
-				suspendThreads();
+//				suspendThreads();
 				tmp = sub_menu(now_arrow,( now_arrow < 10 )?148:46);
 				if( tmp == 0 ){
 					now_arrow = pdata[now_type].num - 1;
@@ -951,8 +959,8 @@ void main_menu(void)
 					libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,PPREFSMSG_MAINMENU_REPUSHSTART);
 					while(1){
 						if( padData.Buttons & PSP_CTRL_START ){
-							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...       ");
-							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 , FG_COLOR,BG_COLOR,"                    ");
+							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*1 , FG_COLOR,BG_COLOR,"RESTARTING...    ");
+							libmPrint(100 + LIBM_CHAR_WIDTH , 44 + LIBM_CHAR_HEIGHT*2 , FG_COLOR,BG_COLOR,"                 ");
 							tmp = 1;
 							break;
 						}else if( padData.Buttons & (CHEACK_KEY & ~PSP_CTRL_START) ){
@@ -992,7 +1000,7 @@ void main_menu(void)
 				if( beforeButtons & PSP_CTRL_SELECT ) continue;
 				beforeButtons = PSP_CTRL_SELECT;
 
-				suspendThreads();
+//				suspendThreads();
 
 				if( pdata[0].edit || pdata[1].edit || pdata[2].edit ){
 					char *menu[] = { PPREFSMSG_YESORNO_LIST };
@@ -1016,7 +1024,7 @@ void main_menu(void)
 			else if( padData.Buttons & PSP_CTRL_NOTE )
 			{
 				beforeButtons = PSP_CTRL_NOTE;
-				suspendThreads();
+//				suspendThreads();
 				i = 0;
 				while(1){
 					wait_button_up_ex(&padData,PSP_CTRL_NOTE);
@@ -1305,7 +1313,7 @@ void saveEdit(void)
 
 	for( i = 0; i < 3; i++ ){
 		if ( pdata[i].edit ){
-			suspendThreads();
+//			suspendThreads();
 			while(1){
 				if( writeSepluginsText(i,config.basePath) < 0 ){
 					makeWindow(24, 28,24 + LIBM_CHAR_WIDTH*26, 28 + LIBM_CHAR_HEIGHT*5, FG_COLOR, BG_COLOR);
