@@ -175,7 +175,7 @@ int config_menu(void)
 	while(1){
 		PRINT_SCREEN();
 		
-		libmPrint(15,28,BG_COLOR,FG_COLOR,PPREFSMSG_CONFIGMENU_TITLE);
+		libmPrint(15,18,BG_COLOR,FG_COLOR,PPREFSMSG_CONFIGMENU_TITLE);
 		for( i = 0; i < conf[0].keyNum; i++ ){
 			if( /*
 				strcasecmp( "Color0", conf[i].key ) == 0 ||
@@ -185,7 +185,7 @@ int config_menu(void)
 				strcasecmp( "Color5", conf[i].key ) == 0*/
 			   strncasecmp("Color", conf[i].key, 5) == 0
 			){
-				libmPrintf(15, 38 + i*SPACE_BETWEEN_THE_LINES, *conf[i].value.u, (*conf[i].value.u == BG_COLOR )?FG_COLOR:BG_COLOR,"%s = %x",conf[i].key, *conf[i].value.u);
+				libmPrintf(15, 28 + i*SPACE_BETWEEN_THE_LINES, *conf[i].value.u, (*conf[i].value.u == BG_COLOR )?FG_COLOR:BG_COLOR,"%s = %x",conf[i].key, *conf[i].value.u);
 				continue;
 			}else if( conf[i].type & INI_TYPE_BUTTON ){
 				sprintf(commonBuf,"%s = ",conf[i].key);
@@ -202,24 +202,24 @@ int config_menu(void)
 			}else if( conf[i].type & INI_TYPE_STRING ){
 				sprintf(commonBuf,"%s = %s",conf[i].key, conf[i].value.s);
 			}
-			libmPrint (15, 38 + i*SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR,commonBuf);
+			libmPrint (15, 28 + i*SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR,commonBuf);
 //			libmPrint (15, 38 + (i*2+1)*SPACE_BETWEEN_THE_LINES, EX_COLOR , BG_COLOR, whatIsThis[i]);
 		}
 
 		
-		libmPrint (15, 38 +(i+1)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_1);
-		libmPrint (15, 38 +(i+2)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_2);
-		libmPrint (15, 38 +(i+3)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_3);
+		libmPrint (15, 28 +(i+1)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_1);
+		libmPrint (15, 28 +(i+2)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_2);
+		libmPrint (15, 28 +(i+3)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_3);
 
 
-		libmPrintf(5, 38 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
+		libmPrintf(5, 28 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
 		libmPrintf(5,264,EX_COLOR ,BG_COLOR,PPREFSMSG_CONFIGMENU_HOWTOUSE,buttonData[buttonNum[0]].name);
 		PRINT_EXPLANATION();
 		wait_button_up(&padData);
 		while(1){
 			get_button(&padData);
 			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){
-				libmPrintf(5, 38 +ARROW_POSITION* SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, " ");
+				libmPrintf(5, 28 +ARROW_POSITION* SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, " ");
 				if( padData.Buttons & PSP_CTRL_DOWN){
 					now_arrow++;
 					if( now_arrow >= conf[0].keyNum+3 ) now_arrow = 0;
@@ -227,7 +227,7 @@ int config_menu(void)
 					now_arrow--;
 					if( now_arrow < 0 ) now_arrow = conf[0].keyNum + 2;
 				}
-				libmPrintf(5, 38 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
+				libmPrintf(5, 28 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
 
 				PRINT_EXPLANATION();
 				wait_button_up(&padData);

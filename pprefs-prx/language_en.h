@@ -131,7 +131,8 @@
 
 #define PPREFSMSG_SORTGAME_SAVE " save? "
 #define PPREFSMSG_SORTGAME_HOWTOUSE "\x87+\x80/\x82:move HOME:quit START:save SEL:reload %s/R:open L:back"
-#define PPREFSMSG_SORTGAME_TITLE "SORT GAME After the sort,RESTART VSH becauseToClearCache"
+#define PPREFSMSG_SORTGAME_TITLE "SORT GAME"
+#define PPREFSMSG_SORTGAME_TITLE_GO "SORT GAME / After the sort,RESTART VSH"
 #define PPREFSMSG_SORTGAME_PLEASECONFIG "please configure SortType in \"config\""
 
 #endif

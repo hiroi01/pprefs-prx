@@ -44,6 +44,32 @@ static int threadsState = 0;// != 0 : suspend / == 0 : resume
 
 static clock_t safelySuspendTime;
 
+
+int isExistScePafJob(void)
+{
+	int i;
+	//get threads list
+	sceKernelGetThreadmanIdList(SCE_KERNEL_TMID_Thread, current_th, MAX_THREAD, &current_count);
+	
+	for(i = 0; i < current_count; i++){
+		SceKernelThreadInfo info;
+		
+		info.size = sizeof(info);
+		
+		if( sceKernelReferThreadStatus(current_th[i], &info) < 0 ){
+			continue;
+		}
+		
+		if( ! strcmp(info.name, "ScePafJob") ) {
+				return 1;
+		}
+	}
+	
+	return 0;
+}
+
+
+#if 0
 static char *checkThreadName[] = {
 	"SceNpSignupEvent",
 	"VshCacheIoPrefetchThread",
@@ -104,7 +130,7 @@ int safelySuspendForVSH()
 	threadsState = 1;
 	return 0;
 }
-
+#endif
 
 
 void safelySuspendThreadsInit()

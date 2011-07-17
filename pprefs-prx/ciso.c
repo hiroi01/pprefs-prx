@@ -126,7 +126,7 @@ int cso_read(char *buf, const char *path, int pos, int size)
 {
   SceUID fp;
   int ret;
-  int err;
+ // int err;
 
   fp = sceIoOpen(path, PSP_O_RDONLY, 0777);
 
@@ -135,7 +135,8 @@ int cso_read(char *buf, const char *path, int pos, int size)
 
   ret = cso_read_fp(buf, fp, pos, size);
 
-  err = sceIoClose(fp);
+//  err = 
+  sceIoClose(fp);
 
   if(fp < 0)
     return ERR_CLOSE;

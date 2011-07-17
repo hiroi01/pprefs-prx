@@ -30,6 +30,7 @@
 // Thanks to Davee
 #define PSP_FIRMWARE(f) ((((f >> 8) & 0xF) << 24) | (((f >> 4) & 0xF) << 16) | ((f & 0xF) << 8) | 0x10)
 
+#define NOP 0x00000000
 
 #define MAKE_CALL(a, f) _sw(0x0C000000 | (((u32)(f) >> 2)  & 0x03ffffff), a);
 #define MAKE_JUMP(a, f) _sw(0x08000000 | (((u32)(f) & 0x0ffffffc) >> 2), a); 
@@ -92,14 +93,13 @@ struct pprefsButtonDatas{
 #ifdef PPREFS_LITE
 
 #define INI_NAME "/pprefs_lite.ini"
-#define PPREFS_CONF_NUM 11
+#define PPREFS_CONF_NUM 12
 
 
 #else
 
 #define INI_NAME "/pprefs.ini"
-#define PPREFS_CONF_NUM 16
-
+#define PPREFS_CONF_NUM 17
 
 #endif
 
@@ -117,7 +117,5 @@ extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
 extern INI_Key conf[PPREFS_CONF_NUM];
 extern int hitobashiraFlag;
-
-
 
 #endif

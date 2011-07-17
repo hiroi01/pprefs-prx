@@ -1,3 +1,5 @@
+//thanks to http://oku.edu.mie-u.ac.jp/~okumura/compression/zlib.html
+
 #include <pspsdk.h>
 #include <pspkernel.h>
 #include <pspdebug.h>
@@ -15,9 +17,16 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <malloc.h>
+#include <zlib.h>
 
 #include <vlf.h>
 #include "utf8text.h"
+
+#include "pprefs_jp_bin.h"
+#include "pprefs_lite_jp_bin.h"
+#include "pprefs_en_bin.h"
+#include "pprefs_lite_en_bin.h"
+
 
 PSP_MODULE_INFO("pprefs_installer", 0, 1, 0);
 PSP_MAIN_THREAD_ATTR(0);
@@ -30,7 +39,65 @@ VlfPicture splashscreen;
 
 int flagToGoBackTop = 0;
 
-//thanks for takka
+
+int Decompress(void* inbuf, unsigned int inbufSize, void* outbuf, unsigned int outbufSize, const char* outPath)
+{
+	z_stream z;
+	//default
+    z.zalloc = NULL;
+    z.zfree = NULL;
+    z.opaque = NULL;
+	
+    // init
+    if (inflateInit(&z) != Z_OK) {
+		return -1;
+    }
+	
+	SceUID fd = sceIoOpen(outPath, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
+	if( fd < 0 ){
+		inflateEnd(&z);
+		return -2;
+	}
+	
+	
+	z.next_in = inbuf;
+	z.avail_in = inbufSize;
+	
+	int ret, writtenSize;
+    while(1){
+		//reset
+		z.next_out = outbuf;
+		z.avail_out = outbufSize;
+
+		ret = inflate(&z, Z_NO_FLUSH);//decompress
+		if( ret != Z_OK && ret != Z_STREAM_END ){//error
+			ret = -3;
+			break;
+		}
+		
+		writtenSize = sceIoWrite(fd, outbuf, outbufSize - z.avail_out);
+		if( writtenSize != (outbufSize - z.avail_out) ){//write error
+			ret = -4;
+			break;
+		}
+		
+		if( ret == Z_STREAM_END ){//done
+			ret = 0;
+			break;
+		}
+    }
+	
+	sceIoClose(fd);
+	inflateEnd(&z);
+	return ret;
+}
+
+
+
+
+
+
+//thanks to takka
 int read_line_file(SceUID fp, char* line, int num)
 {
   char buff[num];
@@ -66,7 +133,7 @@ int read_line_file(SceUID fp, char* line, int num)
   return end - buff + tmp;
 }
 
-
+/*
 int copyFile(const char *src, const char *dst)
 {
 	SceUID fd = -1, fdw = -1;
@@ -105,6 +172,7 @@ error:
 
 	return -1;
 }
+ */
 
 //thanks for plum
 //int Check_EOF(SceUID fd)
@@ -126,7 +194,8 @@ int isEOF(SceUID fd)
 int install(int sel){
 	
 	SceUID fd, fdw;
-	int readSize, ret;
+
+	int ret;
 	char line[LEN_PER_LINE];
 	char *ptr;
 	char pprefsPath[256];
@@ -149,10 +218,9 @@ int install(int sel){
 	strcat(pprefsPath_another, (sel == 1 || sel == 3)?"seplugins/pprefs.prx":"seplugins/pprefs_lite.prx");
 
 	int flag = 0;
-	
 	if( fd >= 0 ){
 		while( ! isEOF(fd) ){
-			readSize = read_line_file(fd, line, LEN_PER_LINE - 1);
+			read_line_file(fd, line, LEN_PER_LINE - 1);
 			if( (ptr = strchr(line,' ')) != NULL ){
 				*ptr = '\0';
 				if( strcasecmp(line, pprefsPath) == 0 ){
@@ -182,10 +250,24 @@ int install(int sel){
 	sceIoRemove(vshPath);
 	sceIoRename(vshtmpPath, vshPath);
 	
-	char *srcPath = (sel == 0)?"japanese/pprefs.prx":(sel == 1)?"japanese/pprefs_lite.prx":(sel == 2)?"english/pprefs.prx":"english/pprefs_lite.prx";
-
-	ret = copyFile(srcPath, pprefsPath);
-
+	
+	
+	unsigned char *srcData[] = {
+		pprefs_jp, pprefs_lite_jp, pprefs_en, pprefs_lite_en
+	};
+	unsigned int srcSize[] = {
+		size_pprefs_jp, size_pprefs_lite_jp, size_pprefs_en, size_pprefs_lite_en
+	};
+	char *buf;
+	unsigned int bufSize = 1024 * 100;
+	while(1){
+		buf = malloc(bufSize);
+		if( buf != NULL ) break;
+		bufSize -= 1024;
+	}
+	ret = Decompress(srcData[sel], srcSize[sel], buf, bufSize, pprefsPath);
+	free(buf);
+	
 
 	return ret;
 
@@ -195,6 +277,7 @@ int menu_sel(int sel)
 {
 	char *dialogMessage[] = {DONE_JPN, "Done"};
 	char *dialogMessageFailed[] = {FAILED_JPN, "Failed"};
+	char message[64];
 	VlfShadowedPicture waitIcon;
 	int ret;
 	
@@ -208,7 +291,12 @@ int menu_sel(int sel)
 			waitIcon = vlfGuiAddWaitIcon();
 			ret = install(sel);
 			vlfGuiRemoveShadowedPicture(waitIcon);
-			vlfGuiMessageDialog(ret < 0?dialogMessageFailed[languageNumber]:dialogMessage[languageNumber], VLF_MD_TYPE_NORMAL | VLF_MD_BUTTONS_NONE);
+			if( ret < 0 ){
+				sprintf(message, "%s : %d", dialogMessageFailed[languageNumber], ret);
+			}else{
+				strcpy(message, dialogMessage[languageNumber]);
+			}
+				vlfGuiMessageDialog(message, VLF_MD_TYPE_NORMAL | VLF_MD_BUTTONS_NONE);
 //			flagToGoBackTop = 1;
 			
 //		return VLF_EV_RET_REMOVE_HANDLERS | VLF_EV_RET_REMOVE_OBJECTS;
@@ -269,14 +357,15 @@ int app_main(int argc, char *argv[])
 	
 	
 	//splashscreen
-	splashscreen = vlfGuiAddPictureFile("splashscreen.png", 0, 0);
+/*	splashscreen = vlfGuiAddPictureFile("splashscreen.png", 0, 0);
 	
 
 	if( splashscreen ){
 		sleep_(1 * 1000 * 1000);
 		vlfGuiSetPictureFade(splashscreen,VLF_FADE_MODE_OUT, VLF_FADE_SPEED_FAST, 0);
 	}
-	
+*/	
+	vlfGuiSetTitleBar(vlfGuiAddText(0,0,"pprefs ver. 1130 / pprefs_lite ver.1030"),0,1,0);
 	
 	while(1){
 		flagToGoBackTop = 0;

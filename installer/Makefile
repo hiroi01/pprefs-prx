@@ -8,7 +8,8 @@ ASFLAGS = $(CFLAGS) -c
 
 LIBDIR = ./lib
 LDFLAGS = -mno-crt0 -nostdlib -nodefaultlibs
-LIBS = -lvlfgui -lvlfgu -lvlfutils -lvlflibc
+LIBS += -lbz2
+LIBS += -lvlfgui -lvlfgu -lvlfutils -lvlflibc 
 
 PSP_FW_VERSION = 271
 

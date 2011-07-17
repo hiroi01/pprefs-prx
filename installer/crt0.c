@@ -30,8 +30,10 @@ int start_thread(SceSize args, void *argp)
 
 	mod = sceKernelLoadModule("iop.prx", 0, NULL);
 	mod = sceKernelStartModule(mod, args, argp, NULL, NULL);
+
 	mod = sceKernelLoadModule("intraFontJPN.prx", 0, NULL);
 	mod = sceKernelStartModule(mod, args, argp, NULL, NULL);
+
 	mod = sceKernelLoadModule("vlf.prx", 0, NULL);
 	mod = sceKernelStartModule(mod, args, argp, NULL, NULL);
 	vlfGuiInit(15000, app_main);

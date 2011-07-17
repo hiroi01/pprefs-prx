@@ -47,6 +47,7 @@ typedef struct
 	u32 color3;
 	u32 color4;
 	u32 color5;
+	u32 disablePluginsKey;
 } Conf_Key;
 
 #else
@@ -70,6 +71,7 @@ typedef struct
 	u32 usbConnectKey;
 	u32 usbDisconnectKey;
 	u32 sortType;
+	u32 disablePluginsKey;
 } Conf_Key;
 #endif
 

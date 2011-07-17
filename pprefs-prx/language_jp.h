@@ -133,7 +133,9 @@
 
 #define PPREFSMSG_SORTGAME_SAVE " 保存しますか? "
 #define PPREFSMSG_SORTGAME_HOWTOUSE "□+↑/↓:並び替え HOME:終了 START:保存 SELECT:編集破棄&リロード %s/R:開く L:戻る"
-#define PPREFSMSG_SORTGAME_TITLE "SORT GAME 並び替えたらRESTART VSHして下さい(キャッシュをクリアするため)"
+#define PPREFSMSG_SORTGAME_TITLE "SORT GAME"
+#define PPREFSMSG_SORTGAME_TITLE_GO "SORT GAME /  並び替えたらRESTART VSHして下さい"
+
 #define PPREFSMSG_SORTGAME_PLEASECONFIG "\"設定\"でSortTypeの設定を行ってください"
 
 #endif
