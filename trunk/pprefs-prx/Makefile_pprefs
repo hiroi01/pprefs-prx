@@ -18,7 +18,6 @@ OBJS =	\
 	sepluginstxt.o \
 	editpergame.o \
 	fileselecter.o \
-	usb.o \
 	iso.o \
 	ciso.o \
 	sortgame.o \
@@ -67,10 +66,10 @@ LIBS += libmenue.a
 else
 LIBS += libmenuj.a
 endif
-LIBS += safelySuspend.a
+LIBS += safelySuspend.a usb.a 
 LIBS +=	-lm -lz \
 	-lpspsystemctrl_kernel \
-	-lpspusb -lpspkubridge -lpspusbstor \
+	-lpspusb -lpspkubridge -lpspusbstor -lpspusbdevice \
 
 
 
@@ -81,4 +80,5 @@ PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 
 all:
+
 

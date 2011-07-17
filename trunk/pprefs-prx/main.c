@@ -19,7 +19,7 @@
 
 
 // モジュールの定義
-PSP_MODULE_INFO( "PPREFS", PSP_MODULE_KERNEL, 0, 0 );
+PSP_MODULE_INFO("PPREFS", PSP_MODULE_KERNEL, 0, 0);
 
 
 /*------------------------------------------------------*/
@@ -216,17 +216,178 @@ const char *INI_Key_lineFeedCode_list[] = {
 };
 
 
+/////////////////////////////////////
+/*
+struct prxLibraryList{
+	char *name;
+	char *path;
+};
 
 
+#define NELEMS(a) (sizeof(a) / sizeof(a[0]))
+
+int LoadStartModule(char *module)
+{
+	SceUID mod = sceKernelLoadModule(module, 0, NULL);
+	
+	if (mod < 0) return mod;
+	
+	return sceKernelStartModule(mod, strlen(module)+1, module, NULL, NULL);
+}
+
+
+int loadLibraries( void )
+{
+	int i, j, ret;
+	char path[256];
+	char *root[] = { "ms0:/", "ef0:/", "flash0:/" };
+	struct prxLibraryList list[] = {
+		{ "cmlibMenu",  "seplugins/lib/cmlibmenu.prx"  }
+	};
+	
+	if( strncasecmp(rootPath, "ef0:/", 5) == 0 ){
+		char *tmp = root[0];
+		root[0] = root[1];
+		root[1] = tmp;
+	}
+	
+	
+	for( i = 0; i < NELEMS(list); i++ ){
+		if( sceKernelFindModuleByName(list[i].name) ) continue;
+		
+		ret = -1;
+		for( j = 0; j < NELEMS(root) && ret < 0; j++ ){
+			strcpy(path, root[j]);
+			strcat(path, list[i].path);
+			ret = LoadStartModule(path);
+		}
+		if( ret < 0 ) return ret;
+	}
+	
+	return 0;
+}
+*/
+//////////////////////////////////////
+//thanks to neur0n
+void ClearCaches(void)
+{
+	sceKernelDcacheWritebackAll();
+	sceKernelIcacheClearAll();
+}
+
+//takka氏の umd_dump より malloc を拝借
+static void *p_malloc(u32 size)
+{
+	u32 *p;
+	SceUID h_block;
+	
+	if(size == 0)
+		return NULL;
+	
+	h_block = sceKernelAllocPartitionMemory(1, "block", 0, size + sizeof(h_block), NULL);
+	
+	if(h_block <= 0)
+		return NULL;
+	
+	p = (u32 *)sceKernelGetBlockHeadAddr(h_block);
+	*p = h_block;
+	
+	return (void *)(p + 1);
+}
+/*
+static s32 p_mfree(void *ptr)
+{
+	return sceKernelFreePartitionMemory((SceUID)*((u32 *)ptr - 1));
+}
+*/
+
+void *RedirectFunction(void *addr, void *func)
+{
+	u32 orgaddr = (u32)addr;
+	if( orgaddr != 0 )
+	{
+		u32 buff = (u32)p_malloc( 4 * 4 );
+		if( buff == 0 ) return 0;
+		
+		memcpy( (void *)buff, (void *)orgaddr, 4 * 2 );
+		MAKE_JUMP( (buff + 4 * 2) , (orgaddr + 4 * 2) );
+		_sw( NOP, buff + 4 * 3 );
+		
+		MAKE_JUMP( (u32)(orgaddr), (u32)(func) );
+		_sw( NOP, orgaddr + 4 * 1 );
+		
+		orgaddr = (u32)buff;
+		
+		ClearCaches();
+	}
+	
+	return (void *)orgaddr;
+}
+
+static SceUID (*_sceKernelLoadModule)(const char *path, int flags, SceKernelLMOption *option);
+static u32 sceKernelLoadModule_orgaddr;
+SceUID sceKernelLoadModule_Patched(const char *path, int flags, SceKernelLMOption *option)
+{
+	
+	int i;
+	for( i = 0; i < pdata[0].num; i++ ){
+		if(!strcasecmp(path, pdata[0].line[i].path)){
+			return 0x80010002;
+		}
+	}
+
+	return _sceKernelLoadModule(path, flags, option);
+}
+
+void hookSceKernelLoadModule(void)
+{
+	sceKernelLoadModule_orgaddr = FindProc("sceModuleManager", "ModuleMgrForKernel", 0x977DE386);
+	_sceKernelLoadModule = RedirectFunction((void *)sceKernelLoadModule_orgaddr, sceKernelLoadModule_Patched);
+}
+/////////////////////////////////////
+
+inline void bootMenu()
+{
+	disable_suspend = 1;
+	
+	if(  sceKernelFindModuleByName("sceUSB_Stor_Driver") ){
+		int i = (deviceModel == 4)? 150 : 300;
+		for(; i > 0; i-- ){
+			if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+				libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... just a moment");
+				sceDisplayWaitVblankStart();
+			}
+			sceKernelDelayThread(10 * 1000);
+		}
+	}
+	
+	while(1){
+		if( ! isExistScePafJob() ){
+			sceKernelDelayThread( 500 );
+			if( !isExistScePafJob() ) break;
+		}
+		if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+			libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... just a moment");
+			sceDisplayWaitVblankStart();
+		}
+		sceKernelDelayThread( 50 );			
+	}
+	
+	suspendThreads();	
+	main_menu();
+	resumeThreads();
+	
+	disable_suspend = 0;	
+}
 
 
 int main_thread( SceSize arglen, void *argp )
 {
-
+#ifndef PPREFS_LITE
 	int usbState = 0;
-	char *temp;
-	char iniPath[256];
-	int i;
+#endif
+
+	
 	//wait
 	while( 1 )
 	{
@@ -245,100 +406,30 @@ int main_thread( SceSize arglen, void *argp )
 		sceKernelDelayThread(1000);
 	}
 	
-
-	
-	
-	//起動時にLが押されていたら
-	sceCtrlPeekBufferPositive( &padData, 1 );
-	if( padData.Buttons & PSP_CTRL_LTRIGGER ) usbState = 2;
-
-	
-	//read INI and set config
-	strcpy(iniPath, argp);
-	temp = strrchr(iniPath, '/');
-	if( temp != NULL ) *temp = '\0';
-	strcat(iniPath,INI_NAME);
-	
-	strcpy(config.basePathDefault,rootPath);
-	
-	//6.35PRO or PRO-A以降かの判別(?)
-	if( sceKernelDevkitVersion() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 && sceKernelFindModuleByName("VshCtrl") == NULL ){
-		//it may be 6.35PRO この判定は正しいのか分からない
-		strcat( config.basePathDefault,"plugins/" );
-	}else{
-		strcat( config.basePathDefault, "seplugins/" );
+/*
+	if( loadLibraries() < 0 ){
+		sceKernelSelfStopUnloadModule(0,0,0);
+		sceKernelExitDeleteThread(0); 
+		return 0;
 	}
-
-
+*/	
 	
-	INI_Init_Key(conf);
-	
-	
-#ifdef PPREFS_LITE
-	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
-	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//1
-	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//2
-	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//3
-	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//4
-	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//5
-	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//6
-	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//7
-	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//8
-	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//9
-	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//10
-#else
-	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
-	INI_Add_Bool(conf, "BootMessage", &config.bootMessage, true );//1
-	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//2
-	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//3
-	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//4
-	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//5
-	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//6
-	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//7
-	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//8
-	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//9
-	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//10
-	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//11
-	INI_Add_Bool(conf, "UsbConnect", &config.usbConnect, false );//12
-	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//13
-	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//14
-	INI_Add_Hex(conf, "SortType", &config.sortType, 0, NULL);//15
-#endif
-
-	INI_Read_Conf(iniPath, conf);
-	SET_CONFIG();
-	
-	//init
-	for( i = 0; i < 3; i++ ){
-		pdata[i].num = 0;
-		pdata[i].edit = false;
-		pdata[i].exist = false;
-	}
-	
-	readSepluginsText(3,false,config.basePath);
-	
-#ifndef PPREFS_LITE
-	if( config.usbConnect && usbState == 0 ) USBinit();
-#endif
-
-	
-
 	PspSysEventHandler events;
-	
 	events.size			= 0x40;
 	events.name			= "MSE_Suspend";
 	events.type_mask	= 0x0000FF00;
 	events.handler		= Callback_Suspend;
-	
 	sceKernelRegisterSysEventHandler(&events);
 	
 	padData.Buttons = 0;
+	
+	
 
 #ifndef PPREFS_LITE
-
 	//BOOT MESSAGE
 	if( config.bootMessage ){
 		clock_t timesec;
+		char *temp;
 
 		strcpy(commonBuf,PPREFSMSG_BOOTMESSAGE);
 		
@@ -349,7 +440,6 @@ int main_thread( SceSize arglen, void *argp )
 			temp[0]  = '\0';
 		}
 		
-
 		timesec = sceKernelLibcClock();
 		while( stop_flag ){
 			//表示
@@ -367,52 +457,32 @@ int main_thread( SceSize arglen, void *argp )
 	}
 #endif
 
-#ifndef PPREFS_LITE
 	
-	if( config.usbConnect && usbState == 0 ){
-		while( stop_flag ){
-			if((padData.Buttons & config.bootKey) == config.bootKey){
-				disable_suspend = 1;
-				main_menu();
-				resumeThreads();
-				disable_suspend = 0;
-			}else if( usbState == 0 &&  (padData.Buttons & config.usbConnectKey) == config.usbConnectKey ){
-				USBActivate();
+
+	
+	while( stop_flag ){
+		if((padData.Buttons & config.bootKey) == config.bootKey){
+			bootMenu();
+		}
+		
+#ifndef PPREFS_LITE
+		if(config.usbConnect){
+			if( usbState == 0 && (padData.Buttons & config.usbConnectKey) == config.usbConnectKey ){
+				enableUsb();
 				usbState = 1;
 				wait_button_up_multithread(&padData);
-			}else if( usbState != 0  && (padData.Buttons & config.usbDisconnectKey) == config.usbDisconnectKey ){
-				USBDeactivate();
+			}else if( usbState == 1 && (padData.Buttons & config.usbDisconnectKey) == config.usbDisconnectKey ){
+				disableUsb();
 				usbState = 0;
 				wait_button_up_multithread(&padData);
 			}
-			//    padData.Buttons ^= XOR_KEY;
-			sceCtrlPeekBufferPositive( &padData, 1 );
-			sceKernelDelayThread( 50000 );
 		}
-	}else{
 #endif
-		while( stop_flag ){
-			if((padData.Buttons & config.bootKey) == config.bootKey){
-				disable_suspend = 1;
-				do{
-					if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
-						libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... please wait");
-						sceDisplayWaitVblankStart();
-					}
-					sceKernelDelayThread( 50 );
-				}while( safelySuspendForVSH() != 0 );
-				main_menu();
-				resumeThreads();
-				disable_suspend = 0;
-			}
-			
-			sceCtrlPeekBufferPositive( &padData, 1 );
-			sceKernelDelayThread( 50000 );
-		}
-
-#ifndef PPREFS_LITE
+		sceCtrlPeekBufferPositive( &padData, 1 );
+		sceKernelDelayThread( 50000 );
 	}
-#endif
+	
+	
   return 0;
 }
 
@@ -636,85 +706,83 @@ int sub_menu(int currentSelected,int position){
 
 
 
-//flag == 0 描画しない
-//flag == 1 描画する
-inline int move_arrow(u32 buttons, int *now_arrow, int *headOffset, int flag)
+#define MOVE_ARROW_UP 1
+#define MOVE_ARROW_DRAW 2
+#define MOVE_ARROW_SORT 4
+//if MOVE_ARROW_UP flag is down, the arrow will move to down
+inline int move_arrow(u32 flag, int *now_arrow, int *headOffset)
 {
-	int i,tmp;
+	int i,before_arrow;
 	
-	tmp = *now_arrow; //現在の矢印の位置を覚えておく
+	before_arrow = *now_arrow; //現在の矢印の位置を覚えておく
 	//矢印の位置を変更 / change position of arrow
-	if( buttons & PSP_CTRL_DOWN ){
-		if(  *now_arrow + 1 < pdata[now_type].num )
-			(*now_arrow)++;
-		else
-			*now_arrow = 0;
-	}else if( buttons & PSP_CTRL_UP ){
-		if( *now_arrow - 1 >= 0 )
-			(*now_arrow)--;
-		else
-			*now_arrow = pdata[now_type].num - 1;
+	if( flag & MOVE_ARROW_UP ){
+		if( *now_arrow - 1 >= 0 ) (*now_arrow)--;
+		else *now_arrow = pdata[now_type].num - 1;
+	}else{
+		if(  *now_arrow + 1 < pdata[now_type].num ) (*now_arrow)++;
+		else *now_arrow = 0;
 	}
-
+	
 	//□が押されてるなら、並び替え(そして編集フラグ立てる) / if □ is pushed , sort ( and flag edit )
-	if( buttons & PSP_CTRL_SQUARE ){
-		
+	if( flag & MOVE_ARROW_SORT ){
+
 		printEditedMark();
 		pdata[now_type].edit = true;
 		/*
-		tmp - *now_arrow ==  1 one up
-		tmp - *now_arrow == -1 one down
-		tmp - *now_arrow >   1 up top      ( tmp > *now_arrow )
-		tmp - *now_arrow <  -1 down bottom ( tmp < *now_arrow )
-		*/
-		if( tmp - *now_arrow > 1 ){
-			for( i = tmp; i > *now_arrow; i-- ){
+		 before_arrow - *now_arrow ==  1 <==> up once
+		 before_arrow - *now_arrow == -1 <==> down once
+		 before_arrow - *now_arrow >   1 <==> up to top      ( before_arrow > *now_arrow )
+		 before_arrow - *now_arrow <  -1 <==> down to bottom ( before_arrow < *now_arrow )
+		 */
+		if( before_arrow - *now_arrow > 1 ){//up to top
+			for( i = before_arrow; i > *now_arrow; i-- ){
 				swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i-1]);
 			}
-			flag = 0;
-//			return 2;
-		}else if( tmp - *now_arrow < -1 ){
-			for( i = tmp; i < *now_arrow; i++ ){
+//			flag = 0;
+			//			return 2;
+		}else if( before_arrow - *now_arrow < -1 ){//down ot bottom
+			for( i = before_arrow; i < *now_arrow; i++ ){
 				swap_pdataLine(pdata[now_type].line[i],pdata[now_type].line[i+1]);
 			}
-			flag = 0;
-//			return 2;
-		}else{
-			swap_pdataLine(pdata[now_type].line[*now_arrow],pdata[now_type].line[tmp]);
+//			flag = 0;
+			//			return 2;
+		}else{//up or down once
+			swap_pdataLine(pdata[now_type].line[*now_arrow],pdata[now_type].line[before_arrow]);
 		}
 	}
 	
 	//one up && arrow is out of screen of top
-	if( tmp - *now_arrow == 1 && *headOffset > *now_arrow ){
+	if( before_arrow - *now_arrow == 1 && *headOffset > *now_arrow ){
 		(*headOffset)--;
 		return 4;
-	//one down && arrow is out of screen of bottom
-	}else if( tmp - *now_arrow == -1 && *headOffset+MAX_DISPLAY_NUM <= *now_arrow ){
+		//one down && arrow is out of screen of bottom
+	}else if( before_arrow - *now_arrow == -1 && *headOffset+MAX_DISPLAY_NUM <= *now_arrow ){
 		(*headOffset)++;
 		return 8;
 	}else if( pdata[now_type].num  > MAX_DISPLAY_NUM ){
 		//up to top
-		if( tmp - *now_arrow > 1 ){
+		if( before_arrow - *now_arrow > 1 ){
 			*headOffset = 0;
 			return 16;
-		//down to bottom
-		}else if( tmp - *now_arrow <  -1 ){
+			//down to bottom
+		}else if( before_arrow - *now_arrow <  -1 ){
 			*headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
 			return 32;
 		}
-
+		
 	}
 	
-	if( flag ){
+	if( flag & MOVE_ARROW_DRAW ){
 		//画面に表示 / display on screen
-//		fillLine(38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);libmPrintf(15,38 + (tmp-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[tmp].toggle?"O N":"OFF",pdata[now_type].line[tmp].print);
-//		fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
-		clearAndPrintALine(tmp-*headOffset, tmp, FG_COLOR);
+		//		fillLine(38 + (before_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);libmPrintf(15,38 + (before_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[before_arrow].toggle?"O N":"OFF",pdata[now_type].line[before_arrow].print);
+		//		fillLine(38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);libmPrintf(15,38 + (*now_arrow-*headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[*now_arrow].toggle?"O N":"OFF",pdata[now_type].line[*now_arrow].print);
+		clearAndPrintALine(before_arrow-*headOffset, before_arrow, FG_COLOR);
 		clearAndPrintALine(*now_arrow-*headOffset, *now_arrow, SL_COLOR);
 	}
 	
 	return 0;
-
+	
 }
 
 /*
@@ -782,6 +850,8 @@ void main_menu(void)
 	}
 	
 	PRINT_SCREEN();
+	
+	
 //	safelySuspendThreadsInit();
 	while(1){
 //		libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
@@ -804,20 +874,7 @@ void main_menu(void)
 
 		if( beforeButtons == 0 ) wait_button_up(&padData);
 		while(1){
-			/*
-			//フリーズしないようにするため、0.5秒のwaitをもってからsuspend
-			if( safelySuspendThreads(5 * 100 * 1000) == 1 ){//まさにいまsuspendした
-				//描画に失敗しているかチェック
-				libmPoint(libmMakeDrawAddr(0,0),CHECKCOLOR);
-				while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
-					sceDisplayWaitVblankStart();
-				}
-				if( libmGetColor(libmMakeDrawAddr(0,0)) != CHECKCOLOR ){//失敗してたら再描画
-					PRINT_SCREEN();
-					break;
-				}
-			}
-			*/
+
 			
 			
 			get_button(&padData);
@@ -828,22 +885,23 @@ void main_menu(void)
 
 				//ここの描画処理が適当すぎるのでいつかなおそう
 
-				tmp = 0;//use as flag
+				tmp = 0;//use as flag here
 				if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){//↓ / ↑
-					tmp = move_arrow(padData.Buttons, &now_arrow, &headOffset, 1);
+					tmp = MOVE_ARROW_DRAW;
+					if(padData.Buttons & PSP_CTRL_UP) tmp |= MOVE_ARROW_UP;
+					if(padData.Buttons & PSP_CTRL_SQUARE) tmp |= MOVE_ARROW_SORT;
+					tmp = move_arrow(tmp, &now_arrow, &headOffset);
 				}else if( !( padData.Buttons & PSP_CTRL_SQUARE ) ){// ← / → 
-//					fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
 					clearAndPrintALine(now_arrow-headOffset, now_arrow, FG_COLOR);
 					if( padData.Buttons & PSP_CTRL_LEFT ){
-						for ( i = 0; i < 5; i++ ) tmp |= move_arrow( PSP_CTRL_UP,&now_arrow,&headOffset,0);
+						for ( i = 0; i < 5; i++ ) tmp |= move_arrow(MOVE_ARROW_UP, &now_arrow, &headOffset);
 					}else{
-						for ( i = 0; i < 5; i++ ) tmp |= move_arrow( PSP_CTRL_DOWN,&now_arrow,&headOffset,0);
+						for ( i = 0; i < 5; i++ ) tmp |= move_arrow(0, &now_arrow, &headOffset);
 					}
 					clearAndPrintALine(now_arrow-headOffset, now_arrow, SL_COLOR);
-//					fillLine(38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2),BG_COLOR);libmPrintf(15,38 + (now_arrow-headOffset)*(LIBM_CHAR_HEIGHT+2) , SL_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[now_arrow].toggle?"O N":"OFF",pdata[now_type].line[now_arrow].print);
 				}
 				
-				if( tmp > 0 ) break;
+				if( tmp > 0 ) break;//re-draw all
 			}
 			else if( (padData.Buttons & buttonData[buttonNum[0]].flag) && pdata[now_type].num > 0 )
 			{
@@ -932,7 +990,7 @@ void main_menu(void)
 					if( headOffset < 0 ) headOffset = 0;
 				}else if( tmp == 1 ){
 					if( now_arrow != 0 ){
-						move_arrow(PSP_CTRL_UP,&now_arrow,&headOffset,0);
+						move_arrow(MOVE_ARROW_UP, &now_arrow, &headOffset);
 					}
 				}else if( tmp >= 0 ){
 					now_arrow = 0;
@@ -1106,8 +1164,8 @@ int module_start( SceSize arglen, void *argp )
 	nidResolve();
 	Get_FirstThreads();
 
-
-
+	
+	
 	strcpy(ownPath, argp);
 	getRootPath(rootPath, argp);
 
@@ -1130,6 +1188,83 @@ int module_start( SceSize arglen, void *argp )
 	if( ! check_file(path) ) hitobashiraFlag = 1;
 
 
+
+	char iniPath[256];
+	int i;
+	
+	//read INI and set config
+	strcpy(iniPath, argp);
+	temp = strrchr(iniPath, '/');
+	if( temp != NULL ) *temp = '\0';
+	strcat(iniPath,INI_NAME);
+	
+	strcpy(config.basePathDefault,rootPath);
+	
+	//6.35PRO or PRO-A以降かの判別(?)
+	if( sceKernelDevkitVersion() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 && sceKernelFindModuleByName("VshCtrl") == NULL ){
+		//it may be 6.35PRO(HEN) この判定は正しいのか分からない
+		strcat( config.basePathDefault,"plugins/" );
+	}else{
+		strcat( config.basePathDefault, "seplugins/" );
+	}
+	
+	
+	
+	INI_Init_Key(conf);
+	
+	
+#ifdef PPREFS_LITE
+	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
+	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//1
+	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//2
+	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//3
+	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//4
+	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//5
+	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//6
+	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//7
+	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//8
+	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//9
+	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//10
+	INI_Add_Button(conf, "DisablePluginsKey", &config.disablePluginsKey, PSP_CTRL_LTRIGGER );//11
+#else
+	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
+	INI_Add_Bool(conf, "BootMessage", &config.bootMessage, true );//1
+	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//2
+	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//3
+	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//4
+	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//5
+	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//6
+	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//7
+	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//8
+	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//9
+	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//10
+	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//11
+	INI_Add_Bool(conf, "UsbConnect", &config.usbConnect, false );//12
+	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//13
+	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//14
+	INI_Add_Hex(conf, "SortType", &config.sortType, 0, NULL);//15
+	INI_Add_Button(conf, "DisablePluginsKey", &config.disablePluginsKey, PSP_CTRL_LTRIGGER );//16
+#endif
+	
+	INI_Read_Conf(iniPath, conf);
+	SET_CONFIG();
+	
+	//init
+	for( i = 0; i < 3; i++ ){
+		pdata[i].num = 0;
+		pdata[i].edit = false;
+		pdata[i].exist = false;
+	}
+	
+	readSepluginsText(3,false,config.basePath);
+	
+	
+	sceCtrlPeekBufferPositive( &padData, 1 );
+
+	if( (padData.Buttons & config.disablePluginsKey) == config.disablePluginsKey ){
+		hookSceKernelLoadModule();
+	}
+	
 
 	SceUID thid;
 	//umd dumpとは逆で flag == 0 の時にストップする仕様
@@ -1168,6 +1303,9 @@ int confirm_save(void)
 
 	return 0;
 }
+
+
+
 
 int check_ms()
 {

@@ -642,6 +642,9 @@ void sortgame_run_sort( sortgame_dir_t *dir, int dirNum, char *rootPath ,int mod
 		strcpy(removedFilePath, rootPath);
 		strcat(removedFilePath, "PSP/SYSTEM/ISOCACHE.BIN");
 		sceIoRemove(removedFilePath);
+		strcpy(removedFilePath, rootPath);
+		strcat(removedFilePath, "PSP/SYSTEM/ISOCACHES.BIN");
+		sceIoRemove(removedFilePath);
 	}
 
 	if( mode == 2 ) sortgame_move_dir_t_to_top(dir, dirNum, dirNum-1);
@@ -793,7 +796,7 @@ void reducationRaw2(u32 *data, int xSize, int ySize, u32 *rescaledata, int hxSiz
     double hokanX = (double)xSize / hxSize;
     double hokanY = (double)ySize / hySize;
 	int i,j;
-	int offset;
+//	int offset;
     ypos = 0.0;
     for (i = 0; i < hySize; i++)
     {
@@ -801,7 +804,7 @@ void reducationRaw2(u32 *data, int xSize, int ySize, u32 *rescaledata, int hxSiz
         for (j = 0; j < hxSize; j++)
         {
             // 単純補間・間引き
-            offset = j + i * hxSize;
+ //           offset = j + i * hxSize;
             rescaledata[j + i * hxSize] = data[(int)xpos + ((int)ypos) * xSize];
             xpos += hokanX;
         }
@@ -1038,14 +1041,16 @@ libmPrintf(7 + 48 + 5, 35 + i*(SPACE_BETWEEN_THE_LINES) + 18, FG_COLOR, BG_COLOR
 int sortgame_menu(void)
 {
 	wait_button_up(&padData);
-	
+
 	int file_num,i,now_arrow,offset,tmp,flag,tmp2;
 	sortgame_dir_t *dir,dirTmp;
 	u32 beforeButtons;
 	clock_t time;
 	bool firstFlag,editFlag;
+	int sorted = 0;
 	char rootName[16];
 	char dirPath[128];
+	
 	int mode = 0;// == 0 カテゴリ表示モード / == 1 ゲームリスト表示モード / == 2 ゲーム表示モード(ただしcategories light for 6.3x使用時 && 一番上のカテゴリ内の場合)
 	
 
@@ -1119,8 +1124,7 @@ LIST_UP:
 		}
 //		libmPrintf(5 ,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 		libmFrame(5 , 35 + now_arrow*(SPACE_BETWEEN_THE_LINES), 475, 35 + (now_arrow+1)*(SPACE_BETWEEN_THE_LINES) - 1, FG_COLOR );
-
-		libmPrint(20,22,BG_COLOR,FG_COLOR,PPREFSMSG_SORTGAME_TITLE);
+		libmPrint(20,22,BG_COLOR,FG_COLOR, (deviceModel == 4)? PPREFSMSG_SORTGAME_TITLE_GO : PPREFSMSG_SORTGAME_TITLE);
 		libmFillRect(0 , 254 , 480 , 272 ,BG_COLOR);
 		libmPrintf(0,264,EX_COLOR ,BG_COLOR,PPREFSMSG_SORTGAME_HOWTOUSE,buttonData[buttonNum[0]].name);
 		
@@ -1191,7 +1195,10 @@ LIST_UP:
 			}
 			else if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode == 0 && padData.Buttons & (buttonData[buttonNum[0]].flag|PSP_CTRL_RTRIGGER) )
 			{// using categories plugin && mode == displaying categories && pressed RTRIGGER or EnterButton
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+				if( sortgame_confirm_save(editFlag) ){
+					sorted = 1;
+					sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+				}
 
 				if( now_arrow+offset == 0 ) dirPath[0] = '\0';//if [Uncategorize] is selected
 				else strcpy(dirPath, dir[now_arrow+offset].name);
@@ -1207,10 +1214,16 @@ LIST_UP:
 				beforeButtons = PSP_CTRL_LTRIGGER;
 
 				if( (!(config.sortType & SORT_TYPE_NORMAL_LIST)) && mode != 0 ){
-					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+					if( sortgame_confirm_save(editFlag) ){
+						sorted = 1;
+						sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+					}
 					mode = 0;
 				}else if( deviceModel == 4 ){//if device is 'go'
-					if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+					if( sortgame_confirm_save(editFlag) ){
+						sorted = 1;
+						sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+					}
 					sortgame_selectStrage(rootName);
 				}else{
 					continue;
@@ -1224,7 +1237,10 @@ LIST_UP:
 				if( beforeButtons & PSP_CTRL_START ) continue;
 				beforeButtons = PSP_CTRL_START;
 				
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+				if( sortgame_confirm_save(editFlag) ){
+					sorted = 1;
+					sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+				}
 				goto LIST_UP;
 			}
 			else if( padData.Buttons & PSP_CTRL_SELECT )
@@ -1247,13 +1263,19 @@ LIST_UP:
 				if( beforeButtons & PSP_CTRL_HOME ) continue;
 				beforeButtons = PSP_CTRL_HOME;
 				
-				if( sortgame_confirm_save(editFlag) ) sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+				if( sortgame_confirm_save(editFlag) ){
+					sorted = 1;
+					sortgame_run_sort(dir, file_num, rootName, mode, (config.sortType & SORT_TYPE_NOTREMOVE_ISOCACHE)?false:true);
+				}
 				
 				free(dir);
 				sortgameBuf = NULL;
 				sortgameBufNum = 0;
 				wait_button_up(&padData);
-				
+				if( sorted ){
+					sceIoDevctl("fatms:", 0x0240D81E, NULL, 0, NULL, 0 );
+					if( deviceModel == 4 ) sceIoDevctl("fatef:", 0x0240D81E, NULL, 0, NULL, 0 );
+				}
 				return 0;
 			}
 			else
@@ -1264,5 +1286,4 @@ LIST_UP:
 	}
 	
 	
-	return 0;
 }
