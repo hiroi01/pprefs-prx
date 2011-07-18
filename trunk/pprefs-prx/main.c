@@ -128,7 +128,7 @@ int pauseGameTest()
 		readSize = pspIoRead(fd,header,512);
 		pspIoClose(fd);
 		
-		fd = sceIoOpen("ms0:/__hibernation",PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC,0777);
+		fd = sceIoOpen("ef0:/__hibernation",PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC,0777);
 		if( fd < 0 )
 		{
 			return fd;
@@ -137,7 +137,7 @@ int pauseGameTest()
 		sceIoClose(fd);
 	}else if( selectNum == 1 ){
 		
-		fd = sceIoOpen("ms0:/__hibernation",PSP_O_RDONLY,0777);
+		fd = sceIoOpen("ef0:/__hibernation",PSP_O_RDONLY,0777);
 		if( fd < 0 )
 		{
 			return fd;
@@ -350,7 +350,15 @@ inline void bootMenu()
 {
 	disable_suspend = 1;
 	
-	if(  sceKernelFindModuleByName("sceUSB_Stor_Driver") ){
+	if( sceKernelFindModuleByName("sceUSB_Stor_Driver") ){
+		while( sceKernelFindModuleByName("sceUSB_Stor_Driver") ){
+			if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
+				libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... just a moment");
+				sceDisplayWaitVblankStart();
+			}
+			sceKernelDelayThread(1000);
+		}
+		
 		int i = (deviceModel == 4)? 150 : 300;
 		for(; i > 0; i-- ){
 			if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
@@ -504,7 +512,7 @@ int main_thread( SceSize arglen, void *argp )
 
 #ifdef PPREFS_LITE
 
-int sub_menu(int currentSelected,int position){
+int sub_menu(int currentSelected, int position){
 	int now_arrow;
 
 	if( deviceModel == 4 ){//if device is 'go'
@@ -572,7 +580,7 @@ int sub_menu(int currentSelected,int position){
 
 #else
 
-int sub_menu(int currentSelected,int position){
+int sub_menu(int currentSelected, int position){
 	int now_arrow;
 /*
 	char *menu_fat[] = { PPREFSMSG_SUBMENU_LIST };
@@ -613,7 +621,7 @@ int sub_menu(int currentSelected,int position){
 		}
 	//削除
 	}else if( now_arrow == 1 ){
-		removeAnItem(now_type,currentSelected);
+		removeAnItem(now_type, currentSelected);
 		pdata[now_type].edit = true;
 	//backup menu
 	}else if( now_arrow == 2 ){
@@ -883,8 +891,6 @@ void main_menu(void)
 			{
 				ALLORW_WAIT((PSP_CTRL_DOWN|PSP_CTRL_UP|PSP_CTRL_RIGHT|PSP_CTRL_LEFT),3 * 100 * 1000,1 * 100 * 1000);
 
-				//ここの描画処理が適当すぎるのでいつかなおそう
-
 				tmp = 0;//use as flag here
 				if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){//↓ / ↑
 					tmp = MOVE_ARROW_DRAW;
@@ -989,9 +995,10 @@ void main_menu(void)
 					headOffset = pdata[now_type].num - MAX_DISPLAY_NUM;
 					if( headOffset < 0 ) headOffset = 0;
 				}else if( tmp == 1 ){
-					if( now_arrow != 0 ){
-						move_arrow(MOVE_ARROW_UP, &now_arrow, &headOffset);
+					if( now_arrow == pdata[now_type].num ){
+						if( now_arrow > 0 ) now_arrow--;
 					}
+					if( headOffset > 0 ) headOffset--;
 				}else if( tmp >= 0 ){
 					now_arrow = 0;
 					headOffset = 0;

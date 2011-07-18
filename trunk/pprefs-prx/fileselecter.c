@@ -145,7 +145,7 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 	dir_t *dirBuf = malloc(sizeof(dir_t)*DIR_BUF_NUM);
 	if( dirBuf == NULL ) return -1;
 	
-	int dir_num,offset,i,now_arrow;
+	int dir_num,offset,i,now_arrow,tmp;
 	u32 beforeButtons = 0;
 	clock_t time = 0;
 	char currentPath[256];
@@ -220,7 +220,20 @@ PRINT_LIST:
 			else if( padData.Buttons & PSP_CTRL_RIGHT )
 			{
 				ALLORW_WAIT(PSP_CTRL_RIGHT,2 * 100 * 1000,1 * 100 * 1000);
-				
+
+				libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
+				tmp = 0;
+				for( i = 0; i < 5; i++ ){
+					if( now_arrow + 1 < MAX_DISPLAY_NUM && now_arrow + 1 < dir_num ){
+						now_arrow++;
+					}else if( offset+MAX_DISPLAY_NUM < dir_num ){
+						offset++;
+						tmp = 1;
+					}
+				}
+				if( tmp ) goto PRINT_LIST;
+				libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+				/*
 				i = (dir_num >= MAX_DISPLAY_NUM)?dir_num - MAX_DISPLAY_NUM:0;//tmp value
 				if( i == offset ){
 					now_arrow = (i == 0)?dir_num-1:MAX_DISPLAY_NUM-1;
@@ -230,12 +243,27 @@ PRINT_LIST:
 					if( offset+MAX_DISPLAY_NUM >= dir_num ) offset = i;
 				}
 				goto PRINT_LIST;
-				
+				*/
 				
 			}
 			else if( padData.Buttons & PSP_CTRL_LEFT )
 			{
 				ALLORW_WAIT(PSP_CTRL_LEFT,2 * 100 * 1000,1 * 100 * 1000);
+				
+				
+				libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),BG_COLOR,BG_COLOR," ");
+				tmp = 0;
+				for( i = 0; i < 5; i++ ){
+					if( now_arrow - 1 >= 0 ){
+						now_arrow--;
+					}else if( offset > 0 ){
+						offset--;
+						tmp = 1;
+					}
+				}
+				if( tmp ) goto PRINT_LIST;
+				libmPrintf(5,46 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
+				/*
 				if( offset == 0 ){
 					now_arrow = 0;
 				}else{
@@ -244,6 +272,7 @@ PRINT_LIST:
 					now_arrow = 0;
 				}
 				goto PRINT_LIST;
+				*/
 			}
 			else if( padData.Buttons & (buttonData[buttonNum[0]].flag | PSP_CTRL_RTRIGGER) )
 			{

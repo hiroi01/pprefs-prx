@@ -33,7 +33,7 @@ char *getSepluginsTextName(char *str,char *basePath, int type)
 	return str;
 }
 
-int removeAnItem(int type,int num){
+int removeAnItem(int type, int num){
 	if( !(0 <= type &&  type <= 2) ) return -1;
 	if(  ! (pdata[type].num > 0) ) return 1;
 	
@@ -43,6 +43,7 @@ int removeAnItem(int type,int num){
 		for( ; num + 1 < pdata[type].num; num++ ){
 			strcpy(pdata[type].line[num].path,pdata[type].line[num+1].path);
 			pdata[type].line[num].toggle = pdata[type].line[num+1].toggle;
+			pdata[type].line[num].pathLen = pdata[type].line[num+1].pathLen;
 		}
 		if( pdata[type].num > 0) pdata[type].num--;
 	}
@@ -50,6 +51,23 @@ int removeAnItem(int type,int num){
 	return 0;
 }
 
+
+/*
+int removeAnItem(int type,int num){
+	if( !(0 <= type &&  type <= 2) ) return -1;
+	if(  ! (pdata[type].num > 0) ) return 1;
+	int i;
+	for(i = num; i + 1 < pdata[type].num; i++){
+		strcpy(pdata[type].line[num].path,pdata[type].line[num+1].path);
+		pdata[type].line[num].toggle = pdata[type].line[num+1].toggle;
+		pdata[type].line[num].pathLen = pdata[type].line[num+1].pathLen;
+	}
+	
+	pdata[type].num--;
+	
+	return 0;
+}
+*/
 /*
 	add a new item to pdata
 
