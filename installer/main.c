@@ -310,7 +310,7 @@ int app_main(int argc, char *argv[])
 		vlfGuiSetPictureFade(splashscreen,VLF_FADE_MODE_OUT, VLF_FADE_SPEED_FAST, 0);
 	}
 */	
-	vlfGuiSetTitleBar(vlfGuiAddText(0,0,"pprefs ver. 1130 / pprefs_lite ver.1030"),0,1,0);
+	vlfGuiSetTitleBar(vlfGuiAddText(0,0,"pprefs ver.1131/pprefs_lite ver.1031"),0,1,0);
 	
 	while(1){
 		flagToGoBackTop = 0;

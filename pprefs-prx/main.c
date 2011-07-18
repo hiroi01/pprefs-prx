@@ -702,7 +702,7 @@ int sub_menu(int currentSelected, int position){
 	} \
 	libmPrintf( \
 		15 + (LIBM_CHAR_WIDTH*5 + 4), 38 + (start_y)*(LIBM_CHAR_HEIGHT+2) ,fgColor, BG_COLOR, \
-		"%s", pdata[now_type].line[lineNumber].print \
+		"%s", (pdata[now_type].line[lineNumber].path + pdata[now_type].line[lineNumber].print) \
 	); \
 }
 

@@ -87,7 +87,7 @@
 "Color of explanation on bottom of screen", \
 "[ON] color", \
 "[OFF] color", \
-
+"if it boots with holding this buttons,\n disable others plugins"
 
 
 /*--------------------------------------*/
@@ -126,6 +126,7 @@
 "button to connect USB\n(button to disconnect USB also can do)", \
 "button to disconnect USB\n(button to connect USB also can do)", \
 "about SORT GAME", \
+"if it boots with holding this buttons,\n disable others plugins"
 
 
 

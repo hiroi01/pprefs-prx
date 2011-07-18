@@ -1124,7 +1124,7 @@ LIST_UP:
 		}
 //		libmPrintf(5 ,38 + now_arrow*(LIBM_CHAR_HEIGHT+2),FG_COLOR,BG_COLOR,">");
 		libmFrame(5 , 35 + now_arrow*(SPACE_BETWEEN_THE_LINES), 475, 35 + (now_arrow+1)*(SPACE_BETWEEN_THE_LINES) - 1, FG_COLOR );
-		libmPrint(20,22,BG_COLOR,FG_COLOR, (deviceModel == 4)? PPREFSMSG_SORTGAME_TITLE_GO : PPREFSMSG_SORTGAME_TITLE);
+		libmPrint(20,22,BG_COLOR,FG_COLOR, PPREFSMSG_SORTGAME_TITLE);
 		libmFillRect(0 , 254 , 480 , 272 ,BG_COLOR);
 		libmPrintf(0,264,EX_COLOR ,BG_COLOR,PPREFSMSG_SORTGAME_HOWTOUSE,buttonData[buttonNum[0]].name);
 		

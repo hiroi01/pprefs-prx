@@ -41,9 +41,7 @@ int removeAnItem(int type, int num){
 		if( pdata[type].num > 0) pdata[type].num--;
 	}else{
 		for( ; num + 1 < pdata[type].num; num++ ){
-			strcpy(pdata[type].line[num].path,pdata[type].line[num+1].path);
-			pdata[type].line[num].toggle = pdata[type].line[num+1].toggle;
-			pdata[type].line[num].pathLen = pdata[type].line[num+1].pathLen;
+			pdata[type].line[num] = pdata[type].line[num+1];
 		}
 		if( pdata[type].num > 0) pdata[type].num--;
 	}
@@ -58,9 +56,7 @@ int removeAnItem(int type,int num){
 	if(  ! (pdata[type].num > 0) ) return 1;
 	int i;
 	for(i = num; i + 1 < pdata[type].num; i++){
-		strcpy(pdata[type].line[num].path,pdata[type].line[num+1].path);
-		pdata[type].line[num].toggle = pdata[type].line[num+1].toggle;
-		pdata[type].line[num].pathLen = pdata[type].line[num+1].pathLen;
+		pdata[type].line[num] = pdata[type].line[num+1];
 	}
 	
 	pdata[type].num--;
@@ -90,7 +86,7 @@ int addNewItem(int type,struct pdataLine *lineData)
 	strcpy(pdata[type].line[pdata[type].num].path,lineData->path);
 	pdata[type].line[pdata[type].num].toggle = lineData->toggle;
 	pdata[type].line[pdata[type].num].pathLen = strlen(pdata[type].line[pdata[type].num].path);
-	pdata[type].line[pdata[type].num].print = &pdata[type].line[pdata[type].num].path[(pdata[type].line[pdata[type].num].pathLen < PRINT_PATH_LEN)?0:(pdata[type].line[pdata[type].num].pathLen-PRINT_PATH_LEN)];
+	pdata[type].line[pdata[type].num].print = (pdata[type].line[pdata[type].num].pathLen < PRINT_PATH_LEN)?0:(pdata[type].line[pdata[type].num].pathLen-PRINT_PATH_LEN);
 
 	pdata[type].num++;
 	
@@ -250,7 +246,7 @@ int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 				}
 			}
 			pdata[type].line[i].pathLen = strlen(pdata[type].line[i].path);
-			pdata[type].line[i].print = &pdata[type].line[i].path[(pdata[type].line[i].pathLen < PRINT_PATH_LEN)?0:(pdata[type].line[i].pathLen-PRINT_PATH_LEN)];
+			pdata[type].line[i].print = (pdata[type].line[i].pathLen < PRINT_PATH_LEN)?0:(pdata[type].line[i].pathLen-PRINT_PATH_LEN);
 			i++;
 		}
 		sceIoClose(fp);
