@@ -1273,8 +1273,14 @@ LIST_UP:
 				sortgameBufNum = 0;
 				wait_button_up(&padData);
 				if( sorted ){
-					sceIoDevctl("fatms:", 0x0240D81E, NULL, 0, NULL, 0 );
-					if( deviceModel == 4 ) sceIoDevctl("fatef:", 0x0240D81E, NULL, 0, NULL, 0 );
+					char deviceName[] = "fatms:";
+					deviceName[3] = 'm';
+					deviceName[4] = 's';
+					sceIoDevctl(deviceName, 0x0240D81E, NULL, 0, NULL, 0 );
+					if( deviceModel == 4 ){
+						sceIoDevctl("fatef:", 0x0240D81E, NULL, 0, NULL, 0 );
+						sceIoDevctl("fatef:", 0x0240D81E, NULL, 0, NULL, 0 );
+					}
 				}
 				return 0;
 			}
