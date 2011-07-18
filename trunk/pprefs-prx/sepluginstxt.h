@@ -29,7 +29,7 @@ struct pdatas{
 		char path[LEN_PER_LINE];
 		bool toggle;//= ture ON / = false OFF
 		int pathLen;
-		char *print;
+		unsigned int print;
 	}line[MAX_LINE];
 } pdata[3];
 
