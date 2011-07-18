@@ -1,5 +1,5 @@
 TARGET = pprefs_instaler
-OBJS = crt0.o main.o 
+OBJS = crt0.o main.o util.o vlf_bin.o
 
 INCDIR = ./include
 CFLAGS = -O2 -G0 -Wall -fshort-wchar -fno-pic -mno-check-zero-division 
@@ -8,7 +8,6 @@ ASFLAGS = $(CFLAGS) -c
 
 LIBDIR = ./lib
 LDFLAGS = -mno-crt0 -nostdlib -nodefaultlibs
-LIBS += -lbz2
 LIBS += -lvlfgui -lvlfgu -lvlfutils -lvlflibc 
 
 PSP_FW_VERSION = 271
@@ -18,7 +17,7 @@ PSP_EBOOT_TITLE = pprefs installer
 PSP_EBOOT_ICON = icon0.png
 
 BUILD_PRX = 1
-PSP_LARGE_MEMORY = 1
+#PSP_LARGE_MEMORY = 1
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak

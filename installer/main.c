@@ -16,17 +16,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <malloc.h>
-#include <zlib.h>
 
 #include <vlf.h>
 #include "utf8text.h"
+
+#include "util.h"
 
 #include "pprefs_jp_bin.h"
 #include "pprefs_lite_jp_bin.h"
 #include "pprefs_en_bin.h"
 #include "pprefs_lite_en_bin.h"
 
+#include "vlf_bin.h"
 
 PSP_MODULE_INFO("pprefs_installer", 0, 1, 0);
 PSP_MAIN_THREAD_ATTR(0);
@@ -40,57 +41,6 @@ VlfPicture splashscreen;
 int flagToGoBackTop = 0;
 
 
-int Decompress(void* inbuf, unsigned int inbufSize, void* outbuf, unsigned int outbufSize, const char* outPath)
-{
-	z_stream z;
-	//default
-    z.zalloc = NULL;
-    z.zfree = NULL;
-    z.opaque = NULL;
-	
-    // init
-    if (inflateInit(&z) != Z_OK) {
-		return -1;
-    }
-	
-	SceUID fd = sceIoOpen(outPath, PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC, 0777);
-	if( fd < 0 ){
-		inflateEnd(&z);
-		return -2;
-	}
-	
-	
-	z.next_in = inbuf;
-	z.avail_in = inbufSize;
-	
-	int ret, writtenSize;
-    while(1){
-		//reset
-		z.next_out = outbuf;
-		z.avail_out = outbufSize;
-
-		ret = inflate(&z, Z_NO_FLUSH);//decompress
-		if( ret != Z_OK && ret != Z_STREAM_END ){//error
-			ret = -3;
-			break;
-		}
-		
-		writtenSize = sceIoWrite(fd, outbuf, outbufSize - z.avail_out);
-		if( writtenSize != (outbufSize - z.avail_out) ){//write error
-			ret = -4;
-			break;
-		}
-		
-		if( ret == Z_STREAM_END ){//done
-			ret = 0;
-			break;
-		}
-    }
-	
-	sceIoClose(fd);
-	inflateEnd(&z);
-	return ret;
-}
 
 
 
@@ -191,6 +141,7 @@ int isEOF(SceUID fd)
 
 #define LEN_PER_LINE 256
 
+
 int install(int sel){
 	
 	SceUID fd, fdw;
@@ -258,15 +209,9 @@ int install(int sel){
 	unsigned int srcSize[] = {
 		size_pprefs_jp, size_pprefs_lite_jp, size_pprefs_en, size_pprefs_lite_en
 	};
-	char *buf;
-	unsigned int bufSize = 1024 * 100;
-	while(1){
-		buf = malloc(bufSize);
-		if( buf != NULL ) break;
-		bufSize -= 1024;
-	}
+	void *buf = vlf;
+	unsigned int bufSize = size_vlf;
 	ret = Decompress(srcData[sel], srcSize[sel], buf, bufSize, pprefsPath);
-	free(buf);
 	
 
 	return ret;
