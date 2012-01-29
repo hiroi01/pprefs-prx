@@ -11,13 +11,13 @@ OBJS =	\
 	pprefsmenu.o \
 	button.o \
 	exports.o \
-	conf.o \
 	common.o \
 	configmenu.o \
 	nidresolve.o \
 	sepluginstxt.o \
 	editpergame.o \
 	fileselecter.o \
+	threadctrl.o \
 	iso.o \
 	ciso.o \
 	sortgame.o \
@@ -47,7 +47,7 @@ CLASSG_LIBS = libs
 
 
 
-INCDIR = $(CLASSG_LIBS)
+INCDIR = $(CLASSG_LIBS) include
 CFLAGS = -Os -G0 -Wall -fno-strict-aliasing -fno-builtin-printf -DUSE_KERNEL_LIBRARY $(OPTION_FLAGS)
 
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
@@ -57,16 +57,12 @@ ASFLAGS = $(CFLAGS)
 ##CFLAGS 	= -O3 -G0 -Wall -DLNGJPN
 #ASFLAGS		=	$(CFLAGS)
 
-LIBDIR			= 
+LIBDIR			= libs
 LDFLAGS		=	-mno-crt0 -nostartfiles
 
-
-ifeq ($(LANGUAGE),english)
-LIBS += libmenue.a
-else
-LIBS += libmenuj.a
-endif
-LIBS += safelySuspend.a usb.a 
+LIBS += -lcmlibMenu
+LIBS += -linip
+LIBS += usb.a 
 LIBS +=	-lm -lz \
 	-lpspsystemctrl_kernel \
 	-lpspusb -lpspkubridge -lpspusbstor -lpspusbdevice \

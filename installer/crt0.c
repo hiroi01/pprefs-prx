@@ -10,10 +10,17 @@
 #include "intraFontJPN_bin.h"
 #include "iop_bin.h"
 
+
 struct modules_data{
 	void* data;
 	unsigned int dataSize;
 	char* path;
+};
+
+
+struct modules_data2 {
+	void *data;
+	unsigned int dataSize;
 };
 
 
@@ -47,6 +54,28 @@ int loadModules(SceSize args, void *argp)
 {
 	SceUID mod;
 	int i;
+	/*
+	struct modules_data2 modules[] = {
+		{iop, size_iop},
+		{intraFontJPN, size_intraFontJPN},
+		{vlf, size_vlf}
+	};
+	
+	for( i = 0; i < NELEMS(modules); i++ ){
+		mod = sceKernelLoadModuleBuffer((void *)modules[i].dataSize, (SceSize)modules[i].data, 0, NULL);
+		if( mod < 0 ){
+			return -6;
+		}
+		
+		mod = sceKernelStartModule(mod, args, argp, NULL, NULL);
+		if( mod < 0 ){
+			return -7;
+		}
+	}
+	
+	return 0;
+	*/
+	
 	
 	struct modules_data modules[] = {
 		{iop, size_iop, "iop.prx"},
@@ -68,7 +97,6 @@ int loadModules(SceSize args, void *argp)
 		mod = sceKernelStartModule(mod, args, argp, NULL, NULL);
 		if( mod < 0 ) return -7;		
 	}
-	
 	return 0;
 	
 	/*

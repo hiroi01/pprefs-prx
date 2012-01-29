@@ -1,7 +1,3 @@
-//ごちゃごちゃしてるからいつか直そう
-
-
-
 #ifndef PPREFSCOMMON_H
 #define PPREFSCOMMON_H
 
@@ -18,14 +14,27 @@
 #include <psploadexec_kernel.h>
 #include <pspsysmem_kernel.h>
 
-#include "conf.h"
+#include <cmlibmenu.h>
+#include <libinip.h>
+
 #include "memory.h"
 #include "button.h"
-#include "safelySuspend.h"
+#include "threadctrl.h"
 #include "file.h"
 #include "language.h"
 #include "nidresolve.h"
 
+#include "debuglog.h"
+
+#ifdef PPREFS_LITE
+
+#define PPREFS_TITLE_STRING "pprefs lite Ver. 1.032beta     by hiroi01"
+
+#else
+
+#define PPREFS_TITLE_STRING "pprefs Ver. 1.132beta     by hiroi01"
+
+#endif
 
 // Thanks to Davee
 #define PSP_FIRMWARE(f) ((((f >> 8) & 0xF) << 24) | (((f >> 4) & 0xF) << 16) | ((f & 0xF) << 8) | 0x10)
@@ -51,33 +60,66 @@ a.year   == b.year      \
 
 
 /*------------------------------------------
-for ini
 ------------------------------------------*/
 
 
-#define SET_CONFIG() \
-{ \
-	int i; \
-	if( config.swapButton ){ \
-		buttonNum[0] = 1; \
-		buttonNum[1] = 0; \
-	}else{ \
-		buttonNum[0] = 0; \
-		buttonNum[1] = 1; \
-	} \
-	i = strlen(config.basePathOri) - 1; \
-	if( config.basePathOri[0] == '\0' ){ \
-		strcpy(config.basePath,config.basePathDefault); \
-	}else{ \
-		if( config.basePathOri[i] != '/' ){ \
-			config.basePathOri[i+1] = '/'; \
-			config.basePathOri[i+2] = '\0'; \
-		} \
-		strcpy(config.basePath,config.basePathOri); \
-	} \
-}
+//used in sortgame.c
+enum
+{
+	SORT_TYPE_NORMAL_LIST = 1,	//
+	SORT_TYPE_NOT_USED_ = 2,	//not used
+	
+	SORT_TYPE_CATEGORIZES_LIGHT_620 = 4,//
+	SORT_TYPE_CATEGORIZES = 8,//
+	SORT_TYPE_CATEGORIZES_LIGHT_63X = 16,	//
+	SORT_TYPE_CATEGORIZES_LIGHT = (SORT_TYPE_CATEGORIZES_LIGHT_620 | SORT_TYPE_CATEGORIZES_LIGHT_63X),
+	
+	SORT_TYPE_ISOCSO = 32,	//
+	SORT_TYPE_GAME = 64,	//
+	SORT_TYPE_GAME150 = 128, //
+	SORT_TYPE_GAME5XX = 256, //
+	
+	SORT_TYPE_NOTREMOVE_ISOCACHE = 512, //if this flag is true, not remove isocache
+	SORT_TYPE_NOTDISPLAY_ICON0 = 1024, //if this flag is true, not displayed ICON0
+};
 
 
+#ifdef PPREFS_LITE
+
+#define INI_NAME "/pprefs_lite.ini"
+#define PPREFS_CONF_NUM 11
+
+#else
+
+#define INI_NAME "/pprefs.ini"
+#define PPREFS_CONF_NUM 12
+
+#endif
+
+typedef struct
+{
+	u32 bootKey;//0
+	bool swapButton;//1
+	bool bootMessage;//2
+	bool onePushRestart;//3
+	int lineFeedCode;//4 // = 0:CR+LF  =1:CR  =2:LF
+	char basePath[64];//5
+	u32 color0;//6
+	u32 color1;//7
+	u32 color2;//8
+	u32 color3;//9
+	u32 color4;//10
+	u32 color5;//11
+	u32 disablePluginsKey;//12
+	
+#ifndef PPREFS_LITE
+	u32 sortType;//13
+#endif
+
+} Conf_Key;
+
+extern char basePathDefault[64];
+extern char basePathCurrent[64];
 
 /*-----------------------------------------------------------*/
 
@@ -90,18 +132,6 @@ struct pprefsButtonDatas{
 };
 
 
-#ifdef PPREFS_LITE
-
-#define INI_NAME "/pprefs_lite.ini"
-#define PPREFS_CONF_NUM 12
-
-
-#else
-
-#define INI_NAME "/pprefs.ini"
-#define PPREFS_CONF_NUM 17
-
-#endif
 
 
 extern dir_t dirTmp;
@@ -112,10 +142,19 @@ extern SceCtrlData padData;
 extern char ownPath[256];
 extern char rootPath[16];
 extern int deviceModel;
-extern char *modelName[];
+extern char modelName[6];//"[01g]" "[02g]" "[03g]" "[04g]" "[g o]" .....
 extern struct pprefsButtonDatas buttonData[];
 extern int buttonNum[];
-extern INI_Key conf[PPREFS_CONF_NUM];
+extern ILP_Key conf[PPREFS_CONF_NUM];
 extern int hitobashiraFlag;
+extern libm_draw_info dinfo;
+extern libm_vram_info vinfo;
+
+/*-----------------------------------------------------------*/
+
+void pprefsApplyConfig(void);
+
 
 #endif
+
+

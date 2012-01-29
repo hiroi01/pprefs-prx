@@ -143,10 +143,9 @@ int isEOF(SceUID fd)
 
 
 int install(int sel){
-	
 	SceUID fd, fdw;
-
-	int ret;
+	
+	int res;
 	char line[LEN_PER_LINE];
 	char *ptr;
 	char pprefsPath[256];
@@ -154,20 +153,22 @@ int install(int sel){
 	char *vshPath = "ms0:/seplugins/vsh.txt";
 	char *vshtmpPath = "ms0:/seplugins/vsh.txt.pprefstmp";
 	
-
+	
+	sceIoMkdir("ms0:/seplugins",0777);
+	
 	fdw = sceIoOpen(vshtmpPath, PSP_O_WRONLY|PSP_O_CREAT|PSP_O_APPEND, 0777);
 	if( fdw < 0 ){
 		return -1;
 	}
-
+	
 	fd = sceIoOpen(vshPath, PSP_O_RDONLY, 0777);
 	
 	strcpy(pprefsPath, rootPath);
 	strcat(pprefsPath, (sel == 1 || sel == 3)?"seplugins/pprefs_lite.prx":"seplugins/pprefs.prx");
-
+	
 	strcpy(pprefsPath_another, rootPath);
 	strcat(pprefsPath_another, (sel == 1 || sel == 3)?"seplugins/pprefs.prx":"seplugins/pprefs_lite.prx");
-
+	
 	int flag = 0;
 	if( fd >= 0 ){
 		while( ! isEOF(fd) ){
@@ -197,7 +198,7 @@ int install(int sel){
 	
 	
 	sceIoClose(fdw);
-
+	
 	sceIoRemove(vshPath);
 	sceIoRename(vshtmpPath, vshPath);
 	
@@ -211,12 +212,12 @@ int install(int sel){
 	};
 	void *buf = vlf;
 	unsigned int bufSize = size_vlf;
-	ret = Decompress(srcData[sel], srcSize[sel], buf, bufSize, pprefsPath);
+	res = Decompress(srcData[sel], srcSize[sel], buf, bufSize, pprefsPath);
 	
-
-	return ret;
-
+	return res;
+	
 }
+
 
 int menu_sel(int sel)
 {

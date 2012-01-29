@@ -4,7 +4,6 @@
 #include "language.h"
 #include "fileselecter.h"
 
-#ifndef PPREFS_LITE
 u32 selectSorttypeByuser()
 {
 	u32 rtn = SORT_TYPE_GAME;
@@ -41,11 +40,6 @@ u32 selectSorttypeByuser()
 
 	return rtn;
 }
-#else
-u32 selectSorttypeByuser(){
-	return 0;
-}
-#endif
 
 
 void selectBasePath(char *path)
@@ -147,63 +141,58 @@ u32 detect_key(void)
 
 #define SPACE_BETWEEN_THE_LINES (LIBM_CHAR_HEIGHT + 2)
 
-/*
-#define ARROW_POSITION ( \
-( now_arrow < conf[0].keyNum )? \
-( now_arrow *2 ): \
-( conf[0].keyNum * 2 + now_arrow - conf[0].keyNum + 1 ) \
-)
-*/
+static inline u32 getArrowPositionY(int pos)
+{
+	if( pos == PPREFS_CONF_NUM ){
+		pos++;
+	}
+	return (pos * SPACE_BETWEEN_THE_LINES);
+}
 
-#define ARROW_POSITION ((now_arrow < conf[0].keyNum)?(now_arrow):(now_arrow+1))
-
-#define PRINT_EXPLANATION() \
-makeWindowQuick(0, 235, 472 ,260,  FG_COLOR, BG_COLOR ); \
-if( now_arrow < conf[0].keyNum ) libmPrintf(5, 240 , FG_COLOR, BG_COLOR, whatIsThis[now_arrow]);
+static void printExplanation(int pos)
+{
+	char *list[] = {
+		PPREFSMSG_CONFIGMENU_WHATISTHIS
+	};
+	
+	makeWindowQuick(0, 235, 472 ,260,  FG_COLOR, BG_COLOR );
+	if( pos < PPREFS_CONF_NUM )
+		libmPrintf(5, 240 , FG_COLOR, BG_COLOR, list[pos]);
+}
 
 int config_menu(void)
 {
-	Conf_Key oldConfig = config;
-	char *temp,**listPtr;
-	char iniPath[256];
-	int now_arrow = 0,i;
-	char *whatIsThis[] = {
-		PPREFSMSG_CONFIGMENU_WHATISTHIS
-	};
+	Conf_Key newConfig = config;
+	char *temp, **listPtr;
+	char buf[256];
+	int currentPos = 0,i;
+	u32 fgColor, bgColor;
 
 	
 	while(1){
-		PRINT_SCREEN();
 		
+		//draw
+		printScreen();
 		libmPrint(15,18,BG_COLOR,FG_COLOR,PPREFSMSG_CONFIGMENU_TITLE);
-		for( i = 0; i < conf[0].keyNum; i++ ){
-			if( /*
-				strcasecmp( "Color0", conf[i].key ) == 0 ||
-				strcasecmp( "Color2", conf[i].key ) == 0 ||
-				strcasecmp( "Color3", conf[i].key ) == 0 ||
-				strcasecmp( "Color4", conf[i].key ) == 0 ||
-				strcasecmp( "Color5", conf[i].key ) == 0*/
-			   strncasecmp("Color", conf[i].key, 5) == 0
-			){
-				libmPrintf(15, 28 + i*SPACE_BETWEEN_THE_LINES, *conf[i].value.u, (*conf[i].value.u == BG_COLOR )?FG_COLOR:BG_COLOR,"%s = %x",conf[i].key, *conf[i].value.u);
-				continue;
-			}else if( conf[i].type & INI_TYPE_BUTTON ){
-				sprintf(commonBuf,"%s = ",conf[i].key);
-				GET_KEY_NAME(*conf[i].value.u, commonBuf);
-				temp = strrchr(commonBuf, '+');
-				if( temp != NULL ) temp[-1] = '\0';
-			}else if( conf[i].type & INI_TYPE_LIST ){
-				listPtr = (char **)conf[i].ex;
-				sprintf(commonBuf,"%s = %s", conf[i].key, listPtr[*conf[i].value.i]);
-			}else if( conf[i].type & INI_TYPE_BOOL ){
-				sprintf(commonBuf,"%s = %s",conf[i].key, *conf[i].value.b?"true":"false");
-			}else if( conf[i].type & INI_TYPE_HEX ){
-				sprintf(commonBuf,"%s = %x",conf[i].key, *conf[i].value.u);
-			}else if( conf[i].type & INI_TYPE_STRING ){
-				sprintf(commonBuf,"%s = %s",conf[i].key, conf[i].value.s);
+		
+		for( i = 0; i < PPREFS_CONF_NUM; i++ ){
+			char *name = ILPGetNameAddressByKeynumber(conf, i);
+			//set color
+			if( strncasecmp("Color", name, 5) == 0){
+				fgColor = *(u32 *)ILPGetValueAddressByKeynumber(conf, i);
+				bgColor = (fgColor == BG_COLOR)?FG_COLOR:BG_COLOR;
+			}else{
+				fgColor = FG_COLOR;
+				bgColor = BG_COLOR;
 			}
-			libmPrint (15, 28 + i*SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR,commonBuf);
-//			libmPrint (15, 38 + (i*2+1)*SPACE_BETWEEN_THE_LINES, EX_COLOR , BG_COLOR, whatIsThis[i]);
+			
+			//set string
+			snprintf(buf, 256, "%s = ", name);
+			name = strchr(buf, '/0');
+			ILPGetStringFormatValueByKeynumber(conf, name, i);
+			
+			//print
+			libmPrint(15, 28 + i*SPACE_BETWEEN_THE_LINES, fgColor, bgColor, buf);
 		}
 
 		
@@ -212,83 +201,128 @@ int config_menu(void)
 		libmPrint (15, 28 +(i+3)*(SPACE_BETWEEN_THE_LINES), FG_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_MENU_3);
 
 
-		libmPrintf(5, 28 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
-		libmPrintf(5,264,EX_COLOR ,BG_COLOR,PPREFSMSG_CONFIGMENU_HOWTOUSE,buttonData[buttonNum[0]].name);
-		PRINT_EXPLANATION();
-		wait_button_up(&padData);
+		libmPrint(5, 28 + getArrowPositionY(currentPos), FG_COLOR, BG_COLOR, ">");
+		libmPrintf(5, 264, EX_COLOR, BG_COLOR, PPREFSMSG_CONFIGMENU_HOWTOUSE,buttonData[buttonNum[0]].name);
+		
+		printExplanation(currentPos);
+		
 		while(1){
 			get_button(&padData);
-			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) ){
-				libmPrintf(5, 28 +ARROW_POSITION* SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, " ");
+			
+			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP) )
+			{
+				libmPrint(5, 28 + getArrowPositionY(currentPos), FG_COLOR, BG_COLOR, " ");
+				
 				if( padData.Buttons & PSP_CTRL_DOWN){
-					now_arrow++;
-					if( now_arrow >= conf[0].keyNum+3 ) now_arrow = 0;
-				}else if( padData.Buttons & PSP_CTRL_UP ){
-					now_arrow--;
-					if( now_arrow < 0 ) now_arrow = conf[0].keyNum + 2;
+					currentPos++;
+					if( currentPos >= (PPREFS_CONF_NUM + 3) )
+						currentPos = 0;
+				}else{// if( padData.Buttons & PSP_CTRL_UP )
+					currentPos--;
+					if( currentPos < 0 )
+						currentPos = (PPREFS_CONF_NUM + 2);
 				}
-				libmPrintf(5, 28 +ARROW_POSITION * SPACE_BETWEEN_THE_LINES, FG_COLOR, BG_COLOR, ">");
-
-				PRINT_EXPLANATION();
+				
+				libmPrint(5, 28 + getArrowPositionY(currentPos), FG_COLOR, BG_COLOR, ">");
+				printExplanation(currentPos);
+				
 				wait_button_up(&padData);
-			}else if( padData.Buttons & buttonData[buttonNum[0]].flag ){
-				if( now_arrow < conf[0].keyNum ){
-					if( strcasecmp( "BasePath", conf[now_arrow].key ) == 0 ){
-						char *list[] = {PPREFSMSG_CONFIG_BASEPATH_LIST};
+			}
+			else if( padData.Buttons & buttonData[buttonNum[0]].flag )
+			{
+				if( currentPos < PPREFS_CONF_NUM ){
+					char *name = ILPGetNameAddressByKeynumber(conf, currentPos);
+					if( strcasecmp("BasePath", name) == 0 )
+					{
+						char *list[] = {
+							PPREFSMSG_CONFIG_BASEPATH_LIST
+						};
 						int selectNum = pprefsMakeSelectBox(32,  32, PPREFSMSG_CONFIG_BASEPATH_TITLE,list, buttonData[buttonNum[0]].flag, 1 );
-						if( selectNum == 0 ){
-							selectBasePath(conf[now_arrow].value.s);
-						}else if( selectNum == 1){
-							conf[now_arrow].value.s[0] = '\0';
+						switch (selectNum) {
+							case 0:
+								selectBasePath(newConfig.basePath);
+								break;
+							case 1:
+								newConfig.basePath[0] = '\0';
+								break;
 						}
-					}else if( strcasecmp( "SortType", conf[now_arrow].key ) == 0  ){
-						*conf[now_arrow].value.u = selectSorttypeByuser();
-					}else if( strcasecmp( "Color2", conf[now_arrow].key ) == 0 ){
-						if( *conf[now_arrow].value.u == RED ){
-							*conf[now_arrow].value.u = GREEN;
-						}else if( *conf[now_arrow].value.u == GREEN ){
-							*conf[now_arrow].value.u = 0xffff4040;
-						}else if( *conf[now_arrow].value.u == 0xffff4040 ){
-							*conf[now_arrow].value.u = RED;
+					}
+					else if( strcasecmp("SortType", name) == 0  )
+					{
+						config.sortType = selectSorttypeByuser();
+					}
+					else if( strcasecmp("Color2", name) == 0 )
+					{
+						if( config.color2 == RED ){
+							config.color2 = GREEN;
+						}else if( config.color2 == GREEN ){
+							config.color2 = 0xffff4040;
+						}else if( config.color2 == 0xffff4040 ){
+							config.color2 = RED;
 						}
-					}else if( conf[now_arrow].type & INI_TYPE_BUTTON ){
-						*conf[now_arrow].value.u = detect_key();
-						if( *conf[now_arrow].value.u == 0 ) *conf[now_arrow].value.u = conf[now_arrow].defaultValue.u;
-					}else if( conf[now_arrow].type & INI_TYPE_LIST ){
-						listPtr = (char **)conf[now_arrow].ex;
-						(*conf[now_arrow].value.i)++;
-						if( listPtr[*conf[now_arrow].value.i] == NULL ) *conf[now_arrow].value.i = 0;
-					}else if( conf[now_arrow].type & INI_TYPE_BOOL ){
-						*conf[now_arrow].value.b = !*conf[now_arrow].value.b;
+					}else{
+						switch (ILPGetTypeByKeynumber(conf, currentPos)) {
+							case ILP_TYPE_BUTTON:
+							{
+								u32 buttonsValue = detect_key();
+								if( buttonsValue == 0 ){
+									ILPSetDefaultOne(conf, currentPos);
+								}else {
+									*(u32 *)(ILPGetValueAddressByKeynumber(conf, currentPos)) = buttonsValue;
+								}
+
+								break;
+							}
+							case ILP_TYPE_LIST:
+							{
+//								listPtr = (char **)conf[currentPos].ex;
+//								(*conf[currentPos].value.i)++;
+//								if( listPtr[*conf[currentPos].value.i] == NULL ) *conf[currentPos].value.i = 0;
+								break;
+							}
+							case ILP_TYPE_BOOL:
+							{
+								bool *boolValue = ILPGetValueAddressByKeynumber(conf, currentPos);
+								*boolValue = ! *boolValue;
+								break;
+							}
+						}
 					}
 				}else{
-					if( now_arrow - conf[0].keyNum ==  0 ){
-						strcpy(iniPath, ownPath);
-						temp = strrchr(iniPath, '/');
-						if( temp != NULL ) *temp = '\0';
-						strcat(iniPath,INI_NAME);
-						INI_Write_Conf(iniPath, conf, lineFeedCode[config.lineFeedCode]);
-						SET_CONFIG();
-						wait_button_up(&padData);
-						return 0;
-					}else if( now_arrow - conf[0].keyNum ==  1 ){//set default
-						INI_Set_Default(conf);
-						wait_button_up(&padData);
-						break;
-					}else if( now_arrow - conf[0].keyNum ==  2 ){//
-						config = oldConfig;
-						wait_button_up(&padData);
-						return 1;
+					switch (currentPos - PPREFS_CONF_NUM) {
+						case 0:
+							config = newConfig;
+							
+							strcpy(buf, ownPath);
+							temp = strrchr(buf, '/');
+							if( temp != NULL )
+								*temp = '\0';
+							strcat(buf, INI_NAME);
+							
+							ILPWriteToFile(conf, buf, lineFeedCode[config.lineFeedCode]);
+							
+							pprefsApplyConfig();
+							
+							wait_button_up(&padData);
+							return 0;
+						case 1:
+							ILPSetDefaultAll(conf);
+							
+							wait_button_up(&padData);
+							break;
+						case 2:
+							wait_button_up(&padData);
+							return 1;
 					}
 				}
 				break;
-			}else if( padData.Buttons & PSP_CTRL_HOME ){
-				config = oldConfig;
+			}
+			else if( padData.Buttons & PSP_CTRL_HOME )
+			{
 				wait_button_up(&padData);
 				return 1;
 			}
 		}
-
 	}
 	
 }

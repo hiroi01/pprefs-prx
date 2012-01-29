@@ -145,7 +145,7 @@ int backupmenu(char *basePath, int *now_type)
 	bool firstFlag = true;
 
 	while(1){
-		PRINT_SCREEN();
+		printScreen();
 		libmPrintf(0, 264, EX_COLOR, BG_COLOR, PPREFSMSG_BACKUPMENU_HOWOTOUSE, buttonData[buttonNum[0]].name);
 		for( i = 0; i < 10; i++ ){
 			sprintf(baseName, "%s_%d.txt", textFileName[*now_type], i);

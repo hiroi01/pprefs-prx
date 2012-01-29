@@ -407,7 +407,7 @@ int editPergameMenu(void)
 	i = 0;
 
 
-	PRINT_SCREEN();
+	printScreen();
 	libmPrint(24, 22,  BG_COLOR, FG_COLOR, PPREFSMSG_EDITPERGAME_TOP);
 	libmPrintf(0, 256,  EX_COLOR , BG_COLOR, PPREFSMSG_EDITPERGAME_HOTOUSE,buttonData[buttonNum[1]].name);
 	libmPrint (0, 264, EX_COLOR , BG_COLOR, PPREFSMSG_EDITPERGAME_HOTOUSE_2);

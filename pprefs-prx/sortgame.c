@@ -1074,14 +1074,14 @@ int sortgame_menu(void)
 	*/
 	
 
-	PRINT_SCREEN();
+	printScreen();
 	
 	
 	if( config.sortType == 0 ){
 		char *menu[] = { "OK", NULL };
 		pprefsMakeSelectBox(24,  40, PPREFSMSG_SORTGAME_PLEASECONFIG ,menu, buttonData[buttonNum[0]].flag, 0);
 		config.sortType = selectSorttypeByuser();
-		PRINT_SCREEN();
+		printScreen();
 	}
 	
 	

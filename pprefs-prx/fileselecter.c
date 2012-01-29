@@ -159,7 +159,7 @@ int fileSelecter(const char *startPath, dir_t *rtn, char* titleLabel,int selectT
 		offset = 0;
 		now_arrow = 0;
 
-		PRINT_SCREEN();
+		printScreen();
 		libmPrintf(15,28,BG_COLOR,FG_COLOR, titleLabel);
 		libmPrintf(15,36,BG_COLOR,FG_COLOR,"[%d] [%s]",dir_num,currentPath);
 		libmPrintf(5,264,EX_COLOR,BG_COLOR, (selectType == 0)?PPREFSMSG_ADD_HOWTOUSE:(selectType == 1)?PPREFSMSG_ADD_HOWTOUSE_2:PPREFSMSG_ADD_HOWTOUSE_3, buttonData[buttonNum[0]].name);
@@ -365,7 +365,7 @@ int fileManager(const char *startPath ,char* titleLabel,int selectType, char *di
 		offset = 0;
 		now_arrow = 0;
 
-		PRINT_SCREEN();
+		printScreen();
 		libmPrintf(15,28,BG_COLOR,FG_COLOR, titleLabel);
 		libmPrintf(15,36,BG_COLOR,FG_COLOR,"[%d] [%s]",dir_num,currentPath);
 		libmPrintf(5,264,EX_COLOR,BG_COLOR, (selectType == 0)?PPREFSMSG_ADD_HOWTOUSE:(selectType == 1)?PPREFSMSG_ADD_HOWTOUSE_2:PPREFSMSG_ADD_HOWTOUSE_3, buttonData[buttonNum[0]].name);

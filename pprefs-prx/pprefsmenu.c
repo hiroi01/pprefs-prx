@@ -90,13 +90,15 @@ int pprefsMakeSelectBox( int start_x, int start_y, const char *itemName , u32 se
 int pprefsMakeSelectBox_( int start_x, int start_y,char *titleLabel, char *itemName[] , u32 selectKey, int type, bool isSpeedy)
 {
 
-	int numOfItem,i,tmp,end_x,end_y;
+	int numOfItem, i, end_x, end_y;
 	SceCtrlData pad;
 
 	end_x = str2bytelen(titleLabel);
 	for( i = 0; itemName[i] != NULL; i++ ){
-		tmp = str2bytelen(itemName[i]);
-		if( end_x < tmp ) end_x = tmp;
+		int len = str2bytelen(itemName[i]);
+		if( end_x < len ){
+			end_x = len;
+		}
 	}
 	numOfItem = i;
 	
@@ -154,12 +156,6 @@ int pprefsMakeSelectBox_( int start_x, int start_y,char *titleLabel, char *itemN
 }
 
 
-void pprefsSleep(clock_t sleepTime)
-{
-	clock_t time = sceKernelLibcClock();
-	
-	while( (sceKernelLibcClock()- time) < sleepTime );
-}
 
 //ˆêu‚Å‘‹‚ðì‚é
 void makeWindowQuick(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
@@ -180,7 +176,7 @@ void makeWindow(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
 		libmFillRect(sx , sy , nowx , nowy , bgcolor );
 		libmFrame(sx , sy , nowx ,nowy , fgcolor );
 		if( nowx == ex && nowy == ey ) break;
-		pprefsSleep(8 * 1000);
+		sceKernelDelayThread(8 * 1000);
 	}
 	
 }
@@ -198,7 +194,7 @@ void makeWindowSpeedy(int sx, int sy, int ex, int ey, u32 fgcolor ,u32 bgcolor)
 		libmFillRect(sx , sy , nowx , nowy , bgcolor );
 		libmFrame(sx , sy , nowx ,nowy , fgcolor );
 		if( nowx == ex && nowy == ey ) break;
-		pprefsSleep(1 * 1000);
+		sceKernelDelayThread(1 * 1000);
 	}
 	
 }
@@ -217,9 +213,27 @@ void makeWindowWithGettingButton(int sx, int sy, int ex, int ey, u32 fgcolor ,u3
 		libmFillRect(sx , sy , nowx , nowy , bgcolor );
 		libmFrame(sx , sy , nowx ,nowy , fgcolor );
 		if( nowx == ex && nowy == ey ) break;
-		pprefsSleep(8 * 1000);
+		sceKernelDelayThread(8 * 1000);
 	}
 	
 }
 
+void printScreen(void)
+{
+	libmFillRect( 0 , 0 , 480 , 272 , BG_COLOR);
+	libmPrint(10, 8, FG_COLOR, BG_COLOR, PPREFS_TITLE_STRING);
+//	libmPrint(440, 8, FG_COLOR, BG_COLOR, modelName[deviceModel]);
+}
+
+void pprefsLibmenuPrintf(int x, int y, u32 fg, u32 bg, const char *fmt, ...)
+{
+	char buf[128];
+	va_list ap;
+	
+	va_start( ap, fmt );
+	vsnprintf( buf, 128, fmt, ap );
+	va_end( ap );
+	
+	libmPrintXY(x, y, fg, bg, buf, &dinfo);
+}
 

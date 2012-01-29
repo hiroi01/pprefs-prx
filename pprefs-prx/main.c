@@ -1,10 +1,3 @@
-/*
-	
-	ありがとう、
-	masciiさん、maxemさん、neur0nさん、plumさん、STEARさん、takkaさん、yreeenさん(アルファベット順)、他全ての開発者の方々
-
-*/
-
 #include <pspsysevent.h>
 
 #include "sepluginstxt.h"
@@ -12,7 +5,6 @@
 #include "pprefsmenu.h"
 #include "fileselecter.h"
 #include "editpergame.h"
-#include "usb.h"
 #include "sortgame.h"
 #include "backupmenu.h"
 #include "common.h"
@@ -27,7 +19,30 @@ PSP_MODULE_INFO("PPREFS", PSP_MODULE_KERNEL, 0, 0);
 static int now_type = 0;//This means ... 0 : vsh.txt / 1 : game.txt / 2:pops.txt
 static struct pdataLine tmp_pdataLine;
 static int stop_flag;
-static int disable_suspend = 0;
+static volatile int disable_suspend = 0;
+static const char *sepluginsTxtFileName[] = {
+	"vsh.txt",
+	"game.txt",
+	"pops.txt"
+};
+
+static char *lineFeedCodeList[] = {
+	"CR+LF",
+	"LF",
+	NULL
+};
+
+/*------------------------------------------------------*/
+
+int Callback_Suspend(int ev_id, char *ev_name, void *param, int *result);
+
+static 	PspSysEventHandler events = { 
+	.size			= 0x40,
+	.name			= "MSE_Suspend",
+	.type_mask		= 0x0000FF00,
+	.handler		= Callback_Suspend
+};
+
 
 /*------------------------------------------------------*/
 
@@ -49,8 +64,7 @@ int main_thread( SceSize arglen, void *argp );
 void main_menu(void);
 int confirm_save(void);
 
-
-
+int loadLibraries(void);
 
 int copyMeProcess(void);
 
@@ -61,138 +75,6 @@ void saveEdit(void);
 /*----------------------------------------------------------------------------*/
 
 
-
-#ifndef PPREFS_LITE
-
-SceUID (* pspIoOpen)(char *file, int flags, SceMode mode) = NULL;
-int (* pspIoRead)(SceUID fd, void *data, u32 len) = NULL;
-int (* pspIoWrite)(SceUID fd, void *data, u32 len) = NULL;
-int (* pspIoClose)(SceUID fd) = NULL;
-
-
-
-int pauseGameTest()
-{
-	if( pspIoOpen == NULL ) pspIoOpen = (void *)FindProc("sceIOFileManager", "IoFileMgrForKernel", 0x109F50BC);	
-	if( pspIoRead == NULL ) pspIoRead = (void *)FindProc("sceIOFileManager", "IoFileMgrForKernel", 0x6A638D83);
-	if( pspIoWrite == NULL ) pspIoWrite = (void *)FindProc("sceIOFileManager", "IoFileMgrForKernel", 0x42EC03AC);
-	if( pspIoClose == NULL ) pspIoClose = (void *)FindProc("sceIOFileManager", "IoFileMgrForKernel", 0x810C4BC3);
-
-	/*
-	char *selectName[] = {
-		"READ",
-		"WRITE",
-		NULL
-	};
-	 */
-	
-	char *list[] = {
-		"READ",
-		"WRITE",
-		"REMOVE",
-		NULL
-	};
-	
-
-	int selectNum = pprefsMakeSelectBox(10, 10,PPREFSMSG_PAUSEGAMETEST ,list, buttonData[buttonNum[0]].flag, 1 );
-
-	
-	
-	
-	int readSize;
-
-
-	u8 _header[512+64];
-	
-	/* use a pointer for math ease */
-	u8 *header = _header; 
-	
-	/* align to 64 */
-	header = (u8 *)((u32)header & ~0x3F); header = (u8 *)((u32)header + 0x40);
-	
-	/* now clear it */
-	memset(header, 0, 512);
-
-	SceUID fd;
-	
-
-	if( selectNum == 0 ){
-		fd = pspIoOpen("eflash0a:__hibernation", PSP_O_RDONLY, 0);
-		/* check for error */
-		if (fd < 0)
-		{
-			/* return error */
-			return fd;
-		}
-		
-		readSize = pspIoRead(fd,header,512);
-		pspIoClose(fd);
-		
-		fd = sceIoOpen("ef0:/__hibernation",PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC,0777);
-		if( fd < 0 )
-		{
-			return fd;
-		}
-		sceIoWrite(fd,header,readSize);
-		sceIoClose(fd);
-	}else if( selectNum == 1 ){
-		
-		fd = sceIoOpen("ef0:/__hibernation",PSP_O_RDONLY,0777);
-		if( fd < 0 )
-		{
-			return fd;
-		}
-		readSize = sceIoRead(fd,header,512);
-		sceIoClose(fd);
-
-
-		fd = pspIoOpen("eflash0a:__hibernation",0x04000003/* PSP_O_WRONLY | PSP_O_CREAT | PSP_O_TRUNC*/, 0);
-		/* check for error */
-		if (fd < 0)
-		{
-			/* return error */
-			return fd;
-		}
-		
-		pspIoWrite(fd,header,readSize);
-		pspIoClose(fd);
-		
-	}else if( selectNum == 2){
-		/* open hibernation fs */
-		fd = pspIoOpen("eflash0a:__hibernation", 0x04000003, 0);
-		
-		/* check for error */
-		if (fd < 0)
-		{
-			/* return error */
-			return fd;
-		}
-		
-		/* write the blank header */
-		int written = pspIoWrite(fd, header, 512);
-		
-		/* check for error */
-		if (written < 0)
-		{
-			/* close file */
-			pspIoClose(fd);
-			
-			/* return the error code */
-			return written;
-		}
-		
-		/* return result */
-		return pspIoClose(fd);
-	}
-
-	
-	
-	return 0;
-
-}
-
-
-#endif
 
 
 #define PSP_SYSEVENT_SUSPEND_QUERY 0x100 
@@ -209,11 +91,6 @@ int Callback_Suspend(int ev_id, char *ev_name, void *param, int *result)
 
 
 
-const char *INI_Key_lineFeedCode_list[] = {
-	"CR+LF",
-	"LF",
-	NULL
-};
 
 
 /////////////////////////////////////
@@ -278,21 +155,25 @@ void ClearCaches(void)
 //takka氏の umd_dump より malloc を拝借
 static void *p_malloc(u32 size)
 {
-	u32 *p;
+//	u32 *p;
+	void *ptr;
 	SceUID h_block;
 	
 	if(size == 0)
 		return NULL;
 	
-	h_block = sceKernelAllocPartitionMemory(1, "block", 0, size + sizeof(h_block), NULL);
+	h_block = sceKernelAllocPartitionMemory(1, "block", 0, size/* + sizeof(h_block)*/, NULL);
 	
 	if(h_block <= 0)
 		return NULL;
 	
-	p = (u32 *)sceKernelGetBlockHeadAddr(h_block);
-	*p = h_block;
+//	p = (u32 *)sceKernelGetBlockHeadAddr(h_block);
+//	*p = h_block;
 	
-	return (void *)(p + 1);
+//	return (void *)(p + 1);
+	
+	ptr = (void *)sceKernelGetBlockHeadAddr(h_block);
+	return ptr;
 }
 /*
 static s32 p_mfree(void *ptr)
@@ -349,88 +230,127 @@ void hookSceKernelLoadModule(void)
 inline void bootMenu()
 {
 	disable_suspend = 1;
-	
-	if( sceKernelFindModuleByName("sceUSB_Stor_Driver") ){
-		while( sceKernelFindModuleByName("sceUSB_Stor_Driver") ){
-			if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
-				libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... just a moment");
-				sceDisplayWaitVblankStart();
-			}
-			sceKernelDelayThread(1000);
-		}
 		
-		int i = (deviceModel == 4)? 150 : 300;
-		for(; i > 0; i-- ){
-			if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
-				libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... just a moment");
-				sceDisplayWaitVblankStart();
-			}
-			sceKernelDelayThread(10 * 1000);
-		}
-	}
-	
-	while(1){
-		if( ! isExistScePafJob() ){
-			sceKernelDelayThread( 500 );
-			if( !isExistScePafJob() ) break;
-		}
-		if( libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_NEXTFRAME) ){
-			libmPrint(0,264,SetAlpha(WHITE,0xFF),SetAlpha(BLACK,0xFF),"pprefs: starting... just a moment");
-			sceDisplayWaitVblankStart();
-		}
-		sceKernelDelayThread( 50 );			
-	}
-	
-	suspendThreads();	
+	threadCtrlSuspend();
 	main_menu();
-	resumeThreads();
+	threadCtrlResume();
 	
 	disable_suspend = 0;	
 }
 
-
-int main_thread( SceSize arglen, void *argp )
+int pprefsInit(SceSize arglen, void *argp)
 {
-#ifndef PPREFS_LITE
-	int usbState = 0;
-#endif
-
+	nidResolve();
+	threadCtrlInit();
 	
-	//wait
-	while( 1 )
-	{
-		if(
-			sceKernelFindModuleByName("sceSystemMemoryManager") && 
-			sceKernelFindModuleByName("sceIOFileManager") && 
-			sceKernelFindModuleByName("sceGE_Manager") && 
-			sceKernelFindModuleByName("sceDisplay_Service") && 
-			sceKernelFindModuleByName("sceController_Service") && 
-			sceKernelFindModuleByName("sceKernelLibrary")
-		)
-		{
-			break;
-		}
+	//set own path & root path
+	char *ptr = strchr(argp, '/');
+	if( ptr != NULL ){
+		int len = ptr - (char *)argp + 1;
+		memcpy(rootPath, argp, len);
+		rootPath[len] = '\0';
 		
+		strcpy(ownPath, argp);
+	}else{
+		strcpy(rootPath, "ms0:/");
+		
+		strcpy(ownPath, "ms0:/");
+	}
+	
+	//set device model number & name
+	deviceModel = sceKernelGetModel();
+	if( deviceModel == 4 ){
+		strcpy(modelName, "[g o]");
+	}else{
+		snprintf(modelName, 6, "[%02d]", deviceModel + 1);
+	}
+	
+	//check hitobashira
+	char path[257];
+	strcpy(path, argp);
+	ptr = strrchr(path, '/');
+	if( ptr != NULL ){
+		*ptr = '\0';
+	}else{
+		ptr = strrchr(path, '\0');
+	}
+	
+	strcat(path, "/hitobashira.txt");
+	if( check_file(path) == 0 ){
+		hitobashiraFlag = 1;
+	}
+	
+	//load INI
+	*ptr = '\0';
+	strcat(path, INI_NAME);
+	
+	strcpy(basePathDefault, rootPath);
+	if( sceKernelDevkitVersion() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 && sceKernelFindModuleByName("VshCtrl") == NULL ){
+		//if it's 6.35PRO(HEN)
+		strcat(basePathDefault,"plugins/");
+	}else{
+		strcat(basePathDefault, "seplugins/");
+	}
+	
+	ILPInitKey(conf);
+	
+	ILPRegisterButton(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME, NULL);//0
+	ILPRegisterBool(conf, "SwapButton", &config.swapButton, false );//1
+	ILPRegisterBool(conf, "OnePushRestart", &config.onePushRestart, false );//2
+	ILPRegisterList(conf, "LineFeedCode", &config.lineFeedCode, 0, lineFeedCodeList);//3
+	ILPRegisterString(conf, "BasePath", config.basePath, basePathDefault);//4
+	ILPRegisterHex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT);//5
+	ILPRegisterHex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT);//6
+	ILPRegisterHex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT);//7
+	ILPRegisterHex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT);//8
+	ILPRegisterHex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT);//9
+	ILPRegisterHex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT);//10
+	ILPRegisterButton(conf, "DisablePluginsKey", &config.disablePluginsKey, PSP_CTRL_LTRIGGER, NULL);//11
+	
+#ifndef PPREFS_LITE	
+	ILPRegisterBool(conf, "BootMessage", &config.bootMessage, true );//1
+	ILPRegisterHex(conf, "SortType", &config.sortType, 0);//15
+#endif
+	
+	ILPReadFromFile(conf, path);
+	
+	pprefsApplyConfig();
+	
+	//init
+	int i;
+	for( i = 0; i < 3; i++ ){
+		pdata[i].num = 0;
+		pdata[i].edit = false;
+		pdata[i].exist = false;
+	}
+	
+	readSepluginsText(3,false,config.basePath);
+	
+	return 0;
+}
+
+
+int main_thread(SceSize arglen, void *argp)
+{
+	
+	sceKernelRegisterSysEventHandler(&events);
+	//wait
+	while( sceKernelFindModuleByName("sceKernelLibrary") == NULL ){
 		sceKernelDelayThread(1000);
 	}
 	
-/*
-	if( loadLibraries() < 0 ){
-		sceKernelSelfStopUnloadModule(0,0,0);
-		sceKernelExitDeleteThread(0); 
-		return 0;
+	//load prx common libraries
+    if( loadLibraries() < 0 ){
+		return sceKernelExitDeleteThread(0);
 	}
-*/	
+	sceKernelDelayThread(5 * 100 * 1000);
 	
-	PspSysEventHandler events;
-	events.size			= 0x40;
-	events.name			= "MSE_Suspend";
-	events.type_mask	= 0x0000FF00;
-	events.handler		= Callback_Suspend;
-	sceKernelRegisterSysEventHandler(&events);
-	
-	padData.Buttons = 0;
-	
+	//init cmlibmenu
+	dinfo.vinfo = &vinfo;
+	libmLoadFont(LIBM_FONT_SJIS);
+	sceKernelDelayThread(5 * 100 * 1000);
+	libmLoadFont(LIBM_FONT_CG);
+	sceKernelDelayThread(5 * 100 * 1000);
 	
 
 #ifndef PPREFS_LITE
@@ -466,26 +386,11 @@ int main_thread( SceSize arglen, void *argp )
 #endif
 
 	
-
-	
 	while( stop_flag ){
 		if((padData.Buttons & config.bootKey) == config.bootKey){
 			bootMenu();
 		}
 		
-#ifndef PPREFS_LITE
-		if(config.usbConnect){
-			if( usbState == 0 && (padData.Buttons & config.usbConnectKey) == config.usbConnectKey ){
-				enableUsb();
-				usbState = 1;
-				wait_button_up_multithread(&padData);
-			}else if( usbState == 1 && (padData.Buttons & config.usbDisconnectKey) == config.usbDisconnectKey ){
-				disableUsb();
-				usbState = 0;
-				wait_button_up_multithread(&padData);
-			}
-		}
-#endif
 		sceCtrlPeekBufferPositive( &padData, 1 );
 		sceKernelDelayThread( 50000 );
 	}
@@ -510,11 +415,11 @@ int main_thread( SceSize arglen, void *argp )
 ・
 */
 
-#ifdef PPREFS_LITE
 
 int sub_menu(int currentSelected, int position){
 	int now_arrow;
 
+#ifdef PPREFS_LITE	
 	if( deviceModel == 4 ){//if device is 'go'
 		char *menu[] = {PPREFSMSG_SUBMENU_LIST_GO};
 		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
@@ -522,74 +427,7 @@ int sub_menu(int currentSelected, int position){
 		char *menu[] = {PPREFSMSG_SUBMENU_LIST};
 		now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
 	}
-
-	wait_button_up(&padData);
-
-	//追記
-	if( now_arrow == 0 ){
-		if( fileSelecter(config.basePath, &dirTmp, PPREFSMSG_ADD_TOP, 0, "ccbcccac") == 0 ){
-			strcpy(tmp_pdataLine.path, dirTmp.name);
-			tmp_pdataLine.toggle = false;
-			addNewItem(now_type,&tmp_pdataLine);
-			pdata[now_type].edit = true;
-		}
-	//削除
-	}else if( now_arrow == 1 ){
-		removeAnItem(now_type,currentSelected);
-		pdata[now_type].edit = true;
-	//backup
-	}else if( now_arrow == 2 ){
-		if( confirm_save() == 0 ){
-			if( backupmenu(config.basePath, &now_type) != 0 ){
-				pdata[now_type].edit = true;
-				printEditedMark();
-			}
-		}
-	//設定
-	}else if( now_arrow == 3 ){
-		if( confirm_save() == 0 ){
-			config_menu();
-			readSepluginsText(3,false,config.basePath);//re-read vsh.txt game.txt pops.txt
-		}
-	//COPY ME
-	}else if( now_arrow == 4 ){
-		int tmp = copyMeProcess();
-		if( tmp < 0 ){
-			makeWindow(
-					   24 , 28 ,
-					   24 + LIBM_CHAR_WIDTH*23 , 28 + LIBM_CHAR_HEIGHT*5,
-					   FG_COLOR,BG_COLOR
-					   );
-			libmPrint(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_ERROR);
-			if( tmp == -1 )
-				libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_INSERTERROR);
-			else
-				libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"ErrorNo.:%d",tmp);
-			libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:OK ",buttonData[buttonNum[0]].name);
-			wait_button_down(&padData,buttonData[buttonNum[0]].flag);
-		}
-		if( tmp !=  1 ) readSepluginsText(3,true,config.basePath);
-	}
-
-	wait_button_up(&padData);
-	
-	return now_arrow;
-	
-}
-
-
-#else
-
-int sub_menu(int currentSelected, int position){
-	int now_arrow;
-/*
-	char *menu_fat[] = { PPREFSMSG_SUBMENU_LIST };
-	char *menu_go[] = { PPREFSMSG_SUBMENU_LIST_GO };
-	char *menu_go_hitobashira[] = { PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA };
-	char **menu = (deviceModel == 4)?(hitobashiraFlag)?menu_go_hitobashira:menu_go:menu_fat;
-*/	
-
-
+#else	
 	if( deviceModel == 4 ){//if device is 'go'
 		if( hitobashiraFlag ){
 			char *menu[] = {PPREFSMSG_SUBMENU_LIST_GO_HITOBASHIRA};
@@ -607,80 +445,102 @@ int sub_menu(int currentSelected, int position){
 			now_arrow = pprefsMakeSelectBox(8,  position, PPREFSMSG_SUBMENU_TITLE,menu, buttonData[buttonNum[0]].flag, 1 );
 		}
 	}
-
+#endif
 
 	wait_button_up(&padData);
 
-	//追記
-	if( now_arrow == 0 ){
-		if( fileSelecter(config.basePath, &dirTmp, PPREFSMSG_ADD_TOP, 0, "ccbcccac") == 0 ){
-			strcpy(tmp_pdataLine.path, dirTmp.name);
-			tmp_pdataLine.toggle = false;
-			addNewItem(now_type,&tmp_pdataLine);
-			pdata[now_type].edit = true;
-		}
-	//削除
-	}else if( now_arrow == 1 ){
-		removeAnItem(now_type, currentSelected);
-		pdata[now_type].edit = true;
-	//backup menu
-	}else if( now_arrow == 2 ){
-		if( confirm_save() == 0 ){
-			if( backupmenu(config.basePath, &now_type) != 0 ){
+	switch (now_arrow) {
+		case 0://add
+		{
+			if( fileSelecter(config.basePath, &dirTmp, PPREFSMSG_ADD_TOP, 0, "ccbcccac") == 0 ){
+				strcpy(tmp_pdataLine.path, dirTmp.name);
+				tmp_pdataLine.toggle = false;
+				addNewItem(now_type,&tmp_pdataLine);
 				pdata[now_type].edit = true;
-				printEditedMark();
+			}
+			break;
+		}
+		case 1://remove
+		{
+			removeAnItem(now_type, currentSelected);
+			pdata[now_type].edit = true;
+			break;
+		}
+		case 2://backup
+		{
+			if( confirm_save() == 0 ){
+				if( backupmenu(config.basePath, &now_type) != 0 ){
+					pdata[now_type].edit = true;
+					printEditedMark();
+				}
+			}
+			break;
+		}
+		case 3://config
+		{
+			if( confirm_save() == 0 ){
+				config_menu();
+				readSepluginsText(3,false,config.basePath);//re-read vsh.txt game.txt pops.txt
+			}			
+			break;
+		}
+		case 4://sortgame
+		{
+			sortgame_menu();
+			break;
+		}
+		case 5://edit pergame
+		{
+			editPergameMenu();
+			break;
+		}
+		case 6:
+		{
+			if(deviceModel != 4){
+				int tmp = copyMeProcess();
+				if( tmp < 0 ){
+					makeWindow(
+							   24 , 28 ,
+							   24 + LIBM_CHAR_WIDTH*23 , 28 + LIBM_CHAR_HEIGHT*5,
+							   FG_COLOR,BG_COLOR
+							   );
+					libmPrint(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_ERROR);
+					if( tmp == -1 )
+						libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_INSERTERROR);
+					else
+						libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"ErrorNo.:%d",tmp);
+					libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:OK ",buttonData[buttonNum[0]].name);
+					wait_button_down(&padData,buttonData[buttonNum[0]].flag);
+				}
+				if( tmp !=  1 ) readSepluginsText(3,true,config.basePath);
+			}else {				
+				fileManager(config.basePath, "remove FILE", 0, NULL);
 			}
 		}
-	//SORT GAME
-	}else if( now_arrow == 3 ){
-		sortgame_menu();
-	//設定
-	}else if( now_arrow == 4 ){
-		if( confirm_save() == 0 ){
-			config_menu();
-			readSepluginsText(3,false,config.basePath);//re-read vsh.txt game.txt pops.txt
+		case 7:
+		{
+			fileManager(config.basePath, "rm FILE", 0, NULL);
 		}
-	//pergame編集
-	}else if( now_arrow == 5 ){
-		editPergameMenu();
-	//not GO -> COPY ME  / is GO -> omake
-	}else if( now_arrow == 6 ){
-		if(deviceModel == 4 ){
-			if(  hitobashiraFlag ){
-				pauseGameTest();
-			}
-		}else{
-			int tmp = copyMeProcess();
-			if( tmp < 0 ){
-				makeWindow(
-						   24 , 28 ,
-						   24 + LIBM_CHAR_WIDTH*23 , 28 + LIBM_CHAR_HEIGHT*5,
-						   FG_COLOR,BG_COLOR
-						   );
-				libmPrint(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_ERROR);
-				if( tmp == -1 )
-					libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,PPREFSMSG_COPYME_INSERTERROR);
-				else
-					libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*2 + 2 , FG_COLOR,BG_COLOR,"ErrorNo.:%d",tmp);
-				libmPrintf(24 + LIBM_CHAR_WIDTH , 28 + LIBM_CHAR_HEIGHT*3 + 4 ,FG_COLOR,BG_COLOR,"%s:OK ",buttonData[buttonNum[0]].name);
-				wait_button_down(&padData,buttonData[buttonNum[0]].flag);
-			}
-			if( tmp !=  1 ) readSepluginsText(3,true,config.basePath);
-		}
-	//REMOVER
-	}else if( now_arrow == 7 ){
 
-		fileManager(config.basePath, "rm FILE", 0, NULL);
 	}
-
+	
 	wait_button_up(&padData);
 	
 	return now_arrow;
 	
 }
 
-#endif
-
+/*
+inline void swapPdataLine()
+{
+	strcpy(tmp_pdataLine.path , first.path);
+	tmp_pdataLine.toggle = first.toggle;
+	strcpy(first.path  , second.path);
+	first.toggle = second.toggle;
+	strcpy(second.path  , tmp_pdataLine.path);
+	second.toggle = tmp_pdataLine.toggle;
+}
+*/
 #define swap_pdataLine(first,second) \
         strcpy( tmp_pdataLine.path , first.path ); \
         tmp_pdataLine.toggle = first.toggle; \
@@ -840,7 +700,6 @@ if( (beforeButtons & (button) ) == (button) ){ \
 
 void main_menu(void)
 {
-
 	wait_button_up(&padData);
 
 	int i,tmp = 0,headOffset = 0;
@@ -851,40 +710,37 @@ void main_menu(void)
 
 	readSepluginsText(3,true,config.basePath);
 	
-
-
-	while( ! libmInitBuffers(LIBM_DRAW_BLEND,PSP_DISPLAY_SETBUF_IMMEDIATE) ){
-		sceDisplayWaitVblankStart();
-	}
-	
-	PRINT_SCREEN();
+	libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
+	printScreen();
 	
 	
-//	safelySuspendThreadsInit();
 	while(1){
-//		libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
-//		PRINT_SCREEN();
+		libmInitBuffers(LIBM_DRAW_INIT8888,PSP_DISPLAY_SETBUF_NEXTFRAME);
+		printScreen();
 		libmFillRect(0 , 38, 480, 38 + MAX_DISPLAY_NUM*(LIBM_CHAR_HEIGHT+2), BG_COLOR);
 
+		if( hitobashiraFlag )
+			libmPrint(416,10,FG_COLOR,BG_COLOR,(hitobashiraFlag == 1)?PPREFSMSG_HITOBASHIRA:PPREFSMSG_HITOBASHIRA_2);
+		else 
+			libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
+		
+		libmPrintf(0, 254, EX_COLOR, BG_COLOR, PPREFSMSG_MAINMENU_HOTOUSE, buttonData[buttonNum[0]].name, buttonData[buttonNum[1]].name);
+		libmPrint(0, 264, EX_COLOR, BG_COLOR, PPREFSMSG_MAINMENU_HOTOUSE_2);
 
-		if( hitobashiraFlag ) libmPrint(416,10,FG_COLOR,BG_COLOR,(hitobashiraFlag == 1)?PPREFSMSG_HITOBASHIRA:PPREFSMSG_HITOBASHIRA_2);
-		else libmPrint(424,10,FG_COLOR,BG_COLOR,"  ");
+		libmPrintf(15,24,BG_COLOR,FG_COLOR,"<<[L]  %s%s [R]>>", basePathCurrent, sepluginsTxtFileName[now_type]);
 
-		libmPrintf(0, 254, EX_COLOR, BG_COLOR, PPREFSMSG_MAINMENU_HOTOUSE,buttonData[buttonNum[0]].name,buttonData[buttonNum[1]].name);
-		libmPrintf(0, 264, EX_COLOR, BG_COLOR, PPREFSMSG_MAINMENU_HOTOUSE_2);
-
-		libmPrintf(15,24,BG_COLOR,FG_COLOR,"<<[L]  %s [R]>>",getSepluginsTextName(commonBuf,config.basePath,now_type));
-		if( pdata[now_type].edit ) printEditedMark();
+		if( pdata[now_type].edit ) 
+			printEditedMark();
 		for( i = 0; i < MAX_DISPLAY_NUM && i < pdata[now_type].num; i++ ){
-//			libmPrintf(15,38 + i*(LIBM_CHAR_HEIGHT+2),(now_arrow == i+headOffset)?SL_COLOR:FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[i+headOffset].toggle?"O N":"OFF",pdata[now_type].line[i+headOffset].print);
+			libmPrintf(15,38 + i*(LIBM_CHAR_HEIGHT+2),(now_arrow == i+headOffset)?SL_COLOR:FG_COLOR,BG_COLOR,"[%s] %s",pdata[now_type].line[i+headOffset].toggle?"O N":"OFF",pdata[now_type].line[i+headOffset].print);
 			printALine(i, i+headOffset, (now_arrow == i+headOffset)?SL_COLOR:FG_COLOR);
 		}
 
-		if( beforeButtons == 0 ) wait_button_up(&padData);
+		if( beforeButtons == 0 )
+			wait_button_up(&padData);
+		
 		while(1){
 
-			
-			
 			get_button(&padData);
 
 			if( padData.Buttons & (PSP_CTRL_DOWN|PSP_CTRL_UP|PSP_CTRL_RIGHT|PSP_CTRL_LEFT) && pdata[now_type].num > 0 )
@@ -952,7 +808,7 @@ void main_menu(void)
 					readSepluginsText(3,false,config.basePath);
 				}
 				
-				PRINT_SCREEN();
+				printScreen();
 				break;
 			}
 			else if( padData.Buttons & PSP_CTRL_RTRIGGER )
@@ -966,7 +822,7 @@ void main_menu(void)
 				now_arrow = 0;
 				headOffset = 0;
 				
-				PRINT_SCREEN();
+				printScreen();
 				break;
 			}
 			else if( padData.Buttons & PSP_CTRL_LTRIGGER )
@@ -980,7 +836,7 @@ void main_menu(void)
 				now_arrow = 0;
 				headOffset = 0;
 				
-				PRINT_SCREEN();
+				printScreen();
 				break;
 			}
 			else if( padData.Buttons &  PSP_CTRL_TRIANGLE )
@@ -1003,7 +859,7 @@ void main_menu(void)
 					now_arrow = 0;
 					headOffset = 0;
 				}
-				PRINT_SCREEN();
+				printScreen();
 				break;
 			}
 			else if( padData.Buttons &  PSP_CTRL_START )
@@ -1041,13 +897,13 @@ void main_menu(void)
 					
 					wait_button_up(&padData);
 					saveEdit();
-					resumeThreads();
+					threadCtrlResume();
 					sceKernelExitVSHVSH(NULL);
 					return;
 				}
 				
 				wait_button_up(&padData);
-				PRINT_SCREEN();
+				printScreen();
 				break;
 			}
 			else if( padData.Buttons & PSP_CTRL_HOME )
@@ -1057,7 +913,7 @@ void main_menu(void)
 				
 				saveEdit();
 				wait_button_up(&padData);
-				resumeThreads();
+				threadCtrlResume();
 				return;
 			}
 			else if( padData.Buttons & PSP_CTRL_SELECT )
@@ -1083,7 +939,7 @@ void main_menu(void)
 				}
 				
 				wait_button_up(&padData);
-				PRINT_SCREEN();
+				printScreen();
 				break;
 			}
 			else if( padData.Buttons & PSP_CTRL_NOTE )
@@ -1148,138 +1004,27 @@ void main_menu(void)
 
 }
 
-void getRootPath(char *dst,char *src)
-{
-	int i;
-	for( i = 0; src[i] != '\0'; i++ ){
-		dst[i] = src[i];
-		if( dst[i] == '/' ){
-			dst[i+1] = '\0';
-			return;
-		}
-	}
-	return;
-}
-
-
-
-
 
 
 int module_start( SceSize arglen, void *argp )
-{
-	nidResolve();
-	Get_FirstThreads();
-
-	
-	
-	strcpy(ownPath, argp);
-	getRootPath(rootPath, argp);
-
-	//deviceModel 多分
-	//0 -> 1000
-	//1 -> 2000
-	//2 -> 3000 03g?
-	//3 -> 3000 04g?
-	//4 -> go
-	//8 -> 3000 09g t箱?
-	deviceModel = sceKernelGetModel();
-	if( deviceModel < 0 || deviceModel > 8) deviceModel = 9;//unknown
-
-
-	char path[256], *temp;
-	strcpy(path, argp);
-	temp = strrchr(path, '/');
-	if( temp != NULL ) *temp = '\0';
-	strcat(path,"/hitobashira.txt");
-	if( ! check_file(path) ) hitobashiraFlag = 1;
-
-
-
-	char iniPath[256];
-	int i;
-	
-	//read INI and set config
-	strcpy(iniPath, argp);
-	temp = strrchr(iniPath, '/');
-	if( temp != NULL ) *temp = '\0';
-	strcat(iniPath,INI_NAME);
-	
-	strcpy(config.basePathDefault,rootPath);
-	
-	//6.35PRO or PRO-A以降かの判別(?)
-	if( sceKernelDevkitVersion() == PSP_FIRMWARE(0x635) && sctrlHENGetVersion() == 0x1001 && sceKernelFindModuleByName("VshCtrl") == NULL ){
-		//it may be 6.35PRO(HEN) この判定は正しいのか分からない
-		strcat( config.basePathDefault,"plugins/" );
-	}else{
-		strcat( config.basePathDefault, "seplugins/" );
+{		
+	if( pprefsInit(arglen, argp) < 0 ){
+		return 0;
 	}
 	
-	
-	
-	INI_Init_Key(conf);
-	
-	
-#ifdef PPREFS_LITE
-	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
-	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//1
-	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//2
-	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//3
-	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//4
-	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//5
-	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//6
-	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//7
-	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//8
-	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//9
-	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//10
-	INI_Add_Button(conf, "DisablePluginsKey", &config.disablePluginsKey, PSP_CTRL_LTRIGGER );//11
-#else
-	INI_Add_Button(conf, "BootKey", &config.bootKey, PSP_CTRL_HOME );//0
-	INI_Add_Bool(conf, "BootMessage", &config.bootMessage, true );//1
-	INI_Add_Bool(conf, "SwapButton", &config.swapButton, false );//2
-	INI_Add_Bool(conf, "OnePushRestart", &config.onePushRestart, false );//3
-	INI_Add_List(conf, "LineFeedCode", &config.lineFeedCode, 0, INI_Key_lineFeedCode_list);//4
-	INI_Add_String(conf, "BasePath", config.basePathOri, config.basePathDefault);//5
-	INI_Add_Hex(conf, "Color0", &config.color0, FG_COLOR_DEFAULT, NULL);//6
-	INI_Add_Hex(conf, "Color1", &config.color1, BG_COLOR_DEFAULT, NULL);//7
-	INI_Add_Hex(conf, "Color2", &config.color2, SL_COLOR_DEFAULT, NULL);//8
-	INI_Add_Hex(conf, "Color3", &config.color3, EX_COLOR_DEFAULT, NULL);//9
-	INI_Add_Hex(conf, "Color4", &config.color4, ON_COLOR_DEFAULT, NULL);//10
-	INI_Add_Hex(conf, "Color5", &config.color5, OF_COLOR_DEFAULT, NULL);//11
-	INI_Add_Bool(conf, "UsbConnect", &config.usbConnect, false );//12
-	INI_Add_Button(conf, "UsbConnectKey", &config.usbConnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_UP) );//13
-	INI_Add_Button(conf, "UsbDisconnectKey", &config.usbDisconnectKey, (PSP_CTRL_RTRIGGER|PSP_CTRL_LTRIGGER|PSP_CTRL_DOWN) );//14
-	INI_Add_Hex(conf, "SortType", &config.sortType, 0, NULL);//15
-	INI_Add_Button(conf, "DisablePluginsKey", &config.disablePluginsKey, PSP_CTRL_LTRIGGER );//16
-#endif
-	
-	INI_Read_Conf(iniPath, conf);
-	SET_CONFIG();
-	
-	//init
-	for( i = 0; i < 3; i++ ){
-		pdata[i].num = 0;
-		pdata[i].edit = false;
-		pdata[i].exist = false;
-	}
-	
-	readSepluginsText(3,false,config.basePath);
-	
-	
-	sceCtrlPeekBufferPositive( &padData, 1 );
-
+	sceCtrlPeekBufferPositive( &padData, 1 );	
 	if( (padData.Buttons & config.disablePluginsKey) == config.disablePluginsKey ){
 		hookSceKernelLoadModule();
 	}
 	
-
-	SceUID thid;
-	//umd dumpとは逆で flag == 0 の時にストップする仕様
 	stop_flag = 1;
-	thid = sceKernelCreateThread( "PPREFS", main_thread, 30, 0x6000, PSP_THREAD_ATTR_NO_FILLSTACK, 0 );
-	if( thid ) sceKernelStartThread( thid, arglen, argp );
+	
+	SceUID thid = sceKernelCreateThread( "PPREFS", main_thread, 30, 0x6000, PSP_THREAD_ATTR_NO_FILLSTACK, 0 );
+	if( thid >= 0 ){
+		sceKernelStartThread( thid, arglen, argp );
+	}
 
-  return 0;
+	return 0;
 }
 
 int module_stop( void )
@@ -1462,7 +1207,7 @@ void saveEdit(void)
 			while(1){
 				if( writeSepluginsText(i,config.basePath) < 0 ){
 					makeWindow(24, 28,24 + LIBM_CHAR_WIDTH*26, 28 + LIBM_CHAR_HEIGHT*5, FG_COLOR, BG_COLOR);
-					libmPrintf(24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT      , FG_COLOR,BG_COLOR,PPREFSMSG_FAILTOWRITE,getSepluginsTextName(commonBuf,config.basePath,i));
+					libmPrintf(24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT      , FG_COLOR,BG_COLOR,PPREFSMSG_FAILTOWRITE,basePathCurrent, sepluginsTxtFileName[i]);
 					libmPrintf(24 + LIBM_CHAR_WIDTH, 28 + LIBM_CHAR_HEIGHT*3 + 4, FG_COLOR,BG_COLOR,PPREFSMSG_FAILTOWRITEHOWTOUSE,buttonData[buttonNum[0]].name,buttonData[buttonNum[1]].name);
 
 					while(1){
@@ -1481,6 +1226,31 @@ void saveEdit(void)
 			}
 		}
 	}
+}
+
+
+
+int loadLibraries(void)
+{
+	int res = 0;
+	char path[] = "ms0:/seplugins/lib/cmlibmenu.prx";
+	
+	if( sceKernelFindModuleByName("cmlibMenu") == NULL ){
+		res = pspSdkLoadStartModule(path, PSP_MEMORY_PARTITION_KERNEL);
+		if( res < 0 ){
+			if( path[0] == 'm' && path[1] == 's' ){
+				path[0] = 'e';
+				path[1] = 'f';
+			}else{
+				path[0] = 'm';
+				path[1] = 's';
+			}
+			
+			res = pspSdkLoadStartModule(path, PSP_MEMORY_PARTITION_KERNEL);
+		}
+	}
+	
+	return res;
 }
 
 
