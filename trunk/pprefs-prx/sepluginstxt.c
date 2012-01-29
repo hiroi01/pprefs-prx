@@ -3,11 +3,6 @@
 #include "file.h"
 
 
-static const char *textFileName[] = {
-	"vsh.txt",
-	"game.txt",
-	"pops.txt"
-};
 
 /*	remove an item from pdata
 
@@ -23,15 +18,14 @@ static const char *textFileName[] = {
 	< 0 on error
 */
 
+static const char *textFileName[] = {
+	"vsh.txt",
+	"game.txt",
+	"pops.txt"
+};
 
-char *getSepluginsTextName(char *str,char *basePath, int type)
-{
-	if( !(0 <= type &&  type <= 2) ) return NULL;
-	strcpy(str, basePath);
-	strcat(str, textFileName[type]);
-	
-	return str;
-}
+
+
 
 int removeAnItem(int type, int num){
 	if( !(0 <= type &&  type <= 2) ) return -1;
@@ -184,8 +178,6 @@ int readSepluginsText( int ptype ,bool checkFlag, char *basePath)
 		type = 0;
 		loopend = 1;
 	}
-	
-//	checkMs();
 	
 	for( ; type < loopend; type++){
 		pdata[type].edit = false;

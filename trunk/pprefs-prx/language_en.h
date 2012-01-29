@@ -37,7 +37,7 @@
 #define PPREFSMSG_COPYME_FAILTOCOPY "Fail to copy"
 #define PPREFSMSG_COPYME_ERROR "error!"
 #define PPREFSMSG_COPYME_INSERTERROR "insert MS that has 'pprefs_lite'"
-#define PPREFSMSG_FAILTOWRITE "Fail to write %s"
+#define PPREFSMSG_FAILTOWRITE "Fail to write %s%s"
 #define PPREFSMSG_FAILTOWRITEHOWTOUSE "%s:Retry %s:Skip "
 
 #define PPREFSMSG_CONFIGMENU_TITLE " Config "

@@ -36,7 +36,6 @@ struct pdatas{
 int removeAnItem(int type,int num);
 int addNewItem(int type,struct pdataLine *lineData);
 
-char *getSepluginsTextName(char *str,char *basePath, int type);
 int readSepluginsText( int ptype ,bool checkFlag ,char *basePath);
 int writeSepluginsText(int ptype, char *basePath);
 

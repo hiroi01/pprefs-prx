@@ -39,23 +39,19 @@ CLASSG_LIBS = libs
 
 
 
-INCDIR = $(CLASSG_LIBS)
+INCDIR = $(CLASSG_LIBS) include
 CFLAGS = -Os -G0 -Wall -fno-strict-aliasing -fno-builtin-printf -DUSE_KERNEL_LIBRARY -DPPREFS_LITE $(OPTION_FLAGS)
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 
-LIBDIR			= 
+LIBDIR		=   libs
 LDFLAGS		=	-mno-crt0 -nostartfiles
 
-ifeq ($(LANGUAGE),japanese)
-LIBS += libmenuj.a
-else
-LIBS += libmenue.a
-endif
+LIBS += -lcmlibMenu
+LIBS += safelySuspend.a
 
 LIBS += -lpspsystemctrl_kernel -lm -lpspkubridge -lpspusbstor 
 
-LIBS += safelySuspend.a
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build_prx.mak
 

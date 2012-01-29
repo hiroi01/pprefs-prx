@@ -42,7 +42,7 @@
 #define PPREFSMSG_COPYME_ERROR "エラーが発生しました"
 #define PPREFSMSG_COPYME_INSERTERROR "pprefsが入っているMSを入れてください"
 
-#define PPREFSMSG_FAILTOWRITE "%sの書き込みに失敗しました"
+#define PPREFSMSG_FAILTOWRITE "%s%sの書き込みに失敗しました"
 #define PPREFSMSG_FAILTOWRITEHOWTOUSE "%s:リトライ %s:スキップ "
 
 #define PPREFSMSG_CONFIGMENU_TITLE " 設定 "

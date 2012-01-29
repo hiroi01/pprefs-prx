@@ -8,18 +8,9 @@ SceCtrlData padData;
 char ownPath[256];
 char rootPath[16];
 int deviceModel = 9;
-char *modelName[] = {
-	"[01g]", //0
-	"[02g]", //1
-	"[03g]", //2
-	"[04g]", //3
-	"[g o]", //4
-	"[06g]", //5
-	"[07g]", //6
-	"[08g]", //7
-	"[09g]", //8
-	"[???]", //9
-};
+libm_draw_info dinfo;
+libm_vram_info vinfo;
+char modelName[6];
 
 //buttonNum buttonData‚Í,ƒ{ƒ^ƒ““ü‚ê‘Ö‚¦‚Ég‚¤
 //buttonNum‚Ì”š‚ğ“ü‚ê‘Ö‚¦‚ê‚Î–ğŠ„‚à“ü‚ê‘Ö‚í‚é
@@ -34,8 +25,35 @@ struct pprefsButtonDatas buttonData[] = {
 	{PSP_CTRL_CIRCLE,PB_SYM_PSP_CIRCLE}
 };
 int buttonNum[] = {0,1};
-INI_Key conf[PPREFS_CONF_NUM];
+ILP_Key conf[PPREFS_CONF_NUM];
 int hitobashiraFlag = 0;
+char basePathDefault[64];
+char basePathCurrent[64];
+
+void pprefsApplyConfig(void)
+{
+	int i;
+	if( config.swapButton ){
+		buttonNum[0] = 1;
+		buttonNum[1] = 0;
+	}else{
+		buttonNum[0] = 0;
+		buttonNum[1] = 1;
+	}
+
+	int len = strlen(config.basePath);
+	if( len == 0 ){
+		strcpy(basePathCurrent, basePathDefault);
+	}else{
+		strcpy(basePathCurrent, config.basePath);
+		if( basePathCurrent[len-1] != '/' ){
+			basePathCurrent[len+0] = '/';
+			basePathCurrent[len+1] = '\0';
+		}
+		
+	}
+
+}
 
 
 
